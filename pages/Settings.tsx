@@ -161,14 +161,17 @@ interface SettingsProps {
     onEndTutorial: () => void;
     modalState: { type: string | null; data: any };
     setModalState: (state: { type: string | null; data: any }) => void;
+    onDeleteAccount: () => Promise<boolean>;
 }
 
-const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSaveUser, onDeleteUser, onSavePromotion, onDeletePromotion, onTogglePromotionStatus, onHardReset, onRestoreItem, uiScale, setUiScale, isTutorialActive, onStartTutorial, onEndTutorial, modalState, setModalState }) => {
+const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSaveUser, onDeleteUser, onSavePromotion, onDeletePromotion, onTogglePromotionStatus, onHardReset, onRestoreItem, uiScale, setUiScale, isTutorialActive, onStartTutorial, onEndTutorial, modalState, setModalState, onDeleteAccount }) => {
     const { products, users, promotions, history, stockAdjustments, expenses, appSettings } = accountState;
     const [activeTab, setActiveTab] = useState<SettingsTab>('general');
     const { theme, toggleTheme, accentColor, setAccentColor } = useContext(ThemeContext);
 
     const [resetConfirm, setResetConfirm] = useState(false);
+    const [businessDeleteConfirm, setBusinessDeleteConfirm] = useState(false);
+    const [businessDeleteName, setBusinessDeleteName] = useState('');
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
     const [promotionToDelete, setPromotionToDelete] = useState<Promotion | null>(null);
     const toast = useToast();
@@ -361,10 +364,15 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                     </button>
                     <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-800">
                         <h3 className="font-semibold text-red-800 dark:text-red-200">Danger Zone</h3>
-                        <Tooltip content="Re-download all data from server" position="bottom">
-                            <button onClick={handleHardReset} className="mt-2 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700">Hard Reset</button>
-                        </Tooltip>
-                        <p className="text-xs text-red-700 dark:text-red-300 mt-2">Re-downloads all data from the server, deleting any local changes that haven't been synced. Use this if your local data seems corrupted.</p>
+                        <div className="flex flex-wrap gap-4 mt-2">
+                            <Tooltip content="Re-download all data from server" position="bottom">
+                                <button onClick={handleHardReset} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700">Hard Reset</button>
+                            </Tooltip>
+                            <Tooltip content="Permanently delete this business" position="bottom">
+                                <button onClick={() => setBusinessDeleteConfirm(true)} className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold hover:bg-red-700">Delete Business</button>
+                            </Tooltip>
+                        </div>
+                        <p className="text-xs text-red-700 dark:text-red-300 mt-2">Hard Reset: Re-downloads all data from the server. Delete Business: Permanently erases all data for this business.</p>
                     </div>
                     <div>
                         <h3 className="font-semibold mb-2">Recycle Bin</h3>
@@ -449,6 +457,45 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                 }}
                 onCancel={() => setPromotionToDelete(null)}
             />
+
+            {/* Business Delete Modal */}
+            {businessDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-md w-full">
+                         <div className="p-6 text-center">
+                            <h3 className="text-lg font-bold text-red-600">Delete Business</h3>
+                             <p className="text-sm text-slate-600 dark:text-slate-400 mt-2">This action is permanent and cannot be undone. All data associated with "{appSettings.shopName}" will be erased.</p>
+                             <p className="text-sm text-slate-600 dark:text-slate-400 mt-4">To confirm, type the name of the business below:</p>
+                            <input
+                                type="text"
+                                value={businessDeleteName}
+                                onChange={e => setBusinessDeleteName(e.target.value)}
+                                className="w-full mt-2 p-2 border rounded bg-white dark:bg-slate-700 text-slate-900 dark:text-white border-slate-300 dark:border-slate-600 focus:ring-1 focus:ring-red-500"
+                                placeholder={appSettings.shopName}
+                            />
+                        </div>
+                        <div className="p-4 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-4">
+                            <button onClick={() => { setBusinessDeleteConfirm(false); setBusinessDeleteName(''); }} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 transition">Cancel</button>
+                            <button 
+                                onClick={async () => {
+                                    if (businessDeleteName === appSettings.shopName) {
+                                        const success = await onDeleteAccount();
+                                        if (success) {
+                                            toast.showToast(`Business "${appSettings.shopName}" deleted.`, 'info');
+                                        }
+                                    } else {
+                                        toast.showToast("Name does not match.", 'error');
+                                    }
+                                }}
+                                disabled={businessDeleteName !== appSettings.shopName}
+                                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-semibold disabled:opacity-50"
+                            >
+                                Delete Business
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

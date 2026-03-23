@@ -20,6 +20,7 @@ import Icon from './components/Icon';
 
 interface LoginProps {
     onLogin: (account: AccountState, user: User, accounts: AccountInfo[]) => void;
+    onDeleteAccount?: (accountId: string) => Promise<boolean>;
 }
 
 const LeftPanel: React.FC = () => (
@@ -95,7 +96,7 @@ const handleFirestoreError = (error: unknown, operationType: OperationType, path
     throw new Error(JSON.stringify(errInfo));
 };
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
     type Step = 'auth' | 'select_business' | 'create_business';
     const [step, setStep] = useState<Step>('auth');
     const [isRegistering, setIsRegistering] = useState(false);
@@ -110,6 +111,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     // State after login
     const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
     const [userAccounts, setUserAccounts] = useState<AccountInfo[]>([]);
+    const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
 
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -262,6 +264,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     };
 
     const handleSelectBusiness = async (accountId: string) => {
+        if (deletingAccountId) return;
         setIsLoading(true);
         setError('');
         try {
@@ -426,11 +429,53 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                         </div>
                         <div className="space-y-3">
                             {userAccounts.map(account => (
-                                <button key={account.id} onClick={() => handleSelectBusiness(account.id)} className="w-full text-left p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:border-gray-700 font-semibold">
-                                    {account.name}
-                                </button>
+                                <div key={account.id} className="flex items-center gap-2 group">
+                                    <button 
+                                        onClick={() => handleSelectBusiness(account.id)} 
+                                        className="flex-1 text-left p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:border-gray-700 font-semibold transition-colors"
+                                    >
+                                        {account.name}
+                                    </button>
+                                    {onDeleteAccount && (
+                                        <button 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDeletingAccountId(account.id);
+                                            }}
+                                            className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Delete Business"
+                                        >
+                                            <Icon name="trash" className="w-5 h-5" />
+                                        </button>
+                                    )}
+                                </div>
                             ))}
                         </div>
+                        {deletingAccountId && (
+                            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] p-4">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
+                                    <h3 className="text-lg font-bold text-red-600">Delete Business</h3>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Are you sure you want to delete "{userAccounts.find(a => a.id === deletingAccountId)?.name}"? This action cannot be undone.</p>
+                                    <div className="flex justify-center gap-4 mt-6">
+                                        <button onClick={() => setDeletingAccountId(null)} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Cancel</button>
+                                        <button 
+                                            onClick={async () => {
+                                                if (onDeleteAccount && deletingAccountId) {
+                                                    const success = await onDeleteAccount(deletingAccountId);
+                                                    if (success) {
+                                                        setUserAccounts(prev => prev.filter(a => a.id !== deletingAccountId));
+                                                        setDeletingAccountId(null);
+                                                    }
+                                                }
+                                            }}
+                                            className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition font-semibold"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="mt-6 text-center">
                             <button onClick={() => setStep('create_business')} className="font-semibold text-primary-600 hover:text-primary-500">
                                 + Create a new business

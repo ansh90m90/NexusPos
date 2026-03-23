@@ -169,3 +169,16 @@ export const deleteAccount = async (accountId: string): Promise<void> => {
         handleFirestoreError(error, OperationType.DELETE, path);
     }
 };
+
+/**
+ * Deletes a user's entire profile and associated data references from Firestore.
+ */
+export const deleteUserAccount = async (userId: string): Promise<void> => {
+    const path = `users/${userId}`;
+    try {
+        const userRef = doc(db, 'users', userId);
+        await deleteDoc(userRef);
+    } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, path);
+    }
+};

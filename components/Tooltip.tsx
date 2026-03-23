@@ -16,29 +16,38 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, delay = 500
     const timeoutRef = useRef<any>(null);
     const triggerRef = useRef<any>(null);
 
-    const handleMouseEnter = useCallback(() => {
+    const handleMouseMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        if (!isVisible) return;
+        
+        let clientX, clientY;
+        if ('touches' in e) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = (e as React.MouseEvent).clientX;
+            clientY = (e as React.MouseEvent).clientY;
+        }
+        
+        setCoords({ x: clientX, y: clientY });
+    }, [isVisible]);
+
+    const handleMouseEnter = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        
+        let clientX, clientY;
+        if ('touches' in e) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = (e as React.MouseEvent).clientX;
+            clientY = (e as React.MouseEvent).clientY;
+        }
+
         timeoutRef.current = setTimeout(() => {
-            if (triggerRef.current) {
-                const rect = triggerRef.current.getBoundingClientRect();
-                let x = rect.left + rect.width / 2;
-                let y = rect.top;
-
-                if (position === 'bottom') {
-                    y = rect.bottom;
-                } else if (position === 'left') {
-                    x = rect.left;
-                    y = rect.top + rect.height / 2;
-                } else if (position === 'right') {
-                    x = rect.right;
-                    y = rect.top + rect.height / 2;
-                }
-
-                setCoords({ x, y });
-                setIsVisible(true);
-            }
+            setCoords({ x: clientX, y: clientY });
+            setIsVisible(true);
         }, delay);
-    }, [delay, position]);
+    }, [delay]);
 
     const handleMouseLeave = useCallback(() => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -67,15 +76,38 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, delay = 500
     const clonedChild = React.cloneElement(child, {
         ref: setRefs,
         onMouseEnter: (e: React.MouseEvent) => {
-            handleMouseEnter();
+            handleMouseEnter(e);
             if (child.props.onMouseEnter) child.props.onMouseEnter(e);
+        },
+        onMouseMove: (e: React.MouseEvent) => {
+            handleMouseMove(e);
+            if (child.props.onMouseMove) child.props.onMouseMove(e);
         },
         onMouseLeave: (e: React.MouseEvent) => {
             handleMouseLeave();
             if (child.props.onMouseLeave) child.props.onMouseLeave(e);
         },
+        onTouchStart: (e: React.TouchEvent) => {
+            handleMouseEnter(e);
+            if (child.props.onTouchStart) child.props.onTouchStart(e);
+        },
+        onTouchMove: (e: React.TouchEvent) => {
+            handleMouseMove(e);
+            if (child.props.onTouchMove) child.props.onTouchMove(e);
+        },
+        onTouchEnd: (e: React.TouchEvent) => {
+            handleMouseLeave();
+            if (child.props.onTouchEnd) child.props.onTouchEnd(e);
+        },
         onFocus: (e: React.FocusEvent) => {
-            handleMouseEnter();
+            // For focus, we don't have mouse coords, so we fallback to element rect if needed
+            // But user specifically asked for pointer, so we'll just ignore focus-based positioning for now
+            // or use the center of the element.
+            if (triggerRef.current) {
+                const rect = triggerRef.current.getBoundingClientRect();
+                setCoords({ x: rect.left + rect.width / 2, y: rect.top });
+                setIsVisible(true);
+            }
             if (child.props.onFocus) child.props.onFocus(e);
         },
         onBlur: (e: React.FocusEvent) => {
@@ -94,12 +126,12 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, delay = 500
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ duration: 0.15 }}
+                            transition={{ duration: 0.1 }}
                             style={{
                                 position: 'fixed',
                                 left: coords.x,
                                 top: coords.y,
-                                transform: `translate(${position === 'left' ? 'calc(-100% - 8px)' : position === 'right' ? '8px' : '-50%'}, ${position === 'top' ? 'calc(-100% - 8px)' : position === 'bottom' ? '8px' : '-50%'})`,
+                                transform: `translate(${position === 'left' ? 'calc(-100% - 12px)' : position === 'right' ? '12px' : '-50%'}, ${position === 'top' ? 'calc(-100% - 12px)' : position === 'bottom' ? '12px' : '-50%'})`,
                                 zIndex: 99999,
                                 pointerEvents: 'none',
                             }}

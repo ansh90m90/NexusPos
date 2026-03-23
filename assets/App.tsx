@@ -28,7 +28,7 @@ import Tutorial, { TutorialStep } from '../components/Tutorial';
 import { ToastProvider, useToast } from '../components/Toast';
 import { Page, Theme, ThemeContext, User, AccountState, ActivityItem, AccountInfo, UiScale, ProductsPageTab, RestaurantPageTab, AccentColor } from '../types';
 import { useLocalStorage, useAccountActions, useSync, SyncStatus } from '../hooks';
-import { deleteAccount as serverDeleteAccount } from '../services/syncService';
+import { deleteAccount as serverDeleteAccount, deleteUserAccount as serverDeleteUserAccount } from '../services/syncService';
 import Icon from '../components/Icon';
 
 const tutorialSteps: TutorialStep[] = [
@@ -53,7 +53,8 @@ const AccountApp: React.FC<{
   onHardReset: () => Promise<void>,
   userAccounts: AccountInfo[],
   onDeleteAccount: (accountId: string) => Promise<boolean>,
-}> = ({ accountState, dispatchOperation, onLogout, initialUser, syncStatus, onForceSync, onHardReset, userAccounts, onDeleteAccount }) => {
+  onDeleteUserAccount: () => Promise<boolean>,
+}> = ({ accountState, dispatchOperation, onLogout, initialUser, syncStatus, onForceSync, onHardReset, userAccounts, onDeleteAccount, onDeleteUserAccount }) => {
 
   const { id: accountId, users, products, dishes, rawMaterials, customers, suppliers, transactions, purchaseOrders, kitchenOrders, batches, notifications, appSettings, rewards, promotions, allocatedRawMaterials, stockAdjustments = [], expenses = [], heldCarts = [], isTest = false } = accountState;
 
@@ -185,8 +186,8 @@ const AccountApp: React.FC<{
         case 'Expenses': return <Expenses expenses={visibleExpenses} onSaveExpense={handleSaveExpense} onDeleteExpense={handleDeleteExpense} modalState={modalState} setModalState={setModalState} />;
         case 'Reports': return <Reports accountState={accountState} />;
         case 'Marketing': return <Marketing accountId={accountId} customers={visibleCustomers} promotions={visiblePromotions} onSavePromotion={handleSavePromotion} setModalState={setModalState} products={visibleProducts} />;
-        case 'Settings': return <Settings accountState={accountState} setAppSettings={handleUpdateAppSettings} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} onSavePromotion={handleSavePromotion} onDeletePromotion={handleDeletePromotion} onTogglePromotionStatus={handleTogglePromotionStatus} onHardReset={onHardReset} onRestoreItem={handleRestoreItem} uiScale={uiScale} setUiScale={setUiScale} isTutorialActive={isTutorialActive} onStartTutorial={() => { setTutorialActive(true); setTutorialStep(0); }} onEndTutorial={() => setTutorialActive(false)} modalState={modalState} setModalState={setModalState} />;
-        case 'MyAccount': return <MyAccountPage user={currentUser} onSave={handleUpdateCurrentUser} userAccounts={userAccounts} currentAccountId={accountId} onDeleteAccount={onDeleteAccount} />;
+        case 'Settings': return <Settings accountState={accountState} setAppSettings={handleUpdateAppSettings} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} onSavePromotion={handleSavePromotion} onDeletePromotion={handleDeletePromotion} onTogglePromotionStatus={handleTogglePromotionStatus} onHardReset={onHardReset} onRestoreItem={handleRestoreItem} uiScale={uiScale} setUiScale={setUiScale} isTutorialActive={isTutorialActive} onStartTutorial={() => { setTutorialActive(true); setTutorialStep(0); }} onEndTutorial={() => setTutorialActive(false)} modalState={modalState} setModalState={setModalState} onDeleteAccount={() => onDeleteAccount(accountId)} />;
+        case 'MyAccount': return <MyAccountPage user={currentUser} onSave={handleUpdateCurrentUser} userAccounts={userAccounts} currentAccountId={accountId} onDeleteAccount={onDeleteAccount} onDeleteUserAccount={onDeleteUserAccount} />;
         default: return <AccessDenied />;
     }
    };
@@ -351,6 +352,23 @@ const AppContent: React.FC = () => {
         }
     };
 
+    const handleDeleteUserAccount = async (): Promise<boolean> => {
+        if (!auth.currentUser) return false;
+        try {
+            const userId = auth.currentUser.uid;
+            await serverDeleteUserAccount(userId);
+            // Also delete the Auth user
+            await auth.currentUser.delete();
+            handleLogout();
+            toast.showToast("Your account has been deleted.", "info");
+            return true;
+        } catch (error) {
+            console.error("Failed to delete user account:", error);
+            toast.showToast("Failed to delete your account. You may need to re-authenticate first.", "error");
+            return false;
+        }
+    };
+
 
     if (!isAuthReady) {
         return (
@@ -364,7 +382,7 @@ const AppContent: React.FC = () => {
     }
 
     if (!accountState || !currentUser) {
-        return <Login onLogin={handleLogin} />;
+        return <Login onLogin={handleLogin} onDeleteAccount={handleDeleteAccount} />;
     }
     
     return (
@@ -378,6 +396,7 @@ const AppContent: React.FC = () => {
           onHardReset={handleHardReset}
           userAccounts={allAccounts}
           onDeleteAccount={handleDeleteAccount}
+          onDeleteUserAccount={handleDeleteUserAccount}
       />
     );
 }
