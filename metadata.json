@@ -1,0 +1,8 @@
+{
+  "name": "NexusPOS",
+  "description": "An all-in-one management application for a hybrid retail shop and a small-scale restaurant, featuring a unified POS, inventory management, menu management, and a detailed customer credit system.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "prompt": ""
+}

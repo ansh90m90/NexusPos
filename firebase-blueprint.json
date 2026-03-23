@@ -1,0 +1,65 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and account associations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Firebase Auth UID" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "accounts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "role": { "type": "string", "enum": ["Admin", "Cashier"] }
+            }
+          }
+        }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "Account": {
+      "title": "Account",
+      "description": "The full state of a business account",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "data": { "type": "object", "description": "The AccountState object" },
+        "lastSyncId": { "type": "number" },
+        "ownerId": { "type": "string", "description": "UID of the owner" }
+      },
+      "required": ["id", "name", "data", "ownerId"]
+    },
+    "Operation": {
+      "title": "Operation",
+      "description": "A single state mutation operation",
+      "type": "object",
+      "properties": {
+        "accountId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "type": { "type": "string" },
+        "payload": { "type": "object" },
+        "timestamp": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/accounts/{accountId}": {
+      "schema": "Account",
+      "description": "Business accounts"
+    },
+    "/accounts/{accountId}/operations/{operationId}": {
+      "schema": "Operation",
+      "description": "Operation log for synchronization"
+    }
+  }
+}
