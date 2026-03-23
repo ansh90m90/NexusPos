@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, AccountState, AccountInfo, ShopType } from './types';
 import { auth, db } from './firebase';
 import { 
@@ -13,7 +13,8 @@ import {
     getDoc, 
     setDoc, 
     updateDoc, 
-    arrayUnion 
+    arrayUnion,
+    onSnapshot
 } from 'firebase/firestore';
 import { createInitialAccountState, createTestAccountState } from './src/data/mockData';
 import Icon from './components/Icon';
@@ -116,6 +117,23 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    useEffect(() => {
+        if (loggedInUser) {
+            const unsubscribe = onSnapshot(doc(db, 'users', loggedInUser.id as any), (userDoc) => {
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    setUserAccounts(userData.accounts || []);
+                    if (userData.accounts && userData.accounts.length > 0) {
+                        setStep('select_business');
+                    } else {
+                        setStep('create_business');
+                    }
+                }
+            });
+            return () => unsubscribe();
+        }
+    }, [loggedInUser]);
+
     const resetForm = () => {
         setEmail('');
         setPassword('');
@@ -156,12 +174,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 });
-                setUserAccounts(userData.accounts || []);
-                if (userData.accounts && userData.accounts.length > 0) {
-                    setStep('select_business');
-                } else {
-                    setStep('create_business');
-                }
+                // Note: userAccounts and step will be updated by the onSnapshot listener
             } else {
                 // Create new user profile for Google user
                 const name = user.displayName || 'User';
@@ -246,12 +259,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     });
-                    setUserAccounts(userData.accounts || []);
-                    if (userData.accounts && userData.accounts.length > 0) {
-                        setStep('select_business');
-                    } else {
-                        setStep('create_business');
-                    }
+                    // Note: userAccounts and step will be updated by the onSnapshot listener
                 } else {
                     setError('User profile not found.');
                 }

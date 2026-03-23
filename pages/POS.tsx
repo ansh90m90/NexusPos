@@ -46,12 +46,12 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
             <div 
                 ref={tileRef}
                 onClick={() => !isOutOfStock && tileRef.current && onAdd(variant, tileRef.current)}
-                className={`bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-200 flex flex-col p-2 relative group ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-500 hover:ring-1 hover:ring-primary-500 cursor-pointer hover:-translate-y-1 hover:shadow-lg'}`}
+                className={`bg-theme-surface rounded-lg border border-theme-main shadow-sm transition-all duration-200 flex flex-col p-2 relative group ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-500 hover:ring-1 hover:ring-primary-500 cursor-pointer hover:-translate-y-1 hover:shadow-lg'}`}
             >
                 {isOutOfStock && <span className="absolute top-1 right-1 text-xs font-bold text-red-500 bg-red-100 dark:bg-red-900/50 px-1.5 py-0.5 rounded-full">Sold Out</span>}
                 <div className="flex-grow">
                     {product.subCategory && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 rounded-full px-2 py-0.5 text-slate-500 dark:text-slate-400 font-semibold">{product.subCategory}</span>}
-                    <h3 className="font-bold text-slate-800 dark:text-white mt-2 text-sm leading-tight break-words">
+                    <h3 className="font-bold text-theme-main mt-2 text-sm leading-tight break-words">
                         {product.name}
                     </h3>
                 </div>
@@ -59,7 +59,7 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
                     <p className="text-lg font-extrabold text-primary-600 dark:text-primary-400">
                         ₹{variant.mrp}
                     </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                    <p className="text-xs text-theme-muted">
                         Stock: {variant.stock}
                     </p>
                 </div>
@@ -72,10 +72,10 @@ const MasterProductTile: React.FC<{ product: Product; onAddVariant: (variant: Pr
     const tileRef = React.useRef<HTMLDivElement>(null);
     return (
         <Tooltip content={`Select a variant for ${product.name}`} position="top">
-            <div ref={tileRef} className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-200 flex flex-col p-2 hover:border-primary-500 hover:ring-1 hover:ring-primary-500 hover:shadow-lg">
+            <div ref={tileRef} className="bg-theme-surface rounded-lg border border-theme-main shadow-sm transition-all duration-200 flex flex-col p-2 hover:border-primary-500 hover:ring-1 hover:ring-primary-500 hover:shadow-lg">
                 <div className="flex-grow">
                     {product.subCategory && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 rounded-full px-2 py-0.5 text-slate-500 dark:text-slate-400 font-semibold">{product.subCategory}</span>}
-                    <h3 className="font-bold text-slate-800 dark:text-white mt-2 text-sm leading-tight break-words">
+                    <h3 className="font-bold text-theme-main mt-2 text-sm leading-tight break-words">
                         {product.name}
                     </h3>
                 </div>
@@ -88,7 +88,7 @@ const MasterProductTile: React.FC<{ product: Product; onAddVariant: (variant: Pr
                                 key={variant.id}
                                 onClick={() => !isOutOfStock && tileRef.current && onAddVariant(variant, tileRef.current)}
                                 disabled={isOutOfStock}
-                                className="w-full flex justify-between items-center px-2 py-1 rounded-md text-xs font-semibold bg-slate-100 dark:bg-slate-700 hover:bg-primary-500 hover:text-white dark:hover:bg-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex justify-between items-center px-2 py-1 rounded-md text-xs font-semibold bg-theme-main border border-theme-main hover:bg-primary-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title={`Stock: ${variant.stock}`}
                             >
                                 <span>{variant.name}</span>
@@ -626,6 +626,8 @@ const PaymentModal: React.FC<{
 }> = ({ total, onComplete, onClose, customer, appSettings }) => {
     const [method, setMethod] = useState<PaymentMethod>('Cash');
     const [received, setReceived] = useState(total.toString());
+    const [transactionId, setTransactionId] = useState('');
+    const [isVerified, setIsVerified] = useState(false);
     const change = parseFloat(received) - total;
 
     const handleComplete = () => {
@@ -633,86 +635,110 @@ const PaymentModal: React.FC<{
             method,
             amount: total,
             received: parseFloat(received) || total,
-            change: Math.max(0, change)
+            change: Math.max(0, change),
+            transactionId: method === 'Online' ? transactionId : undefined,
+            isVerified: method === 'Online' ? isVerified : undefined
         });
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-                <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                    <h3 className="text-lg font-bold">Complete Payment</h3>
-                    <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><Icon name="close" className="w-5 h-5"/></button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+            <div className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main animate-page-fade-in">
+                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-surface">
+                    <h3 className="text-lg font-bold text-theme-main">Complete Payment</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-theme-main rounded-full transition-colors"><Icon name="close" className="w-5 h-5 text-theme-muted"/></button>
                 </div>
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
                     <div className="text-center">
-                        <p className="text-sm text-slate-500 uppercase tracking-wider font-semibold">Total Amount</p>
+                        <p className="text-xs text-theme-muted uppercase tracking-widest font-bold">Total Amount</p>
                         <p className="text-5xl font-black text-primary-600 mt-1">₹{total.toFixed(2)}</p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-3">
                         {(['Cash', 'Online', 'Credit'] as PaymentMethod[]).map(m => (
                             <button 
                                 key={m} 
                                 onClick={() => setMethod(m)}
                                 disabled={m === 'Credit' && !customer}
-                                className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${method === m ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'} ${m === 'Credit' && !customer ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${method === m ? 'border-primary-500 bg-primary-500/10 text-primary-600' : 'border-theme-main hover:border-primary-500/50 text-theme-muted'} ${m === 'Credit' && !customer ? 'opacity-30 cursor-not-allowed' : ''}`}
                             >
                                 <Icon name={m.toLowerCase() as any} className="w-6 h-6" />
-                                <span className="text-xs font-bold">{m}</span>
+                                <span className="text-xs font-bold uppercase tracking-tighter">{m}</span>
                             </button>
                         ))}
                     </div>
 
                     {method === 'Online' && appSettings.upiId && (
-                        <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <p className="text-sm font-bold text-slate-600 dark:text-slate-400 mb-4">Scan to Pay via UPI</p>
-                            <div className="bg-white p-2 rounded-xl">
-                                <QRCodeSVG 
-                                    value={`upi://pay?pa=${appSettings.upiId}&pn=${encodeURIComponent(appSettings.shopName)}&am=${total.toFixed(2)}&cu=INR`} 
-                                    size={180} 
-                                    level="H"
-                                />
+                        <div className="space-y-4">
+                            <div className="flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-theme-main shadow-inner">
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Scan to Pay via UPI</p>
+                                <div className="bg-white p-2 rounded-xl shadow-sm">
+                                    <QRCodeSVG 
+                                        value={`upi://pay?pa=${appSettings.upiId}&pn=${encodeURIComponent(appSettings.shopName)}&am=${total.toFixed(2)}&cu=INR`} 
+                                        size={180} 
+                                        level="H"
+                                    />
+                                </div>
+                                <p className="text-xs text-slate-400 mt-4 text-center font-mono">{appSettings.upiId}</p>
                             </div>
-                            <p className="text-xs text-slate-500 mt-4 text-center break-all">{appSettings.upiId}</p>
+
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Transaction ID / UTR (Optional)</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Enter 12-digit UTR number"
+                                        value={transactionId}
+                                        onChange={e => setTransactionId(e.target.value)}
+                                        className="w-full p-3 bg-theme-main border border-theme-main rounded-xl text-theme-main focus:ring-2 focus:ring-primary-500 outline-none transition-all font-mono"
+                                    />
+                                </div>
+                                <button 
+                                    onClick={() => setIsVerified(!isVerified)}
+                                    className={`w-full p-3 rounded-xl border-2 flex items-center justify-center gap-2 transition-all ${isVerified ? 'bg-green-500/10 border-green-500 text-green-600' : 'border-theme-main text-theme-muted hover:border-green-500/50'}`}
+                                >
+                                    <Icon name={isVerified ? 'sync-check' : 'sync-reload'} className="w-5 h-5" />
+                                    <span className="font-bold">{isVerified ? 'Payment Verified' : 'Mark as Verified'}</span>
+                                </button>
+                            </div>
                         </div>
                     )}
 
                     {method !== 'Credit' && (
                         <div className="space-y-2">
-                            <label className="text-sm font-bold text-slate-600 dark:text-slate-400">Amount Received</label>
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Amount Received</label>
                             <div className="relative">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-theme-muted text-xl">₹</span>
                                 <input 
                                     type="number" 
                                     value={received} 
                                     onChange={e => setReceived(e.target.value)} 
-                                    className="w-full pl-8 p-4 text-2xl font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900"
+                                    className="w-full pl-10 p-4 text-3xl font-black border border-theme-main rounded-2xl bg-theme-main text-theme-main focus:ring-2 focus:ring-primary-500 outline-none transition-all"
                                     autoFocus
                                 />
                             </div>
                             {change > 0 && (
-                                <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-100 dark:border-green-900/30">
-                                    <span className="text-sm font-semibold text-green-700 dark:text-green-300">Change to return</span>
-                                    <span className="text-xl font-bold text-green-700 dark:text-green-300">₹{change.toFixed(2)}</span>
+                                <div className="flex justify-between items-center p-4 bg-green-500/10 rounded-xl border border-green-500/20">
+                                    <span className="text-sm font-bold text-green-600">Change to return</span>
+                                    <span className="text-2xl font-black text-green-600">₹{change.toFixed(2)}</span>
                                 </div>
                             )}
                         </div>
                     )}
 
                     {method === 'Credit' && customer && (
-                        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
-                            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                                This amount will be added to <strong>{customer.name}'s</strong> credit balance.
+                        <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                            <p className="text-sm font-bold text-amber-600">
+                                Adding to <strong>{customer.name}'s</strong> balance.
                             </p>
-                            <p className="text-xs mt-1 text-amber-600 dark:text-amber-400">Current Balance: ₹{customer.creditBalance.toFixed(2)}</p>
+                            <p className="text-xs mt-1 text-amber-500/80">New Balance: ₹{(customer.creditBalance + total).toFixed(2)}</p>
                         </div>
                     )}
 
                     <button 
                         onClick={handleComplete}
                         disabled={method !== 'Credit' && (parseFloat(received) < total || isNaN(parseFloat(received)))}
-                        className="w-full p-4 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-lg shadow-lg shadow-primary-500/30 transition-all disabled:opacity-50 disabled:shadow-none"
+                        className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black text-xl shadow-xl shadow-primary-500/30 transition-all disabled:opacity-50 disabled:shadow-none transform active:scale-95"
                     >
                         Complete Sale
                     </button>

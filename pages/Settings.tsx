@@ -167,7 +167,7 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSaveUser, onDeleteUser, onSavePromotion, onDeletePromotion, onTogglePromotionStatus, onHardReset, onRestoreItem, uiScale, setUiScale, isTutorialActive, onStartTutorial, onEndTutorial, modalState, setModalState, onDeleteAccount }) => {
     const { products, users, promotions, history, stockAdjustments, expenses, appSettings } = accountState;
     const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-    const { theme, toggleTheme, accentColor, setAccentColor } = useContext(ThemeContext);
+    const { theme, setTheme, toggleTheme, accentColor, setAccentColor } = useContext(ThemeContext);
 
     const [resetConfirm, setResetConfirm] = useState(false);
     const [businessDeleteConfirm, setBusinessDeleteConfirm] = useState(false);
@@ -229,19 +229,36 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                     { id: 'violet', label: 'Violet', color: 'bg-violet-600' },
                     { id: 'slate', label: 'Slate', color: 'bg-slate-600' },
                 ];
+                const themes: { id: Theme; label: string; icon: string; description: string }[] = [
+                    { id: 'light', label: 'Light', icon: 'sun', description: 'Clean and bright' },
+                    { id: 'dim', label: 'Dim', icon: 'moon', description: 'Soft dark mode' },
+                    { id: 'dark', label: 'Dark', icon: 'moon', description: 'Deep dark mode' },
+                    { id: 'black', label: 'Black', icon: 'moon', description: 'True black mode' },
+                ];
                 return (
                      <div className="space-y-6">
-                        <div className="flex justify-between items-center bg-slate-100 dark:bg-slate-900/50 p-4 rounded-lg">
-                            <div>
-                                <h3 className="font-semibold text-slate-800 dark:text-white">Theme</h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">Switch between light and dark mode.</p>
+                        <div className="bg-slate-100 dark:bg-slate-900/50 p-4 rounded-lg">
+                            <h3 className="font-semibold text-slate-800 dark:text-white mb-2">Theme</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Choose your preferred visual style.</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {themes.map((t) => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setTheme(t.id)}
+                                        className={`flex flex-col items-start gap-1 p-3 rounded-lg border-2 transition-all ${
+                                            theme === t.id 
+                                                ? 'border-primary-500 bg-white dark:bg-slate-800 shadow-sm' 
+                                                : 'border-transparent bg-slate-200/50 dark:bg-slate-800/50 hover:bg-white/50 dark:hover:bg-slate-700/50'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            <Icon name={t.icon} className={`w-4 h-4 ${theme === t.id ? 'text-primary-500' : 'text-slate-500'}`} />
+                                            <span className="text-sm font-bold">{t.label}</span>
+                                        </div>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400">{t.description}</span>
+                                    </button>
+                                ))}
                             </div>
-                            <Tooltip content="Toggle dark/light mode" position="bottom">
-                                <button onClick={toggleTheme} className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 flex items-center gap-2 transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">
-                                    <Icon name={theme === 'light' ? 'moon' : 'sun'} className="w-5 h-5"/> 
-                                    {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-                                </button>
-                            </Tooltip>
                         </div>
 
                         <div className="bg-slate-100 dark:bg-slate-900/50 p-4 rounded-lg">
@@ -255,7 +272,7 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                                         className={`flex flex-col items-center gap-2 p-2 rounded-lg border-2 transition-all ${
                                             accentColor === color.id 
                                                 ? 'border-primary-500 bg-white dark:bg-slate-800 shadow-sm' 
-                                                : 'border-transparent hover:bg-white/50 dark:hover:bg-slate-800/50'
+                                                : 'border-transparent bg-slate-200/50 dark:bg-slate-800/50 hover:bg-white/50 dark:hover:bg-slate-700/50'
                                         }`}
                                     >
                                         <div className={`w-8 h-8 rounded-full ${color.color} shadow-inner`}></div>

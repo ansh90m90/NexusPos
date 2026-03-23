@@ -29,7 +29,7 @@ const SyncControl: React.FC<{ status: SyncStatus, onSync: () => void }> = ({ sta
     const isSyncing = status === 'syncing';
 
     return (
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-full">
+        <div className="flex items-center gap-1 bg-theme-main p-1 rounded-full">
             <Tooltip content={title} position="bottom">
                 <div className={`flex items-center gap-1.5 text-xs font-semibold ${color} px-2 cursor-help`}>
                     <Icon name={iconName} className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, currentUser, onLogout, not
     }, [menuRef]);
     
     return (
-        <header className="bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 p-2 md:px-4 flex items-center justify-between sticky top-0 z-30 h-16 transition-all duration-300">
+        <header className="bg-theme-surface/90 backdrop-blur-md border-b border-theme-main p-2 md:px-4 flex items-center justify-between sticky top-0 z-30 h-16 transition-all duration-300">
             <div className="flex items-center gap-2">
                 <h1 className="text-lg font-bold text-slate-900 dark:text-white sm:block">{currentPage}</h1>
             </div>

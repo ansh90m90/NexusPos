@@ -39,12 +39,13 @@ export interface User {
     isDeleted?: boolean;
 }
 
-export type Theme = 'light' | 'dark';
+export type Theme = 'light' | 'dim' | 'dark' | 'black';
 export type AccentColor = 'primary' | 'emerald' | 'indigo' | 'rose' | 'amber' | 'violet';
 
 export interface ThemeContextType {
   theme: Theme;
   accentColor: AccentColor;
+  setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   setAccentColor: (color: AccentColor) => void;
 }
@@ -52,6 +53,7 @@ export interface ThemeContextType {
 export const ThemeContext = createContext<ThemeContextType>({
   theme: 'light',
   accentColor: 'primary',
+  setTheme: () => {},
   toggleTheme: () => {},
   setAccentColor: () => {},
 });

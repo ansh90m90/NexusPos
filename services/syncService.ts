@@ -11,7 +11,8 @@ import {
     limit,
     getDocs,
     deleteDoc,
-    getDoc
+    getDoc,
+    arrayRemove
 } from 'firebase/firestore';
 import { AccountState, Operation } from '../types';
 
@@ -163,6 +164,13 @@ export const fetchAccountState = async (accountId: string): Promise<AccountState
 export const deleteAccount = async (accountId: string): Promise<void> => {
     const path = `accounts/${accountId}`;
     try {
+        // Delete operations subcollection first (best effort)
+        const opsRef = collection(db, 'accounts', accountId, 'operations');
+        const opsSnap = await getDocs(opsRef);
+        const deletePromises = opsSnap.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+
+        // Delete the main account document
         const accountRef = doc(db, 'accounts', accountId);
         await deleteDoc(accountRef);
     } catch (error) {
@@ -180,5 +188,27 @@ export const deleteUserAccount = async (userId: string): Promise<void> => {
         await deleteDoc(userRef);
     } catch (error) {
         handleFirestoreError(error, OperationType.DELETE, path);
+    }
+};
+
+/**
+ * Removes an account reference from a user's profile.
+ */
+export const removeAccountFromUser = async (userId: string, accountId: string) => {
+    const path = `users/${userId}`;
+    try {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const accountToRemove = userData.accounts?.find((acc: any) => acc.id === accountId);
+            if (accountToRemove) {
+                await updateDoc(userRef, {
+                    accounts: arrayRemove(accountToRemove)
+                });
+            }
+        }
+    } catch (error) {
+        handleFirestoreError(error, OperationType.UPDATE, path);
     }
 };

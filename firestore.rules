@@ -112,6 +112,7 @@ service cloud.firestore {
       match /operations/{operationId} {
         allow read: if isAccountMember(accountId);
         allow create: if isAccountMember(accountId) && isValidOperation(request.resource.data);
+        allow delete: if isAccountOwner(accountId);
       }
     }
   }

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import Sidebar, { navItems as sidebarNavItems } from '../components/Sidebar';
 import Header from '../components/Header';
 import Dashboard from '../pages/Dashboard';
@@ -28,7 +28,7 @@ import Tutorial, { TutorialStep } from '../components/Tutorial';
 import { ToastProvider, useToast } from '../components/Toast';
 import { Page, Theme, ThemeContext, User, AccountState, ActivityItem, AccountInfo, UiScale, ProductsPageTab, RestaurantPageTab, AccentColor } from '../types';
 import { useLocalStorage, useAccountActions, useSync, SyncStatus } from '../hooks';
-import { deleteAccount as serverDeleteAccount, deleteUserAccount as serverDeleteUserAccount } from '../services/syncService';
+import { deleteAccount as serverDeleteAccount, deleteUserAccount as serverDeleteUserAccount, removeAccountFromUser } from '../services/syncService';
 import Icon from '../components/Icon';
 
 const tutorialSteps: TutorialStep[] = [
@@ -100,7 +100,14 @@ const AccountApp: React.FC<{
   const heldCartsState = useMemo(() => heldCarts || [], [heldCarts]);
 
   const closeCommandPalette = useCallback(() => setCommandPaletteOpen(false), []);
-  const toggleTheme = useCallback(() => setTheme(prev => (prev === 'light' ? 'dark' : 'light')), [setTheme]);
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => {
+      if (prev === 'light') return 'dim';
+      if (prev === 'dim') return 'dark';
+      if (prev === 'dark') return 'black';
+      return 'light';
+    });
+  }, [setTheme]);
 
   const {
     handleNewTransaction, handleSaveProduct, handleDeleteProduct, handleSaveCustomer, handleDeleteCustomer,
@@ -113,7 +120,8 @@ const AccountApp: React.FC<{
   } = useAccountActions({ dispatchOperation, currentUser, setModalState, toast, accountState, setCurrentUser, setCurrentPage });
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.documentElement.classList.toggle('dark', theme !== 'light');
+    document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.setAttribute('data-accent', accentColor);
     document.title = appSettings.shopName || 'NexusPOS';
     const root = document.documentElement;
@@ -136,9 +144,10 @@ const AccountApp: React.FC<{
   const themeContextValue = useMemo(() => ({ 
     theme, 
     accentColor, 
+    setTheme,
     toggleTheme, 
     setAccentColor 
-  }), [theme, accentColor, toggleTheme, setAccentColor]);
+  }), [theme, accentColor, setTheme, toggleTheme, setAccentColor]);
   
    const handleNextTutorialStep = () => {
     const nextStepIndex = tutorialStep + 1;
@@ -194,7 +203,7 @@ const AccountApp: React.FC<{
    
   return (
     <ThemeContext.Provider value={themeContextValue}>
-      <div className="flex bg-slate-50 dark:bg-transparent min-h-screen text-slate-800 dark:text-slate-200 transition-colors duration-300">
+      <div className="flex bg-theme-main min-h-screen text-theme-main transition-colors duration-300">
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} employeeRole={currentUser!.role} appSettings={appSettings} />
         <main ref={mainContentRef} className="flex-1 md:ml-20 pb-16 md:pb-0 flex flex-col h-screen overflow-hidden">
             <Header currentPage={currentPage} currentUser={currentUser!} onLogout={onLogout} notifications={notifications} setCurrentPage={setCurrentPage} syncStatus={syncStatus} onOpenNotifications={handleMarkNotificationsRead} onForceSync={onForceSync} isTest={isTest} />
@@ -247,39 +256,47 @@ const AppContent: React.FC = () => {
     }, [currentUser]);
 
     useEffect(() => {
+        let profileUnsubscribe: (() => void) | null = null;
+        
         const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            const current = currentUserRef.current;
+            if (profileUnsubscribe) {
+                profileUnsubscribe();
+                profileUnsubscribe = null;
+            }
+
             if (firebaseUser) {
-                // User is signed in, fetch profile if not in local storage
-                if (!current || current.id !== firebaseUser.uid) {
-                    try {
-                        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-                        if (userDoc.exists()) {
-                            const userData = userDoc.data();
-                            setCurrentUser({
-                                id: firebaseUser.uid as any,
-                                name: userData.name,
-                                email: userData.email,
-                                role: 'Admin',
-                                createdAt: new Date().toISOString(),
-                                updatedAt: new Date().toISOString()
-                            });
-                            setAllAccounts(userData.accounts || []);
-                        }
-                    } catch (error) {
-                        console.error("Error fetching user profile:", error);
+                // User is signed in, listen to profile changes
+                profileUnsubscribe = onSnapshot(doc(db, 'users', firebaseUser.uid), (userDoc) => {
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        setCurrentUser({
+                            id: firebaseUser.uid as any,
+                            name: userData.name,
+                            email: userData.email,
+                            role: 'Admin',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        });
+                        setAllAccounts(userData.accounts || []);
                     }
-                }
-            } else if (current) {
-                // User is signed out, clear state only if we had a user
+                    setIsAuthReady(true);
+                }, (error) => {
+                    console.error("Error listening to user profile:", error);
+                    setIsAuthReady(true);
+                });
+            } else {
+                // User is signed out, clear state
                 setCurrentUser(null);
                 setCurrentAccountId(null);
                 setAccountState(null);
+                setIsAuthReady(true);
             }
-            setIsAuthReady(true);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribe();
+            if (profileUnsubscribe) profileUnsubscribe();
+        };
     }, [setCurrentUser, setAllAccounts, setCurrentAccountId, setAccountState]);
 
     const handleLogin = (account: AccountState, user: User, accounts: AccountInfo[]) => {
@@ -334,12 +351,16 @@ const AppContent: React.FC = () => {
     };
     
      const handleDeleteAccount = async (accountId: string): Promise<boolean> => {
+        if (!auth.currentUser) return false;
         try {
+            // 1. Remove account reference from user profile
+            await removeAccountFromUser(auth.currentUser.uid, accountId);
+            
+            // 2. Delete the account document itself
             await serverDeleteAccount(accountId);
             
-            const newAccounts = allAccounts.filter(acc => acc.id !== accountId);
-            setAllAccounts(newAccounts);
-
+            // Note: setAllAccounts will be updated automatically by the onSnapshot listener in App.tsx
+            
             // If the deleted account was the current one, log out.
             if (accountId === currentAccountId) {
                 handleLogout();
