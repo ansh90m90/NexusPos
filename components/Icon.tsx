@@ -54,7 +54,8 @@ import {
   Loader2,
   Check,
   Star,
-  User
+  User,
+  Hexagon
 } from 'lucide-react';
 
 export type IconName = 
@@ -75,8 +76,24 @@ interface IconProps {
   strokeWidth?: number;
 }
 
+const CustomNLogo = (props: any) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={props.strokeWidth || 2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={props.className}
+    {...props}
+  >
+    <path d="M5 20V4l14 16V4" />
+  </svg>
+);
+
 const iconMap: Record<IconName, React.ElementType> = {
-  logo: Zap,
+  logo: CustomNLogo,
   dashboard: LayoutDashboard,
   pos: MonitorDot,
   products: Package,
