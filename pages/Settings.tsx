@@ -10,7 +10,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { useToast } from '../components/Toast';
 import { Tooltip } from '../components/Tooltip';
 
-type SettingsTab = 'general' | 'appearance' | 'features' | 'staff' | 'promotions' | 'history' | 'adjustments' | 'data' | 'help';
+type SettingsTab = 'general' | 'appearance' | 'features' | 'staff' | 'promotions' | 'history' | 'adjustments' | 'data' | 'help' | 'about';
 
 const SettingRow: React.FC<{title: string, description: string, enabled: boolean, onToggle: () => void, disabled?: boolean}> = ({title, description, enabled, onToggle, disabled = false}) => (
   <div className="flex justify-between items-center bg-theme-main p-4 rounded-lg border border-theme-main">
@@ -186,6 +186,7 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
         { id: 'adjustments', label: 'Stock Adjustments', icon: 'pos' },
         { id: 'data', label: 'Data Management', icon: 'sync-reload' },
         { id: 'help', label: 'Help & Support', icon: 'more' },
+        { id: 'about', label: 'About Us', icon: 'user' },
     ];
 
     const handleAppSettingsChange = (key: keyof AppSettings, value: boolean | string | number) => {
@@ -409,6 +410,51 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                         <h3 className="font-semibold">{isTutorialActive ? 'End Tutorial' : 'Restart Welcome Tutorial'}</h3>
                         <p className="text-sm text-theme-muted">Get a guided tour of the application's main features.</p>
                     </button>
+                </div>
+            );
+            case 'about': return (
+                <div className="space-y-6 max-w-3xl">
+                    <div className="bg-theme-surface rounded-3xl p-8 border border-theme-main shadow-sm flex flex-col items-center text-center">
+                        <div className="w-24 h-24 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-4">
+                            <Icon name="logo" className="w-12 h-12 text-primary-600 dark:text-primary-400" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-theme-main mb-2">Nexus POS</h2>
+                        <p className="text-theme-muted mb-6">Version 1.0.0</p>
+                        
+                        <div className="w-full bg-theme-main rounded-2xl p-6 mb-6 text-left border border-theme-main">
+                            <h3 className="text-lg font-semibold text-theme-main mb-2">Creator</h3>
+                            <p className="text-theme-muted mb-1"><span className="font-medium text-theme-main">Name:</span> Ansh Singh</p>
+                            <p className="text-theme-muted"><span className="font-medium text-theme-main">Instagram:</span> <a href="https://instagram.com/core_dev.ansh" target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline">@core_dev.ansh</a></p>
+                        </div>
+
+                        <div className="w-full bg-theme-main rounded-2xl p-6 text-left border border-theme-main">
+                            <h3 className="text-lg font-semibold text-theme-main mb-2">Thank You</h3>
+                            <p className="text-theme-muted leading-relaxed">
+                                Thank you for using Nexus POS! We built this application to help businesses manage their operations smoothly and efficiently. Your support means the world to us.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-6 rounded-3xl bg-theme-surface hover:bg-theme-main border border-theme-main transition-colors group shadow-sm">
+                            <div className="w-12 h-12 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
+                                <Icon name="receipt" className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-theme-main">Privacy Policy</h3>
+                                <p className="text-sm text-theme-muted">Read our detailed policy</p>
+                            </div>
+                        </a>
+                        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-6 rounded-3xl bg-theme-surface hover:bg-theme-main border border-theme-main transition-colors group shadow-sm">
+                            <div className="w-12 h-12 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
+                                <Icon name="receipt" className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-theme-main">Terms of Service</h3>
+                                <p className="text-sm text-theme-muted">Read our terms</p>
+                            </div>
+                        </a>
+                    </div>
                 </div>
             );
             default: return null;

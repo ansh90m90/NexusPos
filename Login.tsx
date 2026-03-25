@@ -595,12 +595,17 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteBusiness }) => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex overflow-hidden mx-4 my-8">
+        <div className="min-h-screen bg-gray-100 dark:bg-gray-950 flex flex-col">
+            <div className="flex-1 flex justify-center items-center py-8">
+                <div className="w-full max-w-4xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl flex overflow-hidden mx-4">
                     <LeftPanel />
                     <RightPanel>{renderContent()}</RightPanel>
                 </div>
+            </div>
+            <div className="py-6 text-center text-sm text-gray-500 dark:text-gray-400 flex justify-center gap-4">
+                <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="hover:text-primary-600 transition-colors">Privacy Policy</a>
+                <span>&bull;</span>
+                <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="hover:text-primary-600 transition-colors">Terms of Service</a>
             </div>
         </div>
     );

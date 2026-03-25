@@ -31,6 +31,9 @@ import { Page, Theme, ThemeContext, User, AccountState, ActivityItem, BusinessIn
 import { useLocalStorage, useAccountActions, useSync, SyncStatus } from '../hooks';
 import { deleteBusiness as serverDeleteBusiness, deleteUserAccount as serverDeleteUserAccount } from '../services/syncService';
 
+import PrivacyPolicy from '../pages/PrivacyPolicy';
+import TermsOfService from '../pages/TermsOfService';
+
 const tutorialSteps: TutorialStep[] = [
     { elementSelector: null, title: 'Welcome to the Hub!', content: "Let's take a quick tour of the main features to get you started.", page: 'Dashboard' },
     { elementSelector: '#sidebar', title: 'Navigation Sidebar', content: 'This is your main navigation menu. You can access all major sections of the app from here.', page: 'Dashboard' },
@@ -254,6 +257,14 @@ const AccountApp: React.FC<{
 };
 
 const App: React.FC = () => {
+    const path = window.location.pathname;
+    if (path === '/privacy-policy') {
+        return <PrivacyPolicy />;
+    }
+    if (path === '/terms-of-service') {
+        return <TermsOfService />;
+    }
+
     return (
         <ToastProvider>
             <AppContent />
