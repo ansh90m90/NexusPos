@@ -11,21 +11,27 @@ service cloud.firestore {
     //   - id: string (required) - UID
     //   - name: string (required)
     //   - email: string (required)
-    //   - accounts: array (optional) - list of {id, name, role}
+    //   - accountId: string (required) - The ID of the account this user belongs to
     //
     // Collection: accounts
     // Document ID: accountId
     // Fields:
     //   - id: string (required)
     //   - name: string (required)
-    //   - data: object (required) - AccountState
-    //   - lastSyncId: number (required)
     //   - ownerId: string (required) - UID of the creator
     //
-    // Collection: accounts/{accountId}/operations
+    // Collection: accounts/{accountId}/businesses
+    // Document ID: businessId
+    // Fields:
+    //   - id: string (required)
+    //   - name: string (required)
+    //   - accountId: string (required)
+    //   - data: object (required) - AccountState
+    //   - lastSyncId: number (required)
+    //
+    // Collection: accounts/{accountId}/businesses/{businessId}/operations
     // Document ID: operationId
     // Fields:
-    //   - accountId: string
     //   - clientId: string
     //   - type: string
     //   - payload: object
@@ -54,31 +60,44 @@ service cloud.firestore {
 
     function isAccountMember(accountId) {
       return isAuthenticated() && (
-        get(/databases/$(database)/documents/accounts/$(accountId)).data.ownerId == request.auth.uid ||
+        accountId == request.auth.uid || // Legacy support
+        (exists(/databases/$(database)/documents/accounts/$(accountId)) && 
+         get(/databases/$(database)/documents/accounts/$(accountId)).data.ownerId == request.auth.uid) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accounts.hasAny([{'id': accountId}])) ||
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountId == accountId) ||
         isAdmin()
       );
     }
 
     function isAccountOwner(accountId) {
-      return isAuthenticated() && (get(/databases/$(database)/documents/accounts/$(accountId)).data.ownerId == request.auth.uid || isAdmin());
+      return isAuthenticated() && (
+        accountId == request.auth.uid || // Legacy support
+        (exists(/databases/$(database)/documents/accounts/$(accountId)) && 
+         get(/databases/$(database)/documents/accounts/$(accountId)).data.ownerId == request.auth.uid) || 
+        isAdmin()
+      );
     }
 
     function isValidUser(data) {
-      return data.keys().hasAll(['id', 'name', 'email']) &&
+      return data.keys().hasAll(['id', 'name', 'email', 'accountId']) &&
              data.id is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
              data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") &&
-             (!('role' in data) || data.role in ['Admin', 'User', 'Staff']) &&
-             (!('accounts' in data) || data.accounts is list);
+             data.accountId is string;
     }
 
     function isValidAccount(data) {
-      return data.keys().hasAll(['id', 'name', 'data', 'ownerId', 'lastSyncId']) &&
+      return data.keys().hasAll(['id', 'name', 'ownerId']) &&
              data.id is string &&
              data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.ownerId is string &&
+             data.ownerId is string;
+    }
+
+    function isValidBusiness(data) {
+      return data.keys().hasAll(['id', 'name', 'accountId', 'data', 'lastSyncId']) &&
+             data.id is string &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.accountId is string &&
              data.data is map &&
              data.lastSyncId is number;
     }
@@ -98,21 +117,28 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.get('role', 'User') == 'User' || isAdmin());
-      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && (request.resource.data.get('role', 'User') == resource.data.get('role', 'User') || isAdmin());
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data);
       allow delete: if isAdmin();
     }
 
     match /accounts/{accountId} {
       allow read: if isAccountMember(accountId);
       allow create: if isAuthenticated() && isValidAccount(request.resource.data) && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isAccountMember(accountId) && isValidAccount(request.resource.data) && (request.resource.data.ownerId == resource.data.ownerId || isAdmin());
+      allow update: if isAccountOwner(accountId) && isValidAccount(request.resource.data);
       allow delete: if isAccountOwner(accountId);
 
-      match /operations/{operationId} {
+      match /businesses/{businessId} {
         allow read: if isAccountMember(accountId);
-        allow create: if isAccountMember(accountId) && isValidOperation(request.resource.data);
+        allow create: if isAccountMember(accountId) && isValidBusiness(request.resource.data);
+        allow update: if isAccountMember(accountId) && isValidBusiness(request.resource.data);
         allow delete: if isAccountOwner(accountId);
+
+        match /operations/{operationId} {
+          allow read: if isAccountMember(accountId);
+          allow create: if isAccountMember(accountId) && isValidOperation(request.resource.data);
+          allow delete: if isAccountOwner(accountId);
+        }
       }
     }
   }

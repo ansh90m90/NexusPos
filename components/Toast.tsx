@@ -1,28 +1,14 @@
-import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Icon from './Icon';
-import { Tooltip } from './Tooltip';
+import { ToastContext, ToastType } from './ToastContext';
 
-type ToastType = 'success' | 'error' | 'info';
+export { useToast } from './ToastContext';
 
 interface ToastMessage {
   id: number;
   message: string;
   type: ToastType;
 }
-
-export interface ToastContextType {
-  showToast: (message: string, type?: ToastType) => void;
-}
-
-const ToastContext = createContext<ToastContextType | null>(null);
-
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-};
 
 const Toast: React.FC<{ toast: ToastMessage; onRemove: (id: number) => void }> = ({ toast, onRemove }) => {
     const [isExiting, setIsExiting] = useState(false);

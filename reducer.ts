@@ -1,4 +1,4 @@
-import type { AccountState, Operation, Product, Customer, User, Promotion, Dish, RawMaterial, Supplier, Transaction, PurchaseOrder, PurchaseOrderItem, Batch, KitchenOrder, AppNotification, CartItem, ProductVariant, StockAdjustmentReason, StockAdjustment, ItemType, Expense, AppSettings, HeldCart } from './types';
+import type { AccountState, Operation, Product, Customer, Promotion, Dish, Supplier, Transaction, PurchaseOrder, Batch, KitchenOrder, ProductVariant, StockAdjustment, ItemType, AppSettings } from './types';
 
 // A helper to get the next numeric ID for an array of items.
 function getNextId<T extends { id: number | string }>(items: T[]): number {
@@ -454,7 +454,6 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
             
             batches.forEach(batch => {
                 let variant: ProductVariant | undefined;
-                let product: Product | undefined;
                 
                 let variantIdForBatch = batch.variantId;
 
@@ -487,14 +486,13 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                     newProduct.variants.push(newVariant);
                     newState.products.push(newProduct);
                     variant = newVariant;
-                    product = newProduct;
                     variantIdForBatch = newVariant.id;
                     matchingItem.variantId = newVariant.id; // Update original PO item
                     addHistory('create', 'Product', newProduct.id, newProduct.name, `Created from PO #${order.id.slice(-4)}`);
                 } else {
                      for (const p of newState.products) {
                         const v = p.variants.find(v => String(v.id) === String(variantIdForBatch));
-                        if(v) { variant = v; product = p; break; }
+                        if(v) { variant = v; break; }
                      }
                 }
                 

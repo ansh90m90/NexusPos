@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import type { AccountState } from '../types';
 import Icon from './Icon';
 import { Tooltip } from './Tooltip';
 
@@ -42,7 +41,7 @@ const DataTransferModal: React.FC<DataTransferModalProps> = ({ mode, onClose, on
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        } catch (e) {
+        } catch {
             setFeedback({type: 'error', message: "Could not create download file."});
         }
     };

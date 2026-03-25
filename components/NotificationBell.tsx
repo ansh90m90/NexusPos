@@ -31,7 +31,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ notifications, onOp
             case 'expiring':
                  return <span className="text-orange-500">⏳</span>;
             default:
-                return <span className="text-slate-500">ℹ️</span>;
+                return <span className="text-neutral-500">ℹ️</span>;
         }
     }
 
@@ -46,7 +46,7 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ notifications, onOp
         <div className="relative" ref={ref}>
             <button
                 onClick={handleToggle}
-                className="relative text-slate-600 dark:text-slate-300 rounded-full p-2 hover:bg-slate-200 dark:hover:bg-slate-700/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+                className="relative text-neutral-600 dark:text-neutral-300 rounded-full p-2 hover:bg-neutral-200 dark:hover:bg-neutral-700/50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
                 aria-label="Notifications"
                 title="Notifications"
             >
@@ -61,25 +61,25 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ notifications, onOp
             </button>
 
             {isOpen && (
-                <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-md shadow-lg border dark:border-slate-700 z-20 modal-content overflow-hidden">
-                    <div className="p-3 font-semibold border-b dark:border-slate-700 text-sm">Notifications</div>
+                <div className="absolute top-full right-0 mt-2 w-80 bg-white dark:bg-neutral-800 rounded-md shadow-lg border dark:border-neutral-700 z-20 modal-content overflow-hidden">
+                    <div className="p-3 font-semibold border-b dark:border-neutral-700 text-sm">Notifications</div>
                     {notifications.length > 0 ? (
                         <ul className="py-1 max-h-80 overflow-y-auto">
                             {notifications.map((item) => (
-                                <li key={item.id} className="text-sm flex items-start gap-3 p-3 hover:bg-slate-100 dark:hover:bg-slate-700">
-                                    <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-slate-200 dark:bg-slate-700/50 mt-0.5">
+                                <li key={item.id} className="text-sm flex items-start gap-3 p-3 hover:bg-neutral-100 dark:hover:bg-neutral-700">
+                                    <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full bg-neutral-200 dark:bg-neutral-700/50 mt-0.5">
                                         {getIcon(item.type)}
                                     </div>
                                     <div className="flex-grow">
-                                        <p className="text-slate-800 dark:text-slate-200">{item.message}</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{new Date(item.timestamp).toLocaleString()}</p>
+                                        <p className="text-neutral-800 dark:text-neutral-200">{item.message}</p>
+                                        <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{new Date(item.timestamp).toLocaleString()}</p>
                                     </div>
                                     {!item.isRead && <div className="w-2 h-2 rounded-full bg-primary-500 flex-shrink-0 mt-1.5"></div>}
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                         <p className="p-4 text-sm text-center text-slate-500">No new notifications.</p>
+                         <p className="p-4 text-sm text-center text-neutral-500">No new notifications.</p>
                     )}
                 </div>
             )}

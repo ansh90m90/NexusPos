@@ -8,7 +8,6 @@ import {
     query, 
     where, 
     orderBy, 
-    limit,
     getDocs,
     deleteDoc,
     getDoc,
@@ -85,13 +84,13 @@ const sanitize = (obj: any): any => {
 };
 
 /**
- * Updates the account state in Firestore.
+ * Updates the business state in Firestore.
  */
-export const saveAccountState = async (accountId: string, state: AccountState) => {
-    const path = `accounts/${accountId}`;
+export const saveBusinessState = async (accountId: string, businessId: string, state: AccountState) => {
+    const path = `accounts/${accountId}/businesses/${businessId}`;
     try {
-        const accountRef = doc(db, 'accounts', accountId);
-        await updateDoc(accountRef, {
+        const businessRef = doc(db, 'accounts', accountId, 'businesses', businessId);
+        await updateDoc(businessRef, {
             data: sanitize(state),
             updatedAt: new Date().toISOString()
         });
@@ -103,10 +102,10 @@ export const saveAccountState = async (accountId: string, state: AccountState) =
 /**
  * Pushes a new operation to Firestore for synchronization.
  */
-export const pushOperation = async (accountId: string, operation: Operation) => {
-    const path = `accounts/${accountId}/operations`;
+export const pushOperation = async (accountId: string, businessId: string, operation: Operation) => {
+    const path = `accounts/${accountId}/businesses/${businessId}/operations`;
     try {
-        const opsRef = collection(db, 'accounts', accountId, 'operations');
+        const opsRef = collection(db, 'accounts', accountId, 'businesses', businessId, 'operations');
         await addDoc(opsRef, sanitize(operation));
     } catch (error) {
         handleFirestoreError(error, OperationType.CREATE, path);
@@ -114,11 +113,11 @@ export const pushOperation = async (accountId: string, operation: Operation) => 
 };
 
 /**
- * Subscribes to real-time updates for an account's operations.
+ * Subscribes to real-time updates for a business's operations.
  */
-export const subscribeToOperations = (accountId: string, lastSyncId: number, onNewOperations: (ops: Operation[]) => void) => {
-    const path = `accounts/${accountId}/operations`;
-    const opsRef = collection(db, 'accounts', accountId, 'operations');
+export const subscribeToOperations = (accountId: string, businessId: string, lastSyncId: number, onNewOperations: (ops: Operation[]) => void) => {
+    const path = `accounts/${accountId}/businesses/${businessId}/operations`;
+    const opsRef = collection(db, 'accounts', accountId, 'businesses', businessId, 'operations');
     const q = query(
         opsRef, 
         where('id', '>', lastSyncId),
@@ -141,13 +140,13 @@ export const subscribeToOperations = (accountId: string, lastSyncId: number, onN
 };
 
 /**
- * Fetches the latest account state from Firestore.
+ * Fetches the latest business state from Firestore.
  */
-export const fetchAccountState = async (accountId: string): Promise<AccountState | null> => {
-    const path = `accounts/${accountId}`;
+export const fetchBusinessState = async (accountId: string, businessId: string): Promise<AccountState | null> => {
+    const path = `accounts/${accountId}/businesses/${businessId}`;
     try {
-        const accountRef = doc(db, 'accounts', accountId);
-        const snap = await getDoc(accountRef);
+        const businessRef = doc(db, 'accounts', accountId, 'businesses', businessId);
+        const snap = await getDoc(businessRef);
         if (snap.exists()) {
             return snap.data().data as AccountState;
         }
@@ -159,15 +158,35 @@ export const fetchAccountState = async (accountId: string): Promise<AccountState
 };
 
 /**
- * Deletes an account from Firestore.
+ * Deletes a business from Firestore.
+ */
+export const deleteBusiness = async (accountId: string, businessId: string): Promise<void> => {
+    const path = `accounts/${accountId}/businesses/${businessId}`;
+    try {
+        // Delete operations subcollection first (best effort)
+        const opsRef = collection(db, 'accounts', accountId, 'businesses', businessId, 'operations');
+        const opsSnap = await getDocs(opsRef);
+        const deletePromises = opsSnap.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+
+        // Delete the business document
+        const businessRef = doc(db, 'accounts', accountId, 'businesses', businessId);
+        await deleteDoc(businessRef);
+    } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, path);
+    }
+};
+
+/**
+ * Deletes an account and all its businesses from Firestore.
  */
 export const deleteAccount = async (accountId: string): Promise<void> => {
     const path = `accounts/${accountId}`;
     try {
-        // Delete operations subcollection first (best effort)
-        const opsRef = collection(db, 'accounts', accountId, 'operations');
-        const opsSnap = await getDocs(opsRef);
-        const deletePromises = opsSnap.docs.map(doc => deleteDoc(doc.ref));
+        // Delete all businesses first
+        const businessesRef = collection(db, 'accounts', accountId, 'businesses');
+        const businessesSnap = await getDocs(businessesRef);
+        const deletePromises = businessesSnap.docs.map(doc => deleteBusiness(accountId, doc.id));
         await Promise.all(deletePromises);
 
         // Delete the main account document

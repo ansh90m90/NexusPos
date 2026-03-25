@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import type { Transaction, Product, Customer, EmployeeRole, Batch, AppSettings, PurchaseOrder, ActivityItem, Page, Expense } from '../types';
+import type { Transaction, Product, Customer, EmployeeRole, Batch, PurchaseOrder, ActivityItem, Page, Expense } from '../types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import Icon from '../components/Icon';
 import { Tooltip } from '../components/Tooltip';
@@ -12,24 +12,24 @@ const StatCard: React.FC<{ title: string; value: string; iconName: string; toolt
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:-translate-y-0.5"
+      className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:-translate-y-0.5 h-full"
     >
-      <div className="bg-primary-100 dark:bg-primary-900/50 text-primary-600 dark:text-primary-400 p-3 rounded-full">
+      <div className="bg-theme-accent/10 text-theme-accent p-3 rounded-full">
         <Icon name={iconName} className="w-6 h-6" />
       </div>
       <div>
-        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{title}</p>
-        <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+        <p className="text-sm text-theme-muted font-medium">{title}</p>
+        <p className="text-2xl font-bold text-theme-main">{value}</p>
       </div>
     </motion.div>
   </Tooltip>
 );
 
 const ProfitSummary: React.FC<{ transactions: Transaction[], expenses: Expense[] }> = ({ transactions, expenses }) => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     const { totalRevenue, grossProfit, totalExpenses, netProfit } = useMemo(() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
         const recentTransactions = transactions.filter(t => new Date(t.date) >= thirtyDaysAgo);
         const recentExpenses = expenses.filter(e => new Date(e.date) >= thirtyDaysAgo);
 
@@ -47,37 +47,37 @@ const ProfitSummary: React.FC<{ transactions: Transaction[], expenses: Expense[]
     const netProfitPercentage = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
     return (
-        <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between h-full">
+        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm flex flex-col justify-between h-full">
             <div>
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white">30-Day Profit Summary</h2>
+                <h2 className="text-base font-semibold text-theme-main">30-Day Profit Summary</h2>
                 <div className="mt-4 space-y-3">
                     <div className="flex justify-between items-baseline">
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Gross Profit</span>
-                        <span className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(grossProfit)}</span>
+                        <span className="text-sm font-medium text-theme-muted">Gross Profit</span>
+                        <span className="text-2xl font-bold text-theme-main">{formatCurrency(grossProfit)}</span>
                     </div>
                      <div className="flex justify-between items-baseline">
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Expenses</span>
+                        <span className="text-sm font-medium text-theme-muted">Expenses</span>
                         <span className="text-lg font-semibold text-red-500">-{formatCurrency(totalExpenses)}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="mt-4 pt-4 border-t border-theme-main">
                 <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-bold text-slate-800 dark:text-slate-200">Net Profit</span>
+                    <span className="text-lg font-bold text-theme-main opacity-90">Net Profit</span>
                     <span className={`text-3xl font-extrabold ${netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(netProfit)}</span>
                 </div>
                 <div className="mt-3 space-y-2">
                     <Tooltip content={`Gross Profit: ${grossProfitPercentage.toFixed(1)}% of Revenue`} position="bottom">
                         <div>
-                            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1"><span>Gross Margin</span><span>{grossProfitPercentage.toFixed(1)}%</span></div>
-                            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden"><div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(100, grossProfitPercentage)}%` }}></div></div>
+                            <div className="flex justify-between text-xs text-theme-muted mb-1"><span>Gross Margin</span><span>{grossProfitPercentage.toFixed(1)}%</span></div>
+                            <div className="w-full bg-theme-main rounded-full h-2 overflow-hidden"><div className="bg-theme-accent h-2 rounded-full" style={{ width: `${Math.min(100, grossProfitPercentage)}%` }}></div></div>
                         </div>
                     </Tooltip>
                     <Tooltip content={`Net Profit: ${netProfitPercentage.toFixed(1)}% of Revenue`} position="bottom">
                         <div>
-                             <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1"><span>Net Margin</span><span>{netProfitPercentage.toFixed(1)}%</span></div>
-                            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden"><div className={`h-2 rounded-full ${netProfitPercentage >= 0 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${Math.min(100, Math.abs(netProfitPercentage))}%` }}></div></div>
+                             <div className="flex justify-between text-xs text-theme-muted mb-1"><span>Net Margin</span><span>{netProfitPercentage.toFixed(1)}%</span></div>
+                            <div className="w-full bg-theme-main rounded-full h-2 overflow-hidden"><div className={`h-2 rounded-full ${netProfitPercentage >= 0 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${Math.min(100, Math.abs(netProfitPercentage))}%` }}></div></div>
                         </div>
                     </Tooltip>
                 </div>
@@ -94,12 +94,12 @@ const QuickActions: React.FC<{ onNavigate: (page: Page) => void, onOpenModal: (t
         { label: 'Add Customer', iconName: 'customers', action: () => { onNavigate('Customers'); onOpenModal('add_customer'); } },
     ];
     return (
-      <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <h2 className="text-base font-semibold mb-3 text-slate-900 dark:text-white">Quick Actions</h2>
+      <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
+        <h2 className="text-base font-semibold mb-3 text-theme-main">Quick Actions</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {actions.map(action => (
                 <Tooltip key={action.label} content={`Go to ${action.label}`} position="bottom">
-                    <button onClick={action.action} className="w-full flex flex-col items-center justify-center p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-primary-100 dark:hover:bg-primary-900/50 text-slate-700 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                    <button onClick={action.action} className="w-full flex flex-col items-center justify-center p-2 rounded-lg bg-theme-main hover:bg-primary-100 dark:hover:bg-primary-900/50 text-theme-main hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
                         <div className="mb-1"><Icon name={action.iconName} className="w-5 h-5" /></div>
                         <span className="text-xs font-semibold">{action.label}</span>
                     </button>
@@ -133,21 +133,21 @@ const TopProducts: React.FC<{ transactions: Transaction[], products: Product[] }
     }, [transactions, products]);
 
     return (
-        <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-slate-900 dark:text-white">Top Selling Products</h2>
+        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
+            <h2 className="text-base font-semibold mb-3 text-theme-main">Top Selling Products</h2>
             {topProducts.length > 0 ? (
                 <ul className="space-y-3">
                     {topProducts.map(p => (
                         <Tooltip key={p.name} content={`Sold ${p.quantity} units`} position="left">
                             <li className="flex justify-between items-center text-sm cursor-default">
-                                <span className="font-medium text-slate-800 dark:text-slate-200 truncate pr-4">{p.name}</span>
-                                <span className="font-semibold text-slate-900 dark:text-white">₹{p.revenue.toFixed(2)}</span>
+                                <span className="font-medium text-theme-main opacity-90 truncate pr-4">{p.name}</span>
+                                <span className="font-semibold text-theme-main">₹{p.revenue.toFixed(2)}</span>
                             </li>
                         </Tooltip>
                     ))}
                 </ul>
             ) : (
-                <p className="text-sm text-slate-500 text-center py-8">No sales data available.</p>
+                <p className="text-sm text-theme-muted text-center py-8">No sales data available.</p>
             )}
         </div>
     );
@@ -175,15 +175,15 @@ const TopCustomersChart: React.FC<{ transactions: Transaction[], customers: Cust
     const COLORS = ['#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1'];
 
     return (
-        <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-slate-900 dark:text-white">Top Customers by Revenue</h2>
+        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
+            <h2 className="text-base font-semibold mb-3 text-theme-main">Top Customers by Revenue</h2>
             {topCustomers.length > 0 ? (
                  <ResponsiveContainer width="100%" height={150}>
                     <BarChart data={topCustomers} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
                         <XAxis type="number" hide />
                         <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'currentColor' }} width={80} />
-                        <RechartsTooltip formatter={(value: number) => `₹${value.toFixed(2)}`} cursor={{fill: 'rgba(20, 184, 166, 0.1)'}}/>
-                        <Bar dataKey="revenue" fill="#14b8a6" barSize={20} radius={[0, 4, 4, 0]}>
+                        <RechartsTooltip formatter={(value: number) => `₹${value.toFixed(2)}`} cursor={{fill: 'rgba(var(--primary-500-rgb), 0.1)'}}/>
+                        <Bar dataKey="revenue" fill="var(--primary-500)" barSize={20} radius={[0, 4, 4, 0]}>
                             {topCustomers.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
@@ -191,7 +191,7 @@ const TopCustomersChart: React.FC<{ transactions: Transaction[], customers: Cust
                     </BarChart>
                 </ResponsiveContainer>
             ) : (
-                <p className="text-sm text-slate-500 text-center py-8">No customer sales data available.</p>
+                <p className="text-sm text-theme-muted text-center py-8">No customer sales data available.</p>
             )}
         </div>
     );
@@ -228,24 +228,24 @@ const ActivityFeed: React.FC<{ activities: ActivityItem[], onActivityClick: (act
     };
 
     return (
-        <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-slate-900 dark:text-white">Recent Activity</h2>
+        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
+            <h2 className="text-base font-semibold mb-3 text-theme-main">Recent Activity</h2>
             <ul className="space-y-1 max-h-96 overflow-y-auto">
                 {activities.map(activity => (
                     <Tooltip key={activity.id} content={`View details for ${activity.type.replace('_', ' ')}`} position="left">
-                        <li onClick={() => onActivityClick(activity)} className="flex items-start gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
+                        <li onClick={() => onActivityClick(activity)} className="flex items-start gap-3 p-2 rounded-lg hover:bg-theme-main cursor-pointer">
                             <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${colors[activity.type].bg} ${colors[activity.type].text}`}>
                                 <Icon name={icons[activity.type]} className="w-4 h-4" />
                             </div>
                             <div className="flex-grow">
-                                <p className="text-sm text-slate-800 dark:text-slate-200">{activity.description}</p>
-                                <p className="text-xs text-slate-500">{formatRelativeTime(activity.timestamp)}</p>
+                                <p className="text-sm text-theme-main opacity-90">{activity.description}</p>
+                                <p className="text-xs text-theme-muted">{formatRelativeTime(activity.timestamp)}</p>
                             </div>
-                            {activity.value && <span className="text-sm font-semibold">{activity.type === 'low_stock' ? `${activity.value} left` : `₹${activity.value.toFixed(2)}`}</span>}
+                            {activity.value && <span className="text-sm font-semibold text-theme-main">{activity.type === 'low_stock' ? `${activity.value} left` : `₹${activity.value.toFixed(2)}`}</span>}
                         </li>
                     </Tooltip>
                 ))}
-                {activities.length === 0 && <p className="text-slate-500 dark:text-slate-400 text-sm text-center py-8">No recent activity.</p>}
+                {activities.length === 0 && <p className="text-theme-muted text-sm text-center py-8">No recent activity.</p>}
             </ul>
         </div>
     )
@@ -272,16 +272,16 @@ const SalesTrendChart: React.FC<{ transactions: Transaction[] }> = ({ transactio
     }, [transactions]);
 
     return (
-        <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-slate-900 dark:text-white">Sales Trend (Last 7 Days)</h2>
+        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
+            <h2 className="text-base font-semibold mb-3 text-theme-main">Sales Trend (Last 7 Days)</h2>
             <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={salesData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <RechartsTooltip formatter={(value: number) => `₹${value.toFixed(2)}`} />
+                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="var(--text-muted)" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+                    <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
+                    <RechartsTooltip formatter={(value: number) => `₹${value.toFixed(2)}`} contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)', color: 'var(--text-main)' }} />
                     <Legend />
-                    <Line type="monotone" dataKey="sales" stroke="#14b8a6" strokeWidth={2} name="Sales (₹)" />
+                    <Line type="monotone" dataKey="sales" stroke="var(--accent-main)" strokeWidth={2} name="Sales (₹)" />
                 </LineChart>
             </ResponsiveContainer>
         </div>
@@ -295,7 +295,6 @@ interface DashboardProps {
     customers: Customer[];
     expenses: Expense[];
     batches: Batch[];
-    appSettings: AppSettings;
     employeeRole: EmployeeRole;
     purchaseOrders: PurchaseOrder[];
     setCurrentPage: (page: Page) => void;
@@ -304,7 +303,7 @@ interface DashboardProps {
 }
 
 
-const Dashboard: React.FC<DashboardProps> = React.memo(({ transactions, products, customers, expenses, appSettings, employeeRole, purchaseOrders, setCurrentPage, setModalState, onActivityClick }) => {
+const Dashboard: React.FC<DashboardProps> = React.memo(({ transactions, products, customers, expenses, employeeRole, purchaseOrders, setCurrentPage, setModalState, onActivityClick }) => {
   const totalSales = useMemo(() => transactions.reduce((acc, t) => acc + t.total, 0), [transactions]);
   const totalCreditDue = useMemo(() => customers.reduce((acc, c) => (c.creditBalance > 0 ? acc + c.creditBalance : acc), 0), [customers]);
   
@@ -374,14 +373,14 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ transactions, products
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-theme-main">Dashboard</h1>
       </div>
       
        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-1">
                 <ProfitSummary transactions={transactions} expenses={expenses} />
             </div>
-            <div className={`md:col-span-2 grid grid-cols-2 gap-4 ${employeeRole !== 'Admin' ? 'grid-rows-1' : 'grid-rows-2'}`}>
+            <div className="md:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
                 <StatCard title="Total Sales (All Time)" value={`₹${totalSales.toLocaleString('en-IN', {maximumFractionDigits: 0})}`} iconName="sales-chart" tooltip="Total revenue from all sales." index={0} />
                 <StatCard title="Transactions (All Time)" value={transactions.length.toString()} iconName="receipt" tooltip="Total number of sales transactions." index={1} />
                 {employeeRole === 'Admin' && (

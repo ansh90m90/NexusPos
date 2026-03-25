@@ -1,8 +1,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { applyOperation } from '../reducer';
-import type { AccountState, User, Page, Promotion, Dish, RawMaterial, Supplier, PurchaseOrder, Batch, StockAdjustmentReason, ItemType, Expense, AppSettings, HeldCart, Operation } from '../types';
-import { saveAccountState, pushOperation, subscribeToOperations } from '../services/syncService';
+import type { AccountState, User, Promotion, Dish, RawMaterial, Supplier, PurchaseOrder, Batch, StockAdjustmentReason, ItemType, Expense, AppSettings, HeldCart, Operation } from '../types';
+import { saveBusinessState, pushOperation, subscribeToOperations } from '../services/syncService';
 import type { ToastContextType } from '../components/Toast';
 
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'offline';
@@ -15,6 +15,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, React.Disp
     }
     try {
       const item = window.localStorage.getItem(key);
+      if (item === 'undefined') return initialValue;
       return item ? JSON.parse(item) : initialValue;
     } catch (error) {
       console.error(`Error parsing localStorage key "${key}":`, error);
@@ -30,8 +31,12 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, React.Disp
     if (typeof window !== 'undefined') {
       try {
         const item = window.localStorage.getItem(key);
-        const value = item ? JSON.parse(item) : initialValue;
-        setStoredValue(value);
+        if (item === 'undefined') {
+          setStoredValue(initialValue);
+        } else {
+          const value = item ? JSON.parse(item) : initialValue;
+          setStoredValue(value);
+        }
       } catch (error) {
         console.error(`Error syncing localStorage key "${key}":`, error);
       }
@@ -45,7 +50,11 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, React.Disp
     const handleStorageChange = (e: any) => {
       if (e.key === key && e.newValue !== null) {
         try {
-          setStoredValue(JSON.parse(e.newValue));
+          if (e.newValue === 'undefined') {
+            setStoredValue(initialValue);
+          } else {
+            setStoredValue(JSON.parse(e.newValue));
+          }
         } catch (error) {
           console.error(`Error parsing storage event for key "${key}":`, error);
         }
@@ -76,6 +85,8 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, React.Disp
 
 // --- useSync Hook ---
 export const useSync = (
+    accountId: string | null,
+    businessId: string | null,
     accountState: AccountState | null,
     setAccountState: React.Dispatch<React.SetStateAction<AccountState | null>>
 ) => {
@@ -95,21 +106,21 @@ export const useSync = (
 
     const runSync = useCallback(async () => {
         const currentAccountState = accountStateRef.current;
-        if (!currentAccountState || currentAccountState.isTest) return;
+        if (!currentAccountState || currentAccountState.isTest || !accountId || !businessId) return;
 
         setSyncStatus('syncing');
         try {
-            await saveAccountState(currentAccountState.id, currentAccountState);
+            await saveBusinessState(accountId, businessId, currentAccountState);
             setSyncStatus('synced');
         } catch (error) {
             console.error('Sync failed:', error);
             setSyncStatus('error');
         }
-    }, []);
+    }, [accountId, businessId]);
 
     const dispatchOperation = useCallback((type: string, payload: any, skipSync = false) => {
         const currentAccountState = accountStateRef.current;
-        if (!currentAccountState) return;
+        if (!currentAccountState || !accountId || !businessId) return;
 
         const operation: Operation = {
             id: Date.now(), // In a real app, use a more robust ID system
@@ -127,17 +138,17 @@ export const useSync = (
         
         if (currentAccountState.isTest || skipSync) return;
 
-        pushOperation(currentAccountState.id, operation).catch(err => {
+        pushOperation(accountId, businessId, operation).catch(err => {
             console.error("Failed to push operation:", err);
             setSyncStatus('error');
         });
         
         // Also update the full state periodically or after critical actions
         runSync();
-    }, [runSync, clientId]);
+    }, [runSync, clientId, accountId, businessId]);
 
     useEffect(() => {
-        if (!accountState?.id || accountState.isTest) {
+        if (!accountId || !businessId || accountState?.isTest) {
             if (unsubscribeRef.current) {
                 unsubscribeRef.current();
                 unsubscribeRef.current = null;
@@ -145,12 +156,11 @@ export const useSync = (
             return;
         }
 
-        const accountId = accountState.id;
-        const lastSyncId = accountState.lastSyncId || 0;
+        const lastSyncId = accountState?.lastSyncId || 0;
 
-        unsubscribeRef.current = subscribeToOperations(accountId, lastSyncId, (newOps) => {
+        unsubscribeRef.current = subscribeToOperations(accountId, businessId, lastSyncId, (newOps) => {
             setAccountStateRef.current(prevState => {
-                if (!prevState || prevState.id !== accountId) return prevState;
+                if (!prevState || prevState.id !== businessId) return prevState;
                 
                 let nextState = { ...prevState };
                 let maxId = prevState.lastSyncId || 0;
@@ -172,7 +182,7 @@ export const useSync = (
                 unsubscribeRef.current = null;
             }
         };
-    }, [accountState?.id, accountState?.isTest, accountState?.lastSyncId, clientId]);
+    }, [accountId, businessId, accountState?.isTest, accountState?.lastSyncId, clientId]);
 
     return { syncStatus, runSync, dispatchOperation };
 };
@@ -186,10 +196,9 @@ interface AccountActionsProps {
     toast: ToastContextType;
     accountState: AccountState;
     setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
-    setCurrentPage: (page: Page) => void;
 }
 
-export const useAccountActions = ({ dispatchOperation, currentUser, setModalState, toast, accountState, setCurrentUser, setCurrentPage }: AccountActionsProps) => {
+export const useAccountActions = ({ dispatchOperation, currentUser, setModalState, toast, accountState, setCurrentUser }: AccountActionsProps) => {
     
     const withUser = (payload: any) => ({ ...payload, user: currentUser?.name || 'Unknown' });
 

@@ -115,18 +115,18 @@ const ReceiptModal: React.FC<ReceiptModalProps> = ({ transaction, products, onCl
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-sm w-full">
-        <div className="p-4 border-b dark:border-slate-700">
+      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-xl max-w-sm w-full">
+        <div className="p-4 border-b dark:border-neutral-700">
             <h3 className="text-lg font-bold">Transaction Complete</h3>
         </div>
         <div id="printable-receipt-content" className="absolute -left-[9999px] top-0">
             {receiptContent}
         </div>
-        <div className="p-4 bg-slate-100 dark:bg-slate-900">
+        <div className="p-4 bg-neutral-100 dark:bg-neutral-900">
             {receiptContent}
         </div>
         <div className="p-4 flex justify-between gap-4">
-          <button onClick={onClose} className="w-full px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 transition">Close</button>
+          <button onClick={onClose} className="w-full px-4 py-2 rounded-lg bg-neutral-200 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-500 transition">Close</button>
           <button onClick={handlePrint} className="w-full px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition">Print Receipt</button>
         </div>
       </div>

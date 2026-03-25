@@ -1,6 +1,6 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import type { Product, PurchaseOrder, PurchaseOrderItem, ProductVariant, Supplier, Transaction, Batch } from '../types';
+import React, { useState, useMemo } from 'react';
+import type { Product, PurchaseOrder, PurchaseOrderItem, Supplier, Transaction, Batch } from '../types';
 import Icon from '../components/Icon';
 import { useToast } from '../components/Toast';
 import { Tooltip } from '../components/Tooltip';
@@ -137,8 +137,9 @@ const ReceiveStockModal: React.FC<{
             .filter(({ item }) => (item.variantId && item.variantId > 0 && item.quantity > 0) || (item.isNew && item.productName));
 
         const finalItems: PurchaseOrderItem[] = validItemsAndBatches.map(({ item }) => {
-            const { productId: _, ...rest } = item;
-            return rest;
+            const newItem = { ...item };
+            delete (newItem as any).productId;
+            return newItem as PurchaseOrderItem;
         });
 
         if (finalItems.length === 0 || (!supplierId && !createNewSupplier)) {
@@ -411,7 +412,7 @@ const PurchaseDetailPage: React.FC<{
     );
 };
 
-const Procurement: React.FC<ProcurementProps> = ({ accountId, products, suppliers, purchaseOrders, onNewPurchase, transactions, modalState, setModalState }) => {
+const Procurement: React.FC<ProcurementProps> = ({ products, suppliers, purchaseOrders, onNewPurchase, modalState, setModalState }) => {
     const handleCloseModal = () => {
         setModalState({ type: null, data: null });
     }

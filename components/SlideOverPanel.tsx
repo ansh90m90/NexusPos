@@ -33,15 +33,15 @@ export const SlideOverPanel: React.FC<SlideOverPanelProps> = ({ title, onClose, 
 
     return (
         <div className={`fixed inset-0 bg-black bg-opacity-60 flex z-[70] panel-backdrop ${backdropClasses}`} onClick={handleBackdropClick}>
-            <div ref={panelRef} className={`bg-white dark:bg-slate-800 shadow-xl flex flex-col ${panelClasses}`}>
-                <div className="flex-shrink-0 px-4 py-3 border-b dark:border-slate-700 flex items-center justify-between">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
+            <div ref={panelRef} className={`bg-white dark:bg-neutral-800 shadow-xl flex flex-col ${panelClasses}`}>
+                <div className="flex-shrink-0 px-4 py-3 border-b dark:border-neutral-700 flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-neutral-900 dark:text-white">{title}</h3>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-700">
                         <Icon name="close" className="h-5 w-5" />
                     </button>
                 </div>
                 <div className="flex-grow p-6 overflow-y-auto">{children}</div>
-                <div className="flex-shrink-0 px-4 py-3 border-t dark:border-slate-700 flex justify-end gap-4 bg-slate-50 dark:bg-slate-900/50">
+                <div className="flex-shrink-0 px-4 py-3 border-t dark:border-neutral-700 flex justify-end gap-4 bg-neutral-50 dark:bg-neutral-900/50">
                     {footer}
                 </div>
             </div>

@@ -48,15 +48,15 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
                 onClick={() => !isOutOfStock && tileRef.current && onAdd(variant, tileRef.current)}
                 className={`bg-theme-surface rounded-lg border border-theme-main shadow-sm transition-all duration-200 flex flex-col p-2 relative group ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-500 hover:ring-1 hover:ring-primary-500 cursor-pointer hover:-translate-y-1 hover:shadow-lg'}`}
             >
-                {isOutOfStock && <span className="absolute top-1 right-1 text-xs font-bold text-red-500 bg-red-100 dark:bg-red-900/50 px-1.5 py-0.5 rounded-full">Sold Out</span>}
+                {isOutOfStock && <span className="absolute top-1 right-1 text-xs font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full">Sold Out</span>}
                 <div className="flex-grow">
-                    {product.subCategory && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 rounded-full px-2 py-0.5 text-slate-500 dark:text-slate-400 font-semibold">{product.subCategory}</span>}
+                    {product.subCategory && <span className="text-[10px] bg-theme-main rounded-full px-2 py-0.5 text-theme-muted font-semibold">{product.subCategory}</span>}
                     <h3 className="font-bold text-theme-main mt-2 text-sm leading-tight break-words">
                         {product.name}
                     </h3>
                 </div>
                 <div className="mt-2 flex justify-between items-end">
-                    <p className="text-lg font-extrabold text-primary-600 dark:text-primary-400">
+                    <p className="text-lg font-extrabold text-theme-accent">
                         ₹{variant.mrp}
                     </p>
                     <p className="text-xs text-theme-muted">
@@ -72,9 +72,9 @@ const MasterProductTile: React.FC<{ product: Product; onAddVariant: (variant: Pr
     const tileRef = React.useRef<HTMLDivElement>(null);
     return (
         <Tooltip content={`Select a variant for ${product.name}`} position="top">
-            <div ref={tileRef} className="bg-theme-surface rounded-lg border border-theme-main shadow-sm transition-all duration-200 flex flex-col p-2 hover:border-primary-500 hover:ring-1 hover:ring-primary-500 hover:shadow-lg">
+            <div ref={tileRef} className="bg-theme-surface rounded-lg border border-theme-main shadow-sm transition-all duration-200 flex flex-col p-2 hover:border-theme-accent hover:ring-1 hover:ring-theme-accent hover:shadow-lg">
                 <div className="flex-grow">
-                    {product.subCategory && <span className="text-[10px] bg-slate-100 dark:bg-slate-700 rounded-full px-2 py-0.5 text-slate-500 dark:text-slate-400 font-semibold">{product.subCategory}</span>}
+                    {product.subCategory && <span className="text-[10px] bg-theme-main rounded-full px-2 py-0.5 text-theme-muted font-semibold">{product.subCategory}</span>}
                     <h3 className="font-bold text-theme-main mt-2 text-sm leading-tight break-words">
                         {product.name}
                     </h3>
@@ -88,7 +88,7 @@ const MasterProductTile: React.FC<{ product: Product; onAddVariant: (variant: Pr
                                 key={variant.id}
                                 onClick={() => !isOutOfStock && tileRef.current && onAddVariant(variant, tileRef.current)}
                                 disabled={isOutOfStock}
-                                className="w-full flex justify-between items-center px-2 py-1 rounded-md text-xs font-semibold bg-theme-main border border-theme-main hover:bg-primary-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full flex justify-between items-center px-2 py-1 rounded-md text-xs font-semibold bg-theme-main border border-theme-main hover:bg-theme-accent hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title={`Stock: ${variant.stock}`}
                             >
                                 <span>{variant.name}</span>
@@ -109,7 +109,7 @@ const DishTile: React.FC<{ dish: Dish; onAdd: (dish: Dish, element: HTMLDivEleme
             <div
                 ref={tileRef}
                 onClick={() => !isOutOfStock && tileRef.current && onAdd(dish, tileRef.current)}
-                className={`rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm transition-all duration-200 relative group overflow-hidden ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg hover:-translate-y-1'}`}
+                className={`rounded-lg border border-theme-main shadow-sm transition-all duration-200 relative group overflow-hidden ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg hover:-translate-y-1'}`}
             >
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"></div>
                 <img src={dish.imageUrl} alt={dish.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
@@ -139,17 +139,17 @@ const CartItemComponent: React.FC<{ cartItem: CartItem, onUpdate: (quantity: num
     return (
         <li className="flex items-center gap-3 py-2">
             <div className="flex-grow">
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{name}</p>
-                <p className="text-xs text-slate-500">₹{cartItem.appliedPrice.toFixed(2)}</p>
+                <p className="text-sm font-semibold text-theme-main">{name}</p>
+                <p className="text-xs text-theme-muted">₹{cartItem.appliedPrice.toFixed(2)}</p>
             </div>
             <div className="flex items-center gap-2">
-                <button onClick={() => onUpdate(quantity - 1)} disabled={isWeightBased} className="p-1 rounded-full bg-slate-200 dark:bg-slate-600 disabled:opacity-50 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"><Icon name="remove" className="w-4 h-4" /></button>
-                <span className="font-bold w-6 text-center">{quantity}</span>
-                <button onClick={() => onUpdate(quantity + 1)} disabled={isWeightBased} className="p-1 rounded-full bg-slate-200 dark:bg-slate-600 disabled:opacity-50 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"><Icon name="plus" className="w-4 h-4" /></button>
+                <button onClick={() => onUpdate(quantity - 1)} disabled={isWeightBased} className="p-1 rounded-full bg-theme-main disabled:opacity-50 hover:bg-theme-surface transition-colors"><Icon name="remove" className="w-4 h-4" /></button>
+                <span className="font-bold w-6 text-center text-theme-main">{quantity}</span>
+                <button onClick={() => onUpdate(quantity + 1)} disabled={isWeightBased} className="p-1 rounded-full bg-theme-main disabled:opacity-50 hover:bg-theme-surface transition-colors"><Icon name="plus" className="w-4 h-4" /></button>
             </div>
-            <p className="font-bold w-16 text-right">₹{(quantity * cartItem.appliedPrice).toFixed(2)}</p>
+            <p className="font-bold w-16 text-right text-theme-main">₹{(quantity * cartItem.appliedPrice).toFixed(2)}</p>
             <Tooltip content="Remove Item" position="left">
-                <button onClick={onRemove} className="p-1 text-red-500 rounded-full hover:bg-red-100 dark:hover:bg-red-900/50"><Icon name="delete" className="w-4 h-4" /></button>
+                <button onClick={onRemove} className="p-1 text-red-500 rounded-full hover:bg-red-500/10"><Icon name="delete" className="w-4 h-4" /></button>
             </Tooltip>
         </li>
     );
@@ -225,49 +225,49 @@ const CartView: React.FC<{
     }, [cart, promotions, products, extraCharges]);
 
     return (
-        <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-800 shadow-sm h-full flex flex-col">
-            <div className="p-3 border-b dark:border-slate-700">
+        <div className="bg-theme-surface rounded-lg border border-theme-main shadow-sm h-full flex flex-col">
+            <div className="p-3 border-b border-theme-main">
                 <div className="flex justify-between items-center mb-3">
-                    <h2 className="font-bold text-lg text-slate-900 dark:text-white">Current Order</h2>
+                    <h2 className="font-bold text-lg text-theme-main">Current Order</h2>
                     <Tooltip content="Hold Order" position="bottom">
-                        <button onClick={onHoldCart} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"><Icon name="hold-order" className="w-5 h-5"/></button>
+                        <button onClick={onHoldCart} className="p-2 rounded-full hover:bg-theme-main transition-colors"><Icon name="hold-order" className="w-5 h-5 text-theme-main"/></button>
                     </Tooltip>
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2">
                     {customer ? (
-                        <div className="flex items-center gap-2 bg-primary-50 dark:bg-primary-900/20 p-1.5 pr-3 rounded-full border border-primary-200 dark:border-primary-800/50">
+                        <div className="flex items-center gap-2 bg-theme-accent/10 p-1.5 pr-3 rounded-full border border-theme-accent/30">
                             <Avatar name={customer.name} className="w-8 h-8 text-xs" />
                             <div className="flex-grow">
-                                <p className="text-xs font-bold text-primary-700 dark:text-primary-300">{customer.name}</p>
-                                <p className="text-[10px] text-primary-600/70 dark:text-primary-400/70">₹{customer.creditBalance.toFixed(2)}</p>
+                                <p className="text-xs font-bold text-theme-accent">{customer.name}</p>
+                                <p className="text-[10px] text-theme-accent/70">₹{customer.creditBalance.toFixed(2)}</p>
                             </div>
-                            <button onClick={() => onSetCustomer(null)} className="p-1 hover:bg-primary-100 dark:hover:bg-primary-800 rounded-full transition-colors">
-                                <Icon name="close" className="w-3 h-3 text-primary-600" />
+                            <button onClick={() => onSetCustomer(null)} className="p-1 hover:bg-theme-accent/20 rounded-full transition-colors">
+                                <Icon name="close" className="w-3 h-3 text-theme-accent" />
                             </button>
                         </div>
                     ) : (
                         <>
                             {topCustomers.map((c, i) => (
                                 <Tooltip key={`top-cust-${c.id}-${i}`} content={`Select ${c.name}`} position="bottom">
-                                    <button onClick={() => onSetCustomer(c)} className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:border-primary-500 transition-all overflow-hidden flex items-center justify-center">
+                                    <button onClick={() => onSetCustomer(c)} className="w-9 h-9 rounded-full border border-theme-main hover:border-theme-accent transition-all overflow-hidden flex items-center justify-center">
                                         <Avatar name={c.name} className="w-full h-full text-[10px]" />
                                     </button>
                                 </Tooltip>
                             ))}
                             {/* Two custom customer icons */}
                             <Tooltip content="Walk-in Customer" position="bottom">
-                                <button onClick={() => onSetCustomer(null)} className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:border-primary-500 transition-all flex items-center justify-center bg-slate-50 dark:bg-slate-800">
-                                    <Icon name="user" className="w-4 h-4 text-slate-400" />
+                                <button onClick={() => onSetCustomer(null)} className="w-9 h-9 rounded-full border border-theme-main hover:border-theme-accent transition-all flex items-center justify-center bg-theme-main">
+                                    <Icon name="user" className="w-4 h-4 text-theme-muted" />
                                 </button>
                             </Tooltip>
                             <Tooltip content="Guest Customer" position="bottom">
-                                <button onClick={() => onSetCustomer({ id: -1, name: 'Guest', phone: '', email: '', address: '', creditBalance: 0, transactions: [], createdAt: new Date().toISOString(), isDeleted: false })} className="w-9 h-9 rounded-full border border-slate-200 dark:border-slate-700 hover:border-primary-500 transition-all flex items-center justify-center bg-slate-50 dark:bg-slate-800">
-                                    <Icon name="user-plus" className="w-4 h-4 text-slate-400" />
+                                <button onClick={() => onSetCustomer({ id: -1, name: 'Guest', phone: '', email: '', address: '', creditBalance: 0, transactions: [], createdAt: new Date().toISOString(), isDeleted: false })} className="w-9 h-9 rounded-full border border-theme-main hover:border-theme-accent transition-all flex items-center justify-center bg-theme-main">
+                                    <Icon name="user-plus" className="w-4 h-4 text-theme-muted" />
                                 </button>
                             </Tooltip>
                             <Tooltip content="Select More Customers" position="bottom">
-                                <button onClick={onSelectCustomer} className="w-9 h-9 rounded-full border-2 border-dashed border-primary-300 dark:border-primary-700 hover:border-primary-500 hover:border-solid transition-all flex items-center justify-center text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20">
+                                <button onClick={onSelectCustomer} className="w-9 h-9 rounded-full border-2 border-dashed border-theme-accent/30 hover:border-theme-accent hover:border-solid transition-all flex items-center justify-center text-theme-accent hover:bg-theme-accent/10">
                                     <Icon name="user-plus" className="w-5 h-5" />
                                 </button>
                             </Tooltip>
@@ -276,9 +276,9 @@ const CartView: React.FC<{
                 </div>
             </div>
 
-            <ul className="flex-grow p-3 overflow-y-auto divide-y dark:divide-slate-700">
+            <ul className="flex-grow p-3 overflow-y-auto divide-y divide-theme-main">
                 {cart.length === 0 ? (
-                    <p className="text-center text-slate-500 py-10">Cart is empty</p>
+                    <p className="text-center text-theme-muted py-10">Cart is empty</p>
                 ) : cart.map(ci => {
                     const isProduct = 'productId' in ci.item;
                     const itemKey = `${isProduct ? 'p' : 'd'}-${ci.item.id}`;
@@ -294,10 +294,10 @@ const CartView: React.FC<{
                 })}
             </ul>
 
-            <div className="p-3 border-t dark:border-slate-700 space-y-2 bg-slate-50 dark:bg-slate-900/50 rounded-b-lg">
-                <div className="flex justify-between text-sm"><span>Subtotal</span><span className="font-semibold">₹{subtotal.toFixed(2)}</span></div>
+            <div className="p-3 border-t border-theme-main space-y-2 bg-theme-main rounded-b-lg">
+                <div className="flex justify-between text-sm text-theme-main"><span>Subtotal</span><span className="font-semibold">₹{subtotal.toFixed(2)}</span></div>
                 {extraCharges.map((c, i) => (
-                    <div key={`extra-${i}`} className="flex justify-between text-sm text-slate-600 dark:text-slate-400">
+                    <div key={`extra-${i}`} className="flex justify-between text-sm text-theme-muted">
                         <div className="flex items-center gap-1">
                             <span>{c.description}</span>
                             <button onClick={() => onRemoveExtraCharge(i)} className="text-red-500 hover:text-red-700"><Icon name="close" className="w-3 h-3" /></button>
@@ -305,23 +305,23 @@ const CartView: React.FC<{
                         <span className="font-semibold">₹{c.amount.toFixed(2)}</span>
                     </div>
                 ))}
-                {discountInfo && <div className="flex justify-between text-sm text-green-600"><span>Discount ({discountInfo.promotionName})</span><span className="font-semibold">-₹{discountInfo.amount.toFixed(2)}</span></div>}
-                <div className="flex justify-between text-2xl font-bold border-t dark:border-slate-700 pt-2 mt-2">
+                {discountInfo && <div className="flex justify-between text-sm text-green-500"><span>Discount ({discountInfo.promotionName})</span><span className="font-semibold">-₹{discountInfo.amount.toFixed(2)}</span></div>}
+                <div className="flex justify-between text-2xl font-bold border-t border-theme-main pt-2 mt-2 text-theme-main">
                     <div className="flex items-center gap-2">
                         <span>Total</span>
                         <Tooltip content="Add Service Charge" position="top">
                             <button 
                                 onClick={onOpenCustomCharge}
-                                className="p-1 bg-slate-200 dark:bg-slate-700 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                className="p-1 bg-theme-surface rounded-full hover:bg-theme-main transition-colors border border-theme-main"
                             >
-                                <Icon name="plus" className="w-3 h-3" />
+                                <Icon name="plus" className="w-3 h-3 text-theme-main" />
                             </button>
                         </Tooltip>
                     </div>
                     <span>₹{total.toFixed(2)}</span>
                 </div>
                 <Tooltip content="Proceed to Payment" position="top">
-                    <button onClick={() => onPay(total, subtotal, discountInfo)} disabled={cart.length === 0 && extraCharges.length === 0} className="w-full mt-2 p-3 text-lg font-bold text-white bg-primary-600 rounded-lg hover:bg-primary-700 disabled:bg-slate-400 dark:disabled:bg-slate-600">
+                    <button onClick={() => onPay(total, subtotal, discountInfo)} disabled={cart.length === 0 && extraCharges.length === 0} className="w-full mt-2 p-3 text-lg font-bold text-white bg-theme-accent rounded-lg hover:bg-theme-accent/90 disabled:opacity-50">
                         Charge
                     </button>
                 </Tooltip>
@@ -340,19 +340,19 @@ const CustomChargeModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd:
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-                <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                    <h3 className="font-bold text-lg">Add Custom Charge</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors"><Icon name="close" className="w-5 h-5" /></button>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-theme-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-theme-main">
+                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-main">
+                    <h3 className="font-bold text-lg text-theme-main">Add Custom Charge</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-theme-surface rounded-full transition-colors"><Icon name="close" className="w-5 h-5 text-theme-main" /></button>
                 </div>
                 <div className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
-                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="e.g. Service Charge, Delivery Fee" />
+                        <label className="block text-sm font-medium text-theme-main mb-1">Description</label>
+                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none text-theme-main" placeholder="e.g. Service Charge, Delivery Fee" />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Amount (₹)</label>
-                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none" placeholder="0.00" />
+                        <label className="block text-sm font-medium text-theme-main mb-1">Amount (₹)</label>
+                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none text-theme-main" placeholder="0.00" />
                     </div>
                     <button 
                         onClick={() => {
@@ -364,7 +364,7 @@ const CustomChargeModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd:
                                 setDescription('Service Charge');
                             }
                         }}
-                        className="w-full py-3 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 transition-colors"
+                        className="w-full py-3 bg-theme-accent text-white font-bold rounded-lg hover:bg-theme-accent/90 transition-colors"
                     >
                         Add Charge
                     </button>
@@ -392,16 +392,16 @@ const QRScannerModal: React.FC<{ onClose: () => void; onScan: (decodedText: stri
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
-                <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-                    <h3 className="text-lg font-bold">Scan QR / Barcode</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
-                        <Icon name="close" className="w-5 h-5" />
+            <div className="bg-theme-surface rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-theme-main">
+                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-main">
+                    <h3 className="text-lg font-bold text-theme-main">Scan QR / Barcode</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-theme-surface rounded-full transition-colors">
+                        <Icon name="close" className="w-5 h-5 text-theme-main" />
                     </button>
                 </div>
                 <div className="p-4">
-                    <div id="qr-reader" className="overflow-hidden rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600"></div>
-                    <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                    <div id="qr-reader" className="overflow-hidden rounded-xl border-2 border-dashed border-theme-main"></div>
+                    <p className="mt-4 text-center text-sm text-theme-muted">
                         Point your camera at a product barcode or QR code.
                     </p>
                 </div>
@@ -450,55 +450,55 @@ const CustomerSelectModal: React.FC<{
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[85vh] overflow-hidden border dark:border-slate-700">
-                <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+            <div className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[85vh] overflow-hidden border border-theme-main">
+                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-main">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                        <h3 className="text-lg font-bold text-theme-main">
                             {isAddingNew ? 'Quick Add Customer' : 'Select Customer'}
                         </h3>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                        <p className="text-xs text-theme-muted">
                             {isAddingNew ? 'Fill in basic details' : 'Choose a customer for this order'}
                         </p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
-                        <Icon name="close" className="w-5 h-5" />
+                    <button onClick={onClose} className="p-2 hover:bg-theme-surface rounded-full transition-colors">
+                        <Icon name="close" className="w-5 h-5 text-theme-main" />
                     </button>
                 </div>
 
                 {isAddingNew ? (
                     <div className="p-6 space-y-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Full Name *</label>
+                            <label className="text-xs font-bold text-theme-muted uppercase">Full Name *</label>
                             <input 
                                 type="text" 
                                 value={newName} 
                                 onChange={e => setNewName(e.target.value)}
-                                className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                className="w-full p-3 bg-theme-main border border-theme-main rounded-xl focus:ring-2 focus:ring-theme-accent outline-none text-theme-main"
                                 placeholder="Enter customer name"
                                 autoFocus
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Phone Number</label>
+                            <label className="text-xs font-bold text-theme-muted uppercase">Phone Number</label>
                             <input 
                                 type="tel" 
                                 value={newPhone} 
                                 onChange={e => setNewPhone(e.target.value)}
-                                className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none"
+                                className="w-full p-3 bg-theme-main border border-theme-main rounded-xl focus:ring-2 focus:ring-theme-accent outline-none text-theme-main"
                                 placeholder="Enter phone number"
                             />
                         </div>
                         <div className="flex gap-3 pt-4">
                             <button 
                                 onClick={() => setIsAddingNew(false)}
-                                className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all"
+                                className="flex-1 px-4 py-3 border border-theme-main rounded-xl font-bold text-theme-main hover:bg-theme-main transition-all"
                             >
                                 Cancel
                             </button>
                             <button 
                                 onClick={handleQuickAdd}
                                 disabled={!newName.trim()}
-                                className="flex-1 px-4 py-3 bg-primary-500 hover:bg-primary-600 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary-500/20"
+                                className="flex-1 px-4 py-3 bg-theme-accent hover:bg-theme-accent/90 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-lg shadow-theme-accent/20"
                             >
                                 Save & Select
                             </button>
@@ -506,30 +506,30 @@ const CustomerSelectModal: React.FC<{
                     </div>
                 ) : (
                     <>
-                        <div className="p-4 border-b dark:border-slate-700 bg-white dark:bg-slate-800">
+                        <div className="p-4 border-b border-theme-main bg-theme-surface">
                             <div className="flex gap-2">
                                 <div className="relative flex-grow">
-                                    <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" />
                                     <input 
                                         type="text" 
                                         placeholder="Search by name or phone..." 
                                         value={search} 
                                         onChange={e => setSearch(e.target.value)} 
-                                        className="w-full pl-10 pr-10 p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary-500 outline-none transition-all" 
+                                        className="w-full pl-10 pr-10 p-3 border border-theme-main rounded-xl bg-theme-main focus:ring-2 focus:ring-theme-accent outline-none transition-all text-theme-main" 
                                         autoFocus 
                                     />
                                     {search && (
                                         <button 
                                             onClick={() => setSearch('')}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-theme-surface rounded-full"
                                         >
-                                            <Icon name="close" className="w-3 h-3 text-slate-400" />
+                                            <Icon name="close" className="w-3 h-3 text-theme-muted" />
                                         </button>
                                     )}
                                 </div>
                                 <button 
                                     onClick={() => setIsAddingNew(true)}
-                                    className="p-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl transition-all shadow-lg shadow-primary-500/20 flex items-center justify-center"
+                                    className="p-3 bg-theme-accent hover:bg-theme-accent/90 text-white rounded-xl transition-all shadow-lg shadow-theme-accent/20 flex items-center justify-center"
                                     title="Add New Customer"
                                 >
                                     <Icon name="plus" className="w-5 h-5" />
@@ -540,30 +540,30 @@ const CustomerSelectModal: React.FC<{
                         <div className="flex-grow overflow-y-auto p-2 custom-scrollbar">
                             {search === '' && pinnedCustomers.length > 0 && (
                                 <div className="mb-4">
-                                    <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Pinned Customers</p>
+                                    <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-theme-muted">Pinned Customers</p>
                                     <div className="grid grid-cols-1 gap-1">
                                         {pinnedCustomers.map(c => (
-                                            <div key={`pinned-${c.id}`} onClick={() => onSelect(c)} className="flex items-center gap-3 p-3 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-xl cursor-pointer transition-all border border-transparent hover:border-primary-200 dark:hover:border-primary-800 group">
-                                                <Avatar name={c.name} className="w-10 h-10 ring-2 ring-amber-400/30" />
+                                            <div key={`pinned-${c.id}`} onClick={() => onSelect(c)} className="flex items-center gap-3 p-3 hover:bg-theme-accent/10 rounded-xl cursor-pointer transition-all border border-transparent hover:border-theme-accent/30 group">
+                                                <Avatar name={c.name} className="w-10 h-10 ring-2 ring-theme-accent/30" />
                                                 <div className="flex-grow">
-                                                    <p className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                                    <p className="font-bold text-theme-main flex items-center gap-1.5">
                                                         {c.name}
-                                                        <Icon name="star" className="w-3 h-3 text-amber-500 fill-current" />
+                                                        <Icon name="star" className="w-3 h-3 text-theme-accent fill-current" />
                                                     </p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{c.phone}</p>
+                                                    <p className="text-xs text-theme-muted">{c.phone}</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className={`text-sm font-bold ${c.creditBalance > 0 ? 'text-red-500' : 'text-green-500'}`}>₹{Math.abs(c.creditBalance).toFixed(2)}</p>
-                                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Balance</p>
+                                                    <p className="text-[10px] text-theme-muted uppercase font-bold tracking-tighter">Balance</p>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="mx-3 my-4 border-t dark:border-slate-700"></div>
+                                    <div className="mx-3 my-4 border-t border-theme-main"></div>
                                 </div>
                             )}
 
-                            <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                            <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-theme-muted">
                                 {search ? `Search Results (${filtered.length})` : 'All Customers'}
                             </p>
                             
@@ -571,21 +571,21 @@ const CustomerSelectModal: React.FC<{
                                 {filtered.map((c, i) => {
                                     const isPinned = pinnedIds.includes(c.id);
                                     return (
-                                        <div key={`cust-select-${c.id}-${i}`} className="flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl cursor-pointer transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700 group">
+                                        <div key={`cust-select-${c.id}-${i}`} className="flex items-center gap-3 p-3 hover:bg-theme-main rounded-xl cursor-pointer transition-all border border-transparent hover:border-theme-main group">
                                             <div onClick={() => onSelect(c)} className="flex items-center gap-3 flex-grow">
                                                 <Avatar name={c.name} className="w-10 h-10" />
                                                 <div className="flex-grow">
-                                                    <p className="font-bold text-slate-900 dark:text-white">{c.name}</p>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400">{c.phone}</p>
+                                                    <p className="font-bold text-theme-main">{c.name}</p>
+                                                    <p className="text-xs text-theme-muted">{c.phone}</p>
                                                 </div>
                                                 <div className="text-right mr-2">
                                                     <p className={`text-sm font-bold ${c.creditBalance > 0 ? 'text-red-500' : 'text-green-500'}`}>₹{Math.abs(c.creditBalance).toFixed(2)}</p>
-                                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-tighter">Balance</p>
+                                                    <p className="text-[10px] text-theme-muted uppercase font-bold tracking-tighter">Balance</p>
                                                 </div>
                                             </div>
                                             <button 
                                                 onClick={(e) => { e.stopPropagation(); onTogglePin(c.id); }} 
-                                                className={`p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-all ${isPinned ? 'text-amber-500 bg-amber-50 dark:bg-amber-900/20' : 'text-slate-300 opacity-0 group-hover:opacity-100'}`}
+                                                className={`p-2 rounded-lg hover:bg-theme-surface transition-all ${isPinned ? 'text-amber-500 bg-amber-500/10' : 'text-theme-muted opacity-0 group-hover:opacity-100'}`}
                                             >
                                                 <Icon name="star" className={`w-4 h-4 ${isPinned ? 'fill-current' : ''}`} />
                                             </button>
@@ -596,14 +596,14 @@ const CustomerSelectModal: React.FC<{
 
                             {filtered.length === 0 && (
                                 <div className="text-center py-12 px-4">
-                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Icon name="customers" className="w-8 h-8 text-slate-400" />
+                                    <div className="w-16 h-16 bg-theme-main rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Icon name="customers" className="w-8 h-8 text-theme-muted" />
                                     </div>
-                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">No customers found</h3>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Try a different search term or add a new customer.</p>
+                                    <h3 className="text-lg font-bold text-theme-main">No customers found</h3>
+                                    <p className="text-sm text-theme-muted mt-1">Try a different search term or add a new customer.</p>
                                     <button 
                                         onClick={() => setIsAddingNew(true)}
-                                        className="mt-6 px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-bold transition-all shadow-lg shadow-primary-500/20"
+                                        className="mt-6 px-6 py-2 bg-theme-accent hover:bg-theme-accent/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-theme-accent/20"
                                     >
                                         Add New Customer
                                     </button>
@@ -651,7 +651,7 @@ const PaymentModal: React.FC<{
                 <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
                     <div className="text-center">
                         <p className="text-xs text-theme-muted uppercase tracking-widest font-bold">Total Amount</p>
-                        <p className="text-5xl font-black text-primary-600 mt-1">₹{total.toFixed(2)}</p>
+                        <p className="text-5xl font-black text-theme-accent mt-1">₹{total.toFixed(2)}</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
@@ -660,7 +660,7 @@ const PaymentModal: React.FC<{
                                 key={m} 
                                 onClick={() => setMethod(m)}
                                 disabled={m === 'Credit' && !customer}
-                                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${method === m ? 'border-primary-500 bg-primary-500/10 text-primary-600' : 'border-theme-main hover:border-primary-500/50 text-theme-muted'} ${m === 'Credit' && !customer ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${method === m ? 'border-theme-accent bg-theme-accent/10 text-theme-accent' : 'border-theme-main hover:border-theme-accent/50 text-theme-muted'} ${m === 'Credit' && !customer ? 'opacity-30 cursor-not-allowed' : ''}`}
                             >
                                 <Icon name={m.toLowerCase() as any} className="w-6 h-6" />
                                 <span className="text-xs font-bold uppercase tracking-tighter">{m}</span>
@@ -670,8 +670,8 @@ const PaymentModal: React.FC<{
 
                     {method === 'Online' && appSettings.upiId && (
                         <div className="space-y-4">
-                            <div className="flex flex-col items-center justify-center p-6 bg-white rounded-2xl border border-theme-main shadow-inner">
-                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Scan to Pay via UPI</p>
+                            <div className="flex flex-col items-center justify-center p-6 bg-theme-surface rounded-2xl border border-theme-main shadow-inner">
+                                <p className="text-xs font-bold text-theme-muted uppercase tracking-widest mb-4">Scan to Pay via UPI</p>
                                 <div className="bg-white p-2 rounded-xl shadow-sm">
                                     <QRCodeSVG 
                                         value={`upi://pay?pa=${appSettings.upiId}&pn=${encodeURIComponent(appSettings.shopName)}&am=${total.toFixed(2)}&cu=INR`} 
@@ -679,7 +679,7 @@ const PaymentModal: React.FC<{
                                         level="H"
                                     />
                                 </div>
-                                <p className="text-xs text-slate-400 mt-4 text-center font-mono">{appSettings.upiId}</p>
+                                <p className="text-xs text-theme-muted mt-4 text-center font-mono">{appSettings.upiId}</p>
                             </div>
 
                             <div className="space-y-3">
@@ -690,7 +690,7 @@ const PaymentModal: React.FC<{
                                         placeholder="Enter 12-digit UTR number"
                                         value={transactionId}
                                         onChange={e => setTransactionId(e.target.value)}
-                                        className="w-full p-3 bg-theme-main border border-theme-main rounded-xl text-theme-main focus:ring-2 focus:ring-primary-500 outline-none transition-all font-mono"
+                                        className="w-full p-3 bg-theme-main border border-theme-main rounded-xl text-theme-main focus:ring-2 focus:ring-theme-accent outline-none transition-all font-mono"
                                     />
                                 </div>
                                 <button 
@@ -713,7 +713,7 @@ const PaymentModal: React.FC<{
                                     type="number" 
                                     value={received} 
                                     onChange={e => setReceived(e.target.value)} 
-                                    className="w-full pl-10 p-4 text-3xl font-black border border-theme-main rounded-2xl bg-theme-main text-theme-main focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                    className="w-full pl-10 p-4 text-3xl font-black border border-theme-main rounded-2xl bg-theme-main text-theme-main focus:ring-2 focus:ring-theme-accent outline-none transition-all"
                                     autoFocus
                                 />
                             </div>
@@ -738,7 +738,7 @@ const PaymentModal: React.FC<{
                     <button 
                         onClick={handleComplete}
                         disabled={method !== 'Credit' && (parseFloat(received) < total || isNaN(parseFloat(received)))}
-                        className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white rounded-2xl font-black text-xl shadow-xl shadow-primary-500/30 transition-all disabled:opacity-50 disabled:shadow-none transform active:scale-95"
+                        className="w-full py-4 bg-theme-accent hover:bg-theme-accent/90 text-white rounded-2xl font-black text-xl shadow-xl shadow-theme-accent/30 transition-all disabled:opacity-50 disabled:shadow-none transform active:scale-95"
                     >
                         Complete Sale
                     </button>
@@ -987,14 +987,14 @@ const POS: React.FC<POSProps> = (props) => {
             <div className="md:col-span-2">
                 <div className="relative mb-3 flex gap-2">
                     <div className="relative flex-grow">
-                        <Icon name="search" className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="text" placeholder="Search products or dishes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all" />
+                        <Icon name="search" className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" />
+                        <input type="text" placeholder="Search products or dishes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none transition-all text-theme-main" />
                     </div>
                     {props.appSettings.enableBarcodeScanner && (
                         <Tooltip content="Scan Barcode" position="bottom">
                             <button 
                                 onClick={() => setQRScannerOpen(true)}
-                                className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+                                className="p-3 bg-theme-main border border-theme-main rounded-lg hover:bg-theme-surface transition-colors text-theme-main"
                             >
                                 <Icon name="barcode" className="w-6 h-6" />
                             </button>
@@ -1004,7 +1004,7 @@ const POS: React.FC<POSProps> = (props) => {
                         <Tooltip content="Scan QR Code" position="bottom">
                             <button 
                                 onClick={() => setQRScannerOpen(true)}
-                                className="p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-600 dark:text-slate-300"
+                                className="p-3 bg-theme-main border border-theme-main rounded-lg hover:bg-theme-surface transition-colors text-theme-main"
                             >
                                 <Icon name="camera" className="w-6 h-6" />
                             </button>
@@ -1013,16 +1013,16 @@ const POS: React.FC<POSProps> = (props) => {
                 </div>
                 
                 {props.appSettings.shopTypes.includes('Restaurant') && props.appSettings.shopTypes.includes('Retail') && (
-                    <div className="flex items-center bg-slate-200/50 dark:bg-slate-800/50 rounded-xl p-1 mb-4 self-start w-fit border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center bg-theme-main rounded-xl p-1 mb-4 self-start w-fit border border-theme-main">
                         <button 
                             onClick={() => setActiveTab('products')} 
-                            className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${activeTab === 'products' ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                            className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${activeTab === 'products' ? 'bg-theme-surface text-theme-accent shadow-sm' : 'text-theme-muted hover:text-theme-main'}`}
                         >
                             Products
                         </button>
                         <button 
                             onClick={() => setActiveTab('dishes')} 
-                            className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${activeTab === 'dishes' ? 'bg-white dark:bg-slate-700 text-primary-600 dark:text-primary-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                            className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${activeTab === 'dishes' ? 'bg-theme-surface text-theme-accent shadow-sm' : 'text-theme-muted hover:text-theme-main'}`}
                         >
                             Dishes
                         </button>
@@ -1071,7 +1071,7 @@ const POS: React.FC<POSProps> = (props) => {
             <div data-tutorial-id="pos-cart" className="md:hidden fixed bottom-16 left-0 right-0 z-20">
                 {cart.length > 0 && (
                      <Tooltip content="View Cart Details" position="top">
-                         <div onClick={() => setMobileCartOpen(true)} className="bg-primary-600 text-white p-3 shadow-lg flex justify-between items-center cursor-pointer">
+                         <div onClick={() => setMobileCartOpen(true)} className="bg-theme-accent text-white p-3 shadow-lg flex justify-between items-center cursor-pointer">
                             <div>
                                 <span className="font-bold">{cart.length} items</span>
                                 <span className="ml-2">Total: ₹{cart.reduce((t, i) => t + i.appliedPrice * i.quantity, 0).toFixed(2)}</span>

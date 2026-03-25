@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Page, EmployeeRole, AppSettings } from '../types';
+import { navItems } from '../constants';
 import Icon from './Icon';
 import { Tooltip } from './Tooltip';
 
@@ -38,19 +39,6 @@ const NavItem: React.FC<{
         </Tooltip>
     )
 };
-
-export const navItems: { page: Page; label: string; roles: EmployeeRole[]; iconName: string }[] = [
-  { page: 'Dashboard', label: 'Dashboard', roles: ['Admin', 'Cashier'], iconName: 'dashboard' },
-  { page: 'POS', label: 'POS', roles: ['Admin', 'Cashier'], iconName: 'pos' },
-  { page: 'Products', label: 'Products', roles: ['Admin'], iconName: 'products' },
-  { page: 'Customers', label: 'Customers', roles: ['Admin', 'Cashier'], iconName: 'customers' },
-  { page: 'Restaurant', label: 'Restaurant', roles: ['Admin'], iconName: 'restaurant' },
-  { page: 'Purchases', label: 'Purchases', roles: ['Admin'], iconName: 'purchases' },
-  { page: 'Suppliers', label: 'Suppliers', roles: ['Admin'], iconName: 'suppliers' },
-  { page: 'Expenses', label: 'Expenses', roles: ['Admin'], iconName: 'expenses' },
-  { page: 'Reports', label: 'Reports', roles: ['Admin'], iconName: 'reports' },
-  { page: 'Settings', label: 'Settings', roles: ['Admin', 'Cashier'], iconName: 'settings' },
-];
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, employeeRole, appSettings }) => {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -121,16 +109,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, employee
                             href="#"
                             onClick={(e) => { e.preventDefault(); setIsMoreMenuOpen(prev => !prev); }}
                             title="More"
-                            className={`group flex items-center justify-center p-3 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-all duration-200 ${isMoreMenuOpen ? 'bg-slate-200/60 dark:bg-slate-800' : ''}`}
+                            className={`group flex items-center justify-center p-3 rounded-lg text-theme-muted hover:bg-theme-main transition-all duration-200 ${isMoreMenuOpen ? 'bg-theme-main' : ''}`}
                         >
                             <Icon name="more" className="w-6 h-6" />
                         </a>
                         {isMoreMenuOpen && (
-                            <div className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border dark:border-slate-700 z-50">
+                            <div className="absolute bottom-full right-0 mb-2 w-48 bg-theme-surface rounded-md shadow-lg border border-theme-main z-50">
                                 <ul>
                                     {hiddenItems.map(item => (
                                         <li key={item.page}>
-                                            <a href="#" onClick={(e) => { e.preventDefault(); handleNavigation(item.page); }} className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${currentPage === item.page ? 'text-primary-600 bg-primary-50 dark:bg-primary-900/40 dark:text-primary-300' : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700'}`}>
+                                            <a href="#" onClick={(e) => { e.preventDefault(); handleNavigation(item.page); }} className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${currentPage === item.page ? 'text-primary-600 bg-primary-500/10 dark:text-primary-400' : 'text-theme-main hover:bg-theme-main'}`}>
                                                 <Icon name={item.iconName} className="w-5 h-5" />
                                                 <span>{item.label}</span>
                                             </a>

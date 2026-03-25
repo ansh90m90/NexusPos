@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, AccountState, AccountInfo, ShopType } from './types';
+import { User, AccountState, BusinessInfo, ShopType } from './types';
 import { auth, db } from './firebase';
 import { 
     signInWithEmailAndPassword, 
@@ -13,15 +13,15 @@ import {
     getDoc, 
     setDoc, 
     updateDoc, 
-    arrayUnion,
+    collection,
     onSnapshot
 } from 'firebase/firestore';
 import { createInitialAccountState, createTestAccountState } from './src/data/mockData';
 import Icon from './components/Icon';
 
 interface LoginProps {
-    onLogin: (account: AccountState, user: User, accounts: AccountInfo[]) => void;
-    onDeleteAccount?: (accountId: string) => Promise<boolean>;
+    onLogin: (account: AccountState, user: User, businesses: BusinessInfo[]) => void;
+    onDeleteBusiness?: (accountId: string, businessId: string) => Promise<boolean>;
 }
 
 const LeftPanel: React.FC = () => (
@@ -83,12 +83,12 @@ const handleFirestoreError = (error: unknown, operationType: OperationType, path
             emailVerified: auth.currentUser?.emailVerified,
             isAnonymous: auth.currentUser?.isAnonymous,
             tenantId: auth.currentUser?.tenantId,
-            providerInfo: auth.currentUser?.providerData.map(provider => ({
+            providerInfo: (auth.currentUser?.providerData || []).map(provider => ({
                 providerId: provider.providerId,
                 displayName: provider.displayName,
                 email: provider.email,
                 photoUrl: provider.photoURL
-            })) || []
+            }))
         },
         operationType,
         path
@@ -97,7 +97,7 @@ const handleFirestoreError = (error: unknown, operationType: OperationType, path
     throw new Error(JSON.stringify(errInfo));
 };
 
-const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, onDeleteBusiness }) => {
     type Step = 'auth' | 'select_business' | 'create_business';
     const [step, setStep] = useState<Step>('auth');
     const [isRegistering, setIsRegistering] = useState(false);
@@ -111,24 +111,34 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
 
     // State after login
     const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
-    const [userAccounts, setUserAccounts] = useState<AccountInfo[]>([]);
-    const [deletingAccountId, setDeletingAccountId] = useState<string | null>(null);
+    const [userBusinesses, setUserBusinesses] = useState<BusinessInfo[]>([]);
+    const [deletingBusinessId, setDeletingBusinessId] = useState<string | null>(null);
 
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (loggedInUser) {
-            const unsubscribe = onSnapshot(doc(db, 'users', loggedInUser.id as any), (userDoc) => {
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    setUserAccounts(userData.accounts || []);
-                    if (userData.accounts && userData.accounts.length > 0) {
-                        setStep('select_business');
-                    } else {
-                        setStep('create_business');
-                    }
+            const accountId = loggedInUser.accountId;
+            if (!accountId) {
+                console.error("User profile is missing accountId");
+                setError("Your user profile is incomplete. Please contact support.");
+                return;
+            }
+            const businessesRef = collection(db, 'accounts', accountId, 'businesses');
+            const unsubscribe = onSnapshot(businessesRef, (snapshot) => {
+                const businesses: BusinessInfo[] = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    name: doc.data().name
+                }));
+                setUserBusinesses(businesses);
+                if (businesses.length > 0) {
+                    setStep('select_business');
+                } else {
+                    setStep('create_business');
                 }
+            }, (err) => {
+                handleFirestoreError(err, OperationType.GET, `accounts/${accountId}/businesses`);
             });
             return () => unsubscribe();
         }
@@ -166,41 +176,65 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
             
             if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
+                let accountId = userData.accountId;
+
+                // Migration: If accountId is missing or is the UID, ensure the account document exists
+                if (!accountId || accountId === user.uid) {
+                    accountId = accountId || user.uid;
+                    const accountDocSnap = await getDoc(doc(db, 'accounts', accountId));
+                    if (!accountDocSnap.exists()) {
+                        await setDoc(doc(db, 'accounts', accountId), {
+                            id: accountId,
+                            name: `${userData.name || user.displayName || 'User'}'s Account`,
+                            ownerId: user.uid,
+                            createdAt: new Date().toISOString()
+                        });
+                    }
+                    if (!userData.accountId) {
+                        await setDoc(doc(db, 'users', user.uid), { accountId }, { merge: true });
+                    }
+                }
+
                 setLoggedInUser({
-                    id: user.uid as any,
+                    id: user.uid,
                     name: userData.name || user.displayName || 'User',
                     email: user.email || '',
                     role: 'Admin',
+                    accountId: accountId,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 });
-                // Note: userAccounts and step will be updated by the onSnapshot listener
             } else {
-                // Create new user profile for Google user
+                // Create new account and user profile for Google user
+                const accountId = `acc_${Date.now()}`;
                 const name = user.displayName || 'User';
                 const email = user.email || '';
+                
+                // 1. Create Account
+                await setDoc(doc(db, 'accounts', accountId), {
+                    id: accountId,
+                    name: `${name}'s Account`,
+                    ownerId: user.uid,
+                    createdAt: new Date().toISOString()
+                });
+
+                // 2. Create User
                 const userDoc = {
                     id: user.uid,
                     name: name,
                     email: email,
                     role: 'User',
-                    accounts: []
+                    accountId: accountId
                 };
-                try {
-                    await setDoc(doc(db, 'users', user.uid), userDoc);
-                } catch (err) {
-                    handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
-                }
+                await setDoc(doc(db, 'users', user.uid), userDoc);
                 
                 setLoggedInUser({
-                    id: user.uid as any,
-                    name: name,
-                    email: email,
+                    ...userDoc,
                     role: 'Admin',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 });
-                setUserAccounts([]);
+                setUserBusinesses([]);
                 setStep('create_business');
             }
         } catch (err: any) {
@@ -221,29 +255,33 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                 userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 await updateProfile(userCredential.user, { displayName: name });
                 
-                // Create user document in Firestore
+                const accountId = `acc_${Date.now()}`;
+                
+                // 1. Create Account
+                await setDoc(doc(db, 'accounts', accountId), {
+                    id: accountId,
+                    name: `${name}'s Account`,
+                    ownerId: userCredential.user.uid,
+                    createdAt: new Date().toISOString()
+                });
+
+                // 2. Create User
                 const userDoc = {
                     id: userCredential.user.uid,
                     name: name,
                     email: email,
                     role: 'User',
-                    accounts: []
+                    accountId: accountId
                 };
-                try {
-                    await setDoc(doc(db, 'users', userCredential.user.uid), userDoc);
-                } catch (err) {
-                    handleFirestoreError(err, OperationType.WRITE, `users/${userCredential.user.uid}`);
-                }
+                await setDoc(doc(db, 'users', userCredential.user.uid), userDoc);
                 
                 setLoggedInUser({
-                    id: userCredential.user.uid as any,
-                    name: name,
-                    email: email,
+                    ...userDoc,
                     role: 'Admin',
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 });
-                setUserAccounts([]);
+                setUserBusinesses([]);
                 setStep('create_business');
             } else {
                 userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -251,15 +289,34 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                 
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
+                    let accountId = userData.accountId;
+
+                    // Migration: If accountId is missing or is the UID, ensure the account document exists
+                    if (!accountId || accountId === userCredential.user.uid) {
+                        accountId = accountId || userCredential.user.uid;
+                        const accountDocSnap = await getDoc(doc(db, 'accounts', accountId));
+                        if (!accountDocSnap.exists()) {
+                            await setDoc(doc(db, 'accounts', accountId), {
+                                id: accountId,
+                                name: `${userData.name || 'User'}'s Account`,
+                                ownerId: userCredential.user.uid,
+                                createdAt: new Date().toISOString()
+                            });
+                        }
+                        if (!userData.accountId) {
+                            await setDoc(doc(db, 'users', userCredential.user.uid), { accountId }, { merge: true });
+                        }
+                    }
+
                     setLoggedInUser({
-                        id: userCredential.user.uid as any,
+                        id: userCredential.user.uid,
                         name: userData.name,
                         email: userData.email,
                         role: 'Admin',
+                        accountId: accountId,
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     });
-                    // Note: userAccounts and step will be updated by the onSnapshot listener
                 } else {
                     setError('User profile not found.');
                 }
@@ -271,19 +328,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
         }
     };
 
-    const handleSelectBusiness = async (accountId: string) => {
-        if (deletingAccountId) return;
+    const handleSelectBusiness = async (businessId: string) => {
+        if (deletingBusinessId || !loggedInUser) return;
         setIsLoading(true);
         setError('');
         try {
-            const accountSnap = await getDoc(doc(db, 'accounts', accountId));
-            if (accountSnap.exists() && loggedInUser) {
-                const accountData = accountSnap.data();
-                onLogin(accountData.data as AccountState, loggedInUser, userAccounts);
+            const businessSnap = await getDoc(doc(db, 'accounts', loggedInUser.accountId, 'businesses', businessId));
+            if (businessSnap.exists()) {
+                const businessData = businessSnap.data();
+                onLogin(businessData.data as AccountState, loggedInUser, userBusinesses);
             } else {
                 setError('Could not load the selected business.');
             }
-        } catch (_err) {
+        } catch {
              setError('Failed to fetch business data.');
         } finally {
             setIsLoading(false);
@@ -296,11 +353,11 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
         setTimeout(() => {
             const testAccount = createTestAccountState();
             const demoUser = testAccount.users.find(u => u.role === 'Admin')!;
-            const demoAccountInfo: AccountInfo = {
+            const demoBusinessInfo: BusinessInfo = {
                 id: testAccount.id,
                 name: testAccount.name
             };
-            onLogin(testAccount, demoUser as any, [demoAccountInfo]);
+            onLogin(testAccount, demoUser as any, [demoBusinessInfo]);
         }, 500);
     };
 
@@ -317,44 +374,31 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
         }
 
         try {
-            const accountId = `acc_${Date.now()}`;
-            const initialState = createInitialAccountState(accountId, shopName, shopTypes);
+            const businessId = `biz_${Date.now()}`;
+            const initialState = createInitialAccountState(businessId, shopName, shopTypes);
             
             // Add the current user as an admin in the state
             initialState.users.push({
-                id: loggedInUser.id as any,
+                id: loggedInUser.id,
                 name: loggedInUser.name,
                 email: loggedInUser.email,
                 role: 'Admin',
+                accountId: loggedInUser.accountId,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             });
 
-            const accountDoc = {
-                id: accountId,
+            const businessDoc = {
+                id: businessId,
                 name: shopName,
-                ownerId: loggedInUser.id,
+                accountId: loggedInUser.accountId,
                 data: initialState,
                 lastSyncId: 0
             };
 
-            try {
-                await setDoc(doc(db, 'accounts', accountId), accountDoc);
-            } catch (err) {
-                handleFirestoreError(err, OperationType.WRITE, `accounts/${accountId}`);
-            }
+            await setDoc(doc(db, 'accounts', loggedInUser.accountId, 'businesses', businessId), businessDoc);
             
-            // Update user's accounts list
-            const newAccountInfo = { id: accountId, name: shopName, role: 'Admin' };
-            try {
-                await updateDoc(doc(db, 'users', loggedInUser.id as any), {
-                    accounts: arrayUnion(newAccountInfo)
-                });
-            } catch (err) {
-                handleFirestoreError(err, OperationType.UPDATE, `users/${loggedInUser.id}`);
-            }
-
-            onLogin(initialState, loggedInUser, [...userAccounts, newAccountInfo]);
+            onLogin(initialState, loggedInUser, [...userBusinesses, { id: businessId, name: shopName }]);
         } catch (err: any) {
             setError(err.message || 'Failed to create business.');
         } finally {
@@ -436,19 +480,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Welcome back, {loggedInUser?.name}!</p>
                         </div>
                         <div className="space-y-3">
-                            {userAccounts.map(account => (
-                                <div key={account.id} className="flex items-center gap-2 group">
+                            {userBusinesses.map(business => (
+                                <div key={business.id} className="flex items-center gap-2 group">
                                     <button 
-                                        onClick={() => handleSelectBusiness(account.id)} 
+                                        onClick={() => handleSelectBusiness(business.id)} 
                                         className="flex-1 text-left p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 dark:border-gray-700 font-semibold transition-colors"
                                     >
-                                        {account.name}
+                                        {business.name}
                                     </button>
-                                    {onDeleteAccount && (
+                                    {onDeleteBusiness && (
                                         <button 
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setDeletingAccountId(account.id);
+                                                setDeletingBusinessId(business.id);
                                             }}
                                             className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
                                             title="Delete Business"
@@ -459,20 +503,20 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                                 </div>
                             ))}
                         </div>
-                        {deletingAccountId && (
+                        {deletingBusinessId && (
                             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[100] p-4">
                                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm w-full text-center">
                                     <h3 className="text-lg font-bold text-red-600">Delete Business</h3>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Are you sure you want to delete "{userAccounts.find(a => a.id === deletingAccountId)?.name}"? This action cannot be undone.</p>
+                                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">Are you sure you want to delete "{userBusinesses.find(a => a.id === deletingBusinessId)?.name}"? This action cannot be undone.</p>
                                     <div className="flex justify-center gap-4 mt-6">
-                                        <button onClick={() => setDeletingAccountId(null)} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Cancel</button>
+                                        <button onClick={() => setDeletingBusinessId(null)} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Cancel</button>
                                         <button 
                                             onClick={async () => {
-                                                if (onDeleteAccount && deletingAccountId) {
-                                                    const success = await onDeleteAccount(deletingAccountId);
+                                                if (onDeleteBusiness && deletingBusinessId && loggedInUser) {
+                                                    const success = await onDeleteBusiness(loggedInUser.accountId, deletingBusinessId);
                                                     if (success) {
-                                                        setUserAccounts(prev => prev.filter(a => a.id !== deletingAccountId));
-                                                        setDeletingAccountId(null);
+                                                        setUserBusinesses(prev => prev.filter(a => a.id !== deletingBusinessId));
+                                                        setDeletingBusinessId(null);
                                                     }
                                                 }
                                             }}
@@ -501,7 +545,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                 return (
                     <>
                         <div className="text-center mb-6">
-                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{userAccounts.length > 0 ? 'Create a New Business' : 'Create Your First Business'}</h2>
+                             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{userBusinesses.length > 0 ? 'Create a New Business' : 'Create Your First Business'}</h2>
                             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">First, give your new shop a name.</p>
                         </div>
                         <form className="space-y-4" onSubmit={handleCreateBusinessSubmit}>
@@ -538,7 +582,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteAccount }) => {
                                 {isLoading ? 'Creating...' : 'Create & Open Business'}
                             </button>
                         </form>
-                        {userAccounts.length > 0 && (
+                        {userBusinesses.length > 0 && (
                              <div className="mt-6 text-center text-sm">
                                 <button onClick={() => setStep('select_business')} className="text-gray-500 hover:underline">
                                     &larr; Back to business selection

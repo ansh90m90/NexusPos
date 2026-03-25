@@ -29,17 +29,18 @@ export interface Promotion {
 }
 
 export interface User {
-    id: number;
+    id: string;
     name: string;
     email: string;
     password?: string;
     role: EmployeeRole;
+    accountId: string;
     createdAt: string;
     updatedAt: string;
     isDeleted?: boolean;
 }
 
-export type Theme = 'light' | 'dim' | 'dark' | 'black';
+export type Theme = 'light' | 'dim' | 'dark' | 'black' | 'luxury' | 'neon';
 export type AccentColor = 'primary' | 'emerald' | 'indigo' | 'rose' | 'amber' | 'violet';
 
 export interface ThemeContextType {
@@ -312,7 +313,7 @@ export interface Expense {
 }
 
 // Account System Types
-export interface AccountInfo {
+export interface BusinessInfo {
   id: string;
   name: string;
 }

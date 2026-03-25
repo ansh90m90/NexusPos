@@ -46,7 +46,6 @@ import {
   Sparkles, 
   Send, 
   ExternalLink,
-  Store,
   Wallet,
   Globe,
   HelpCircle,
@@ -68,7 +67,7 @@ export type IconName =
   | 'sync-offline' | 'sync-reload' | 'sales-chart' | 'receipt' | 'credit-card' 
   | 'receive-stock' | 'activity-sale' | 'activity-customer' | 'activity-low-stock' 
   | 'activity-purchase' | 'access-denied' | 'ai-sparkle' | 'ai' | 'send' | 'link-external'
-  | 'cash' | 'online' | 'credit' | 'camera' | 'upload' | 'spinner' | 'check' | 'star' | 'user' | 'user-plus';
+  | 'cash' | 'online' | 'credit' | 'camera' | 'upload' | 'spinner' | 'check' | 'star' | 'user' | 'user-plus' | 'zap';
 
 interface IconProps {
   name: IconName;
@@ -136,6 +135,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   star: Star,
   user: User,
   'user-plus': UserPlus,
+  zap: Zap,
 };
 
 const Icon: React.FC<IconProps> = ({ name, className = "w-6 h-6", strokeWidth = 1.5 }) => {

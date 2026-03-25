@@ -25,7 +25,7 @@ const Marketing: React.FC<MarketingProps> = ({ promotions, onSavePromotion, setM
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Marketing Hub</h1>
+                <h1 className="text-3xl font-bold text-theme-main">Marketing Hub</h1>
                 <Tooltip content="Create a new promotional campaign" position="bottom">
                     <button 
                         onClick={() => setModalState({ type: 'PROMOTION_MODAL', data: null })}
@@ -40,14 +40,14 @@ const Marketing: React.FC<MarketingProps> = ({ promotions, onSavePromotion, setM
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {promotions.length > 0 ? (
                     promotions.map((promotion) => (
-                        <div key={promotion.id} className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 flex flex-col">
+                        <div key={promotion.id} className="bg-theme-surface rounded-xl border border-theme-main shadow-sm p-4 flex flex-col">
                             <div className="flex justify-between items-start mb-2">
-                                <h3 className="font-bold text-slate-900 dark:text-white">{promotion.name}</h3>
-                                <span className={`px-2 py-1 rounded text-xs font-bold ${promotion.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                                <h3 className="font-bold text-theme-main">{promotion.name}</h3>
+                                <span className={`px-2 py-1 rounded text-xs font-bold ${promotion.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-theme-main text-theme-muted'}`}>
                                     {promotion.isActive ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 flex-grow">
+                            <p className="text-sm text-theme-muted mb-4 flex-grow">
                                 {promotion.type === 'PERCENTAGE_OFF' ? `${promotion.value}% off` : `₹${promotion.value} off`}
                                 {promotion.minPurchaseAmount > 0 && ` on orders above ₹${promotion.minPurchaseAmount}`}
                             </p>
@@ -55,7 +55,7 @@ const Marketing: React.FC<MarketingProps> = ({ promotions, onSavePromotion, setM
                                 <Tooltip content={`Edit ${promotion.name}`} position="top">
                                     <button 
                                         onClick={() => setModalState({ type: 'PROMOTION_MODAL', data: promotion })}
-                                        className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
+                                        className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition"
                                     >
                                         Edit
                                     </button>
@@ -63,7 +63,7 @@ const Marketing: React.FC<MarketingProps> = ({ promotions, onSavePromotion, setM
                                 <Tooltip content={`Duplicate ${promotion.name}`} position="top">
                                     <button 
                                         onClick={() => handleCreatePromotion({ ...promotion, id: `promo_${Date.now()}`, isActive: true })}
-                                        className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300 hover:bg-primary-200 dark:hover:bg-primary-900 transition"
+                                        className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-theme-accent/10 text-theme-accent hover:bg-theme-accent/20 transition"
                                     >
                                         Duplicate
                                     </button>
@@ -72,10 +72,10 @@ const Marketing: React.FC<MarketingProps> = ({ promotions, onSavePromotion, setM
                         </div>
                     ))
                 ) : (
-                    <div className="col-span-full text-center p-10 bg-white dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-                        <Icon name="marketing" className="w-12 h-12 mx-auto text-slate-400" />
-                        <h3 className="mt-2 font-semibold text-slate-900 dark:text-white">No promotions yet</h3>
-                        <p className="mt-1 text-sm text-slate-500">Create your first promotion to boost your sales.</p>
+                    <div className="col-span-full text-center p-10 bg-theme-surface rounded-xl border border-dashed border-theme-main">
+                        <Icon name="marketing" className="w-12 h-12 mx-auto text-theme-muted" />
+                        <h3 className="mt-2 font-semibold text-theme-main">No promotions yet</h3>
+                        <p className="mt-1 text-sm text-theme-muted">Create your first promotion to boost your sales.</p>
                     </div>
                 )}
             </div>

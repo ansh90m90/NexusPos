@@ -8,44 +8,47 @@
         "id": { "type": "string", "description": "Firebase Auth UID" },
         "name": { "type": "string" },
         "email": { "type": "string" },
-        "accounts": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "string" },
-              "name": { "type": "string" },
-              "role": { "type": "string", "enum": ["Admin", "Cashier"] }
-            }
-          }
-        }
+        "accountId": { "type": "string", "description": "The ID of the account this user belongs to" }
       },
-      "required": ["id", "name", "email"]
+      "required": ["id", "name", "email", "accountId"]
     },
     "Account": {
       "title": "Account",
-      "description": "The full state of a business account",
+      "description": "A top-level account that can own multiple businesses",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "data": { "type": "object", "description": "The AccountState object" },
-        "lastSyncId": { "type": "number" },
-        "ownerId": { "type": "string", "description": "UID of the owner" }
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "name", "data", "ownerId"]
+      "required": ["id", "name", "ownerId"]
+    },
+    "Business": {
+      "title": "Business",
+      "description": "A specific business or shop under an account",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "accountId": { "type": "string" },
+        "data": { "type": "object", "description": "The AccountState object" },
+        "lastSyncId": { "type": "number" }
+      },
+      "required": ["id", "name", "accountId", "data"]
     },
     "Operation": {
       "title": "Operation",
       "description": "A single state mutation operation",
       "type": "object",
       "properties": {
-        "accountId": { "type": "string" },
+        "id": { "type": "number" },
         "clientId": { "type": "string" },
         "type": { "type": "string" },
         "payload": { "type": "object" },
         "timestamp": { "type": "number" }
-      }
+      },
+      "required": ["id", "clientId", "type", "payload", "timestamp"]
     }
   },
   "firestore": {
@@ -55,9 +58,13 @@
     },
     "/accounts/{accountId}": {
       "schema": "Account",
-      "description": "Business accounts"
+      "description": "Top-level accounts"
     },
-    "/accounts/{accountId}/operations/{operationId}": {
+    "/accounts/{accountId}/businesses/{businessId}": {
+      "schema": "Business",
+      "description": "Businesses under an account"
+    },
+    "/accounts/{accountId}/businesses/{businessId}/operations/{operationId}": {
       "schema": "Operation",
       "description": "Operation log for synchronization"
     }

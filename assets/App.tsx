@@ -3,8 +3,9 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
-import Sidebar, { navItems as sidebarNavItems } from '../components/Sidebar';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
+import Sidebar from '../components/Sidebar';
+import { navItems as sidebarNavItems } from '../constants';
 import Header from '../components/Header';
 import Dashboard from '../pages/Dashboard';
 import POS from '../pages/POS';
@@ -26,10 +27,9 @@ import DataTransferModal from '../components/DataTransferModal';
 import ActivityDetailModal from '../components/ActivityDetailModal';
 import Tutorial, { TutorialStep } from '../components/Tutorial';
 import { ToastProvider, useToast } from '../components/Toast';
-import { Page, Theme, ThemeContext, User, AccountState, ActivityItem, AccountInfo, UiScale, ProductsPageTab, RestaurantPageTab, AccentColor } from '../types';
+import { Page, Theme, ThemeContext, User, AccountState, ActivityItem, BusinessInfo, UiScale, ProductsPageTab, RestaurantPageTab, AccentColor } from '../types';
 import { useLocalStorage, useAccountActions, useSync, SyncStatus } from '../hooks';
-import { deleteAccount as serverDeleteAccount, deleteUserAccount as serverDeleteUserAccount, removeAccountFromUser } from '../services/syncService';
-import Icon from '../components/Icon';
+import { deleteBusiness as serverDeleteBusiness, deleteUserAccount as serverDeleteUserAccount } from '../services/syncService';
 
 const tutorialSteps: TutorialStep[] = [
     { elementSelector: null, title: 'Welcome to the Hub!', content: "Let's take a quick tour of the main features to get you started.", page: 'Dashboard' },
@@ -44,6 +44,8 @@ const tutorialSteps: TutorialStep[] = [
 
 
 const AccountApp: React.FC<{
+  accountId: string,
+  businessId: string,
   accountState: AccountState,
   dispatchOperation: (type: string, payload: any, skipSync?: boolean) => void,
   onLogout: () => void,
@@ -51,12 +53,13 @@ const AccountApp: React.FC<{
   syncStatus: SyncStatus,
   onForceSync: () => Promise<void>,
   onHardReset: () => Promise<void>,
-  userAccounts: AccountInfo[],
-  onDeleteAccount: (accountId: string) => Promise<boolean>,
+  userBusinesses: BusinessInfo[],
+  onDeleteBusiness: (accountId: string, businessId: string) => Promise<boolean>,
   onDeleteUserAccount: () => Promise<boolean>,
-}> = ({ accountState, dispatchOperation, onLogout, initialUser, syncStatus, onForceSync, onHardReset, userAccounts, onDeleteAccount, onDeleteUserAccount }) => {
+  onSwitchBusiness: (businessId: string) => Promise<void>,
+}> = ({ accountId, businessId, accountState, dispatchOperation, onLogout, initialUser, syncStatus, onForceSync, onHardReset, userBusinesses, onDeleteBusiness, onDeleteUserAccount, onSwitchBusiness }) => {
 
-  const { id: accountId, users, products, dishes, rawMaterials, customers, suppliers, transactions, purchaseOrders, kitchenOrders, batches, notifications, appSettings, rewards, promotions, allocatedRawMaterials, stockAdjustments = [], expenses = [], heldCarts = [], isTest = false } = accountState;
+  const { products, dishes, rawMaterials, customers, suppliers, transactions, purchaseOrders, kitchenOrders, batches, notifications, appSettings, promotions, allocatedRawMaterials, expenses = [], heldCarts = [], isTest = false } = accountState;
 
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [theme, setTheme] = useLocalStorage<Theme>(`${accountId}_theme`, 'light');
@@ -73,6 +76,14 @@ const AccountApp: React.FC<{
   const [mainScrollTop, setMainScrollTop] = useState(0);
   const mainContentRef = useRef<HTMLElement>(null);
   const toast = useToast();
+  const accentColorClasses: Record<AccentColor, string> = {
+    primary: 'accent-primary',
+    emerald: 'accent-emerald',
+    indigo: 'accent-indigo',
+    rose: 'accent-rose',
+    amber: 'accent-amber',
+    violet: 'accent-violet',
+  };
 
   useEffect(() => {
     const isFreshLogin = localStorage.getItem('fresh_login');
@@ -94,19 +105,13 @@ const AccountApp: React.FC<{
   const visibleRawMaterials = useMemo(() => rawMaterials.filter(rm => !rm.isDeleted), [rawMaterials]);
   const visibleCustomers = useMemo(() => customers.filter(c => !c.isDeleted), [customers]);
   const visibleSuppliers = useMemo(() => suppliers.filter(s => !s.isDeleted), [suppliers]);
-  const visibleUsers = useMemo(() => users.filter(u => !u.isDeleted), [users]);
   const visiblePromotions = useMemo(() => promotions.filter(p => !p.isDeleted), [promotions]);
   const visibleExpenses = useMemo(() => expenses.filter(e => !e.isDeleted), [expenses]);
   const heldCartsState = useMemo(() => heldCarts || [], [heldCarts]);
 
   const closeCommandPalette = useCallback(() => setCommandPaletteOpen(false), []);
   const toggleTheme = useCallback(() => {
-    setTheme(prev => {
-      if (prev === 'light') return 'dim';
-      if (prev === 'dim') return 'dark';
-      if (prev === 'dark') return 'black';
-      return 'light';
-    });
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   }, [setTheme]);
 
   const {
@@ -117,7 +122,7 @@ const AccountApp: React.FC<{
     handleRestoreItem, handleAdjustStock, handleSaveExpense, handleDeleteExpense, handleUpdateAppSettings,
     handleUpdateKitchenOrders, handleUpdateCurrentUser, handleAccountImport, handleCancelTransaction,
     handleUpdateHeldCarts, handleAddSupplierPayment,
-  } = useAccountActions({ dispatchOperation, currentUser, setModalState, toast, accountState, setCurrentUser, setCurrentPage });
+  } = useAccountActions({ dispatchOperation, currentUser, setModalState, toast, accountState, setCurrentUser });
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme !== 'light');
@@ -172,7 +177,7 @@ const AccountApp: React.FC<{
     const customerItems = visibleCustomers.map(c => ({ id: `cust-${c.id}`, name: c.name, type: 'Customer' as const, action: { type: 'navigate' as const, payload: 'Customers' as Page } }));
     
     return [...pageItems, ...productItems, ...customerItems];
-  }, [sidebarNavItems, visibleProducts, visibleCustomers, currentUser]);
+  }, [visibleProducts, visibleCustomers, currentUser]);
   
    const renderPage = () => {
     if (!currentUser) return <Login onLogin={() => {}} />;
@@ -195,18 +200,34 @@ const AccountApp: React.FC<{
         case 'Expenses': return <Expenses expenses={visibleExpenses} onSaveExpense={handleSaveExpense} onDeleteExpense={handleDeleteExpense} modalState={modalState} setModalState={setModalState} />;
         case 'Reports': return <Reports accountState={accountState} />;
         case 'Marketing': return <Marketing accountId={accountId} customers={visibleCustomers} promotions={visiblePromotions} onSavePromotion={handleSavePromotion} setModalState={setModalState} products={visibleProducts} />;
-        case 'Settings': return <Settings accountState={accountState} setAppSettings={handleUpdateAppSettings} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} onSavePromotion={handleSavePromotion} onDeletePromotion={handleDeletePromotion} onTogglePromotionStatus={handleTogglePromotionStatus} onHardReset={onHardReset} onRestoreItem={handleRestoreItem} uiScale={uiScale} setUiScale={setUiScale} isTutorialActive={isTutorialActive} onStartTutorial={() => { setTutorialActive(true); setTutorialStep(0); }} onEndTutorial={() => setTutorialActive(false)} modalState={modalState} setModalState={setModalState} onDeleteAccount={() => onDeleteAccount(accountId)} />;
-        case 'MyAccount': return <MyAccountPage user={currentUser} onSave={handleUpdateCurrentUser} userAccounts={userAccounts} currentAccountId={accountId} onDeleteAccount={onDeleteAccount} onDeleteUserAccount={onDeleteUserAccount} />;
+        case 'Settings': return <Settings accountState={accountState} setAppSettings={handleUpdateAppSettings} onSaveUser={handleSaveUser} onDeleteUser={handleDeleteUser} onSavePromotion={handleSavePromotion} onDeletePromotion={handleDeletePromotion} onTogglePromotionStatus={handleTogglePromotionStatus} onHardReset={onHardReset} onRestoreItem={handleRestoreItem} uiScale={uiScale} setUiScale={setUiScale} isTutorialActive={isTutorialActive} onStartTutorial={() => { setTutorialActive(true); setTutorialStep(0); }} onEndTutorial={() => setTutorialActive(false)} modalState={modalState} setModalState={setModalState} onDeleteAccount={() => onDeleteBusiness(accountId, businessId)} />;
+        case 'MyAccount': return <MyAccountPage user={currentUser} onSave={handleUpdateCurrentUser} userAccounts={userBusinesses as any} currentAccountId={businessId} onDeleteAccount={(id) => onDeleteBusiness(accountId, id)} onDeleteUserAccount={onDeleteUserAccount} />;
         default: return <AccessDenied />;
     }
    };
    
   return (
     <ThemeContext.Provider value={themeContextValue}>
-      <div className="flex bg-theme-main min-h-screen text-theme-main transition-colors duration-300">
+      <div 
+        data-theme={theme} 
+        className={`flex bg-theme-main min-h-screen text-theme-main transition-colors duration-300 ${theme !== 'light' ? 'dark' : ''} ${accentColorClasses[accentColor]}`}
+      >
         <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} employeeRole={currentUser!.role} appSettings={appSettings} />
         <main ref={mainContentRef} className="flex-1 md:ml-20 pb-16 md:pb-0 flex flex-col h-screen overflow-hidden">
-            <Header currentPage={currentPage} currentUser={currentUser!} onLogout={onLogout} notifications={notifications} setCurrentPage={setCurrentPage} syncStatus={syncStatus} onOpenNotifications={handleMarkNotificationsRead} onForceSync={onForceSync} isTest={isTest} />
+            <Header 
+              currentPage={currentPage} 
+              currentUser={currentUser!} 
+              onLogout={onLogout} 
+              notifications={notifications} 
+              setCurrentPage={setCurrentPage} 
+              syncStatus={syncStatus} 
+              onOpenNotifications={handleMarkNotificationsRead} 
+              onForceSync={onForceSync} 
+              isTest={isTest}
+              userBusinesses={userBusinesses}
+              currentBusinessId={businessId}
+              onSwitchBusiness={onSwitchBusiness}
+            />
             <div onScroll={e => setMainScrollTop(e.currentTarget.scrollTop)} className="flex-1 p-4 overflow-y-auto">
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -242,11 +263,12 @@ const App: React.FC = () => {
 
 
 const AppContent: React.FC = () => {
-    const [allAccounts, setAllAccounts] = useLocalStorage<AccountInfo[]>('all_accounts', []);
+    const [userBusinesses, setUserBusinesses] = useLocalStorage<BusinessInfo[]>('user_businesses', []);
     const [currentAccountId, setCurrentAccountId] = useLocalStorage<string | null>('current_account_id', null);
-    const [accountState, setAccountState] = useLocalStorage<AccountState | null>(`account_${currentAccountId}`, null);
+    const [currentBusinessId, setCurrentBusinessId] = useLocalStorage<string | null>('current_business_id', null);
+    const [accountState, setAccountState] = useLocalStorage<AccountState | null>(`business_${currentBusinessId}`, null);
     const [currentUser, setCurrentUser] = useLocalStorage<User | null>(`user_${currentAccountId}`, null);
-    const { syncStatus, runSync, dispatchOperation } = useSync(accountState, setAccountState);
+    const { syncStatus, runSync, dispatchOperation } = useSync(currentAccountId, currentBusinessId, accountState, setAccountState);
     const toast = useToast();
     const [isAuthReady, setIsAuthReady] = useState(false);
     const currentUserRef = useRef<User | null>(currentUser);
@@ -270,14 +292,15 @@ const AppContent: React.FC = () => {
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
                         setCurrentUser({
-                            id: firebaseUser.uid as any,
+                            id: firebaseUser.uid,
                             name: userData.name,
                             email: userData.email,
                             role: 'Admin',
+                            accountId: userData.accountId,
                             createdAt: new Date().toISOString(),
                             updatedAt: new Date().toISOString()
                         });
-                        setAllAccounts(userData.accounts || []);
+                        setCurrentAccountId(userData.accountId);
                     }
                     setIsAuthReady(true);
                 }, (error) => {
@@ -288,6 +311,7 @@ const AppContent: React.FC = () => {
                 // User is signed out, clear state
                 setCurrentUser(null);
                 setCurrentAccountId(null);
+                setCurrentBusinessId(null);
                 setAccountState(null);
                 setIsAuthReady(true);
             }
@@ -297,21 +321,22 @@ const AppContent: React.FC = () => {
             unsubscribe();
             if (profileUnsubscribe) profileUnsubscribe();
         };
-    }, [setCurrentUser, setAllAccounts, setCurrentAccountId, setAccountState]);
+    }, [setCurrentUser, setCurrentAccountId, setCurrentBusinessId, setAccountState]);
 
-    const handleLogin = (account: AccountState, user: User, accounts: AccountInfo[]) => {
-        // Manually set localStorage to ensure the new keys are populated before state updates trigger re-renders
+    const handleLogin = (business: AccountState, user: User, businesses: BusinessInfo[]) => {
         if (typeof window !== 'undefined') {
-            window.localStorage.setItem('current_account_id', JSON.stringify(account.id));
-            window.localStorage.setItem(`account_${account.id}`, JSON.stringify(account));
-            window.localStorage.setItem(`user_${account.id}`, JSON.stringify(user));
-            window.localStorage.setItem('all_accounts', JSON.stringify(accounts));
+            window.localStorage.setItem('current_account_id', JSON.stringify(user.accountId));
+            window.localStorage.setItem('current_business_id', JSON.stringify(business.id));
+            window.localStorage.setItem(`business_${business.id}`, JSON.stringify(business));
+            window.localStorage.setItem(`user_${user.accountId}`, JSON.stringify(user));
+            window.localStorage.setItem('user_businesses', JSON.stringify(businesses));
             window.localStorage.setItem('fresh_login', 'true');
         }
 
-        setAllAccounts(accounts);
-        setCurrentAccountId(account.id);
-        setAccountState(account);
+        setUserBusinesses(businesses);
+        setCurrentAccountId(user.accountId);
+        setCurrentBusinessId(business.id);
+        setAccountState(business);
         setCurrentUser(user);
     };
 
@@ -319,9 +344,10 @@ const AppContent: React.FC = () => {
         try {
             await signOut(auth);
             setCurrentAccountId(null);
+            setCurrentBusinessId(null);
             setAccountState(null);
             setCurrentUser(null);
-            localStorage.clear(); // Clear all local storage on logout for security
+            localStorage.clear();
         } catch (error) {
             console.error("Logout error:", error);
             toast.showToast("Failed to log out.", "error");
@@ -329,14 +355,12 @@ const AppContent: React.FC = () => {
     };
 
     const handleHardReset = async () => {
-        if (!currentAccountId || accountState?.isTest) {
+        if (!currentBusinessId || accountState?.isTest) {
             toast.showToast("Hard reset is not available for this account.", "error");
             return;
         }
         try {
-            // This is a placeholder for a server call that would fetch the pristine state.
-            // For now, it re-fetches from local storage which simulates a reset if the in-memory state is corrupt.
-            const item = window.localStorage.getItem(`account_${currentAccountId}`);
+            const item = window.localStorage.getItem(`business_${currentBusinessId}`);
             const freshState = item ? JSON.parse(item) : null;
             if(freshState) {
                 setAccountState(freshState);
@@ -350,24 +374,18 @@ const AppContent: React.FC = () => {
         }
     };
     
-     const handleDeleteAccount = async (accountId: string): Promise<boolean> => {
+     const handleDeleteBusiness = async (accountId: string, businessId: string): Promise<boolean> => {
         if (!auth.currentUser) return false;
         try {
-            // 1. Remove account reference from user profile
-            await removeAccountFromUser(auth.currentUser.uid, accountId);
+            await serverDeleteBusiness(accountId, businessId);
             
-            // 2. Delete the account document itself
-            await serverDeleteAccount(accountId);
-            
-            // Note: setAllAccounts will be updated automatically by the onSnapshot listener in App.tsx
-            
-            // If the deleted account was the current one, log out.
-            if (accountId === currentAccountId) {
-                handleLogout();
+            if (businessId === currentBusinessId) {
+                setCurrentBusinessId(null);
+                setAccountState(null);
             }
             return true;
         } catch (error) {
-            console.error("Failed to delete account on server:", error);
+            console.error("Failed to delete business on server:", error);
             toast.showToast("Failed to delete the business. Please ensure you are connected to the server and try again.", "error");
             return false;
         }
@@ -378,7 +396,6 @@ const AppContent: React.FC = () => {
         try {
             const userId = auth.currentUser.uid;
             await serverDeleteUserAccount(userId);
-            // Also delete the Auth user
             await auth.currentUser.delete();
             handleLogout();
             toast.showToast("Your account has been deleted.", "info");
@@ -387,6 +404,26 @@ const AppContent: React.FC = () => {
             console.error("Failed to delete user account:", error);
             toast.showToast("Failed to delete your account. You may need to re-authenticate first.", "error");
             return false;
+        }
+    };
+
+    const handleSwitchBusiness = async (businessId: string) => {
+        if (!currentAccountId) return;
+        
+        const businessInfo = userBusinesses.find(b => b.id === businessId);
+        if (!businessInfo) return;
+
+        try {
+            const businessDoc = await getDoc(doc(db, 'accounts', currentAccountId, 'businesses', businessId));
+            if (businessDoc.exists()) {
+                const newState = businessDoc.data() as AccountState;
+                setCurrentBusinessId(businessId);
+                setAccountState(newState);
+                toast.showToast(`Switched to ${businessInfo.name}`, "success");
+            }
+        } catch (error) {
+            console.error("Failed to switch business:", error);
+            toast.showToast("Failed to switch business. Please check your connection.", "error");
         }
     };
 
@@ -402,12 +439,14 @@ const AppContent: React.FC = () => {
         );
     }
 
-    if (!accountState || !currentUser) {
-        return <Login onLogin={handleLogin} onDeleteAccount={handleDeleteAccount} />;
+    if (!accountState || !currentUser || !currentAccountId || !currentBusinessId) {
+        return <Login onLogin={handleLogin} onDeleteBusiness={handleDeleteBusiness} />;
     }
     
     return (
       <AccountApp 
+          accountId={currentAccountId}
+          businessId={currentBusinessId}
           accountState={accountState} 
           dispatchOperation={dispatchOperation}
           onLogout={handleLogout}
@@ -415,9 +454,10 @@ const AppContent: React.FC = () => {
           syncStatus={syncStatus}
           onForceSync={runSync}
           onHardReset={handleHardReset}
-          userAccounts={allAccounts}
-          onDeleteAccount={handleDeleteAccount}
+          userBusinesses={userBusinesses}
+          onDeleteBusiness={handleDeleteBusiness}
           onDeleteUserAccount={handleDeleteUserAccount}
+          onSwitchBusiness={handleSwitchBusiness}
       />
     );
 }

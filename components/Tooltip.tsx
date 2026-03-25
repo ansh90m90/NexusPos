@@ -135,7 +135,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, delay = 500
                                 zIndex: 99999,
                                 pointerEvents: 'none',
                             }}
-                            className={`px-3 py-2 bg-slate-900/95 dark:bg-slate-800/95 backdrop-blur-sm text-white text-xs rounded-lg shadow-xl border border-slate-700/50 max-w-xs whitespace-normal font-medium ${className}`}
+                            className={`px-3 py-2 bg-theme-surface backdrop-blur-md text-theme-main dark:text-white text-xs rounded-lg shadow-2xl border border-theme-main max-w-xs whitespace-normal font-medium z-[99999] ${className}`}
                         >
                             {content}
                         </motion.div>

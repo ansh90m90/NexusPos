@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import type { User, AccountInfo } from '../types';
+import type { User, BusinessInfo } from '../types';
 import { useToast } from '../components/Toast';
 import { Tooltip } from '../components/Tooltip';
 
 interface MyAccountPageProps {
     user: User;
     onSave: (updateData: { name: string, email: string, oldPassword?: string, newPassword?: string }) => { success: boolean, message: string };
-    userAccounts: AccountInfo[];
+    userAccounts: BusinessInfo[];
     currentAccountId: string;
     onDeleteAccount: (accountId: string) => Promise<boolean>;
     onDeleteUserAccount: () => Promise<boolean>;
