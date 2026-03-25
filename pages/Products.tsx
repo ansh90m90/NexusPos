@@ -137,120 +137,130 @@ const ProductPanel: React.FC<{
             onClose={onClose}
             footer={
                  <>
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition">Cancel</button>
-                    <button type="submit" form="product-form" className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition font-semibold">Save Product</button>
+                    <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-surface text-theme-main hover:bg-theme-main border border-theme-main transition font-medium">Cancel</button>
+                    <button type="submit" form="product-form" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save Product</button>
                 </>
             }
         >
             <form id="product-form" onSubmit={handleSubmit} className="space-y-6">
-                <input name="name" value={formData.name} onChange={handleMainChange} placeholder="Product Name (e.g., Lays Classic)" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main text-sm focus:ring-1 focus:ring-primary-500" required/>
+                <div className="space-y-1">
+                    <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Product Name *</label>
+                    <input name="name" value={formData.name} onChange={handleMainChange} placeholder="e.g., Lays Classic" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required/>
+                </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-sm font-medium text-theme-muted">Low Stock Threshold</label>
-                        <input type="number" name="minStock" value={formData.minStock} onChange={handleMainChange} className="w-full mt-1 p-2 border rounded bg-theme-main text-theme-main border-theme-main text-sm"/>
-                        <p className="text-xs text-theme-muted mt-1">Receive a notification when stock falls below this level.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Low Stock Threshold</label>
+                        <input type="number" name="minStock" value={formData.minStock} onChange={handleMainChange} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"/>
+                        <p className="text-[10px] text-theme-muted mt-1">Receive a notification when stock falls below this level.</p>
                     </div>
 
-                    <div>
-                        <label className="text-sm font-medium text-theme-muted">Pricing Type</label>
-                        <select name="pricingType" value={formData.pricingType} onChange={handleMainChange} className="w-full mt-1 p-2 border rounded bg-theme-main text-theme-main border-theme-main text-sm" required>
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Pricing Type</label>
+                        <select name="pricingType" value={formData.pricingType} onChange={handleMainChange} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required>
                             <option value="fixed">Fixed Price (Packaged)</option>
                             <option value="per_unit">Per Unit (by Weight/Vol)</option>
                         </select>
-                        <p className="text-xs text-theme-muted mt-1">'Fixed' for packaged items, 'Per Unit' for loose items.</p>
+                        <p className="text-[10px] text-theme-muted mt-1">'Fixed' for packaged items, 'Per Unit' for loose items.</p>
                     </div>
                 </div>
                 
-                <h4 className="font-semibold pt-4 border-t border-theme-main text-base text-theme-main">Variants / Pricing</h4>
-                <div className="space-y-3">
-                    {isPerUnit ? (
-                         <div className="p-4 rounded-lg bg-theme-main border border-theme-main">
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
-                                <div>
-                                    <label className="text-xs font-medium mb-1 block text-theme-muted">Unit</label>
-                                    <select value={formData.variants?.[0]?.unit || 'kg'} onChange={(e) => handleVariantChange(0, 'unit', e.target.value)} className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm">
-                                        <option value="kg">kg</option><option value="g">g</option><option value="l">l</option><option value="ml">ml</option><option value="pcs">pcs</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium mb-1 block text-theme-muted">Sale Price / Unit</label>
-                                    <input type="number" step="0.01" value={formData.variants?.[0]?.mrp || 0} onChange={(e) => handleVariantChange(0, 'mrp', parseFloat(e.target.value) || 0)} className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium mb-1 block text-theme-muted">W/S Price / Unit</label>
-                                    <input type="number" step="0.01" value={formData.variants?.[0]?.wholesalePrice || ''} onChange={(e) => handleVariantChange(0, 'wholesalePrice', parseFloat(e.target.value) || 0)} className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium mb-1 block text-theme-muted">Net Cost / Unit</label>
-                                    <input type="number" step="0.01" value={formData.variants?.[0]?.netPurchasePrice || 0} onChange={(e) => handleVariantChange(0, 'netPurchasePrice', parseFloat(e.target.value) || 0)} className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium mb-1 block text-theme-muted">Total Stock</label>
-                                    <input type="number" step="0.001" value={formData.variants?.[0]?.stock || 0} onChange={(e) => handleVariantChange(0, 'stock', parseFloat(e.target.value) || 0)} className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
+                <div className="pt-4 border-t border-theme-main">
+                    <h4 className="font-bold text-theme-main mb-4">Variants & Pricing</h4>
+                    <div className="space-y-4">
+                        {isPerUnit ? (
+                             <div className="p-4 rounded-2xl bg-theme-main border border-theme-main">
+                                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Unit</label>
+                                        <select value={formData.variants?.[0]?.unit || 'kg'} onChange={(e) => handleVariantChange(0, 'unit', e.target.value)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all">
+                                            <option value="kg">kg</option><option value="g">g</option><option value="l">l</option><option value="ml">ml</option><option value="pcs">pcs</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Sale Price / Unit</label>
+                                        <input type="number" step="0.01" value={formData.variants?.[0]?.mrp || 0} onChange={(e) => handleVariantChange(0, 'mrp', parseFloat(e.target.value) || 0)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">W/S Price / Unit</label>
+                                        <input type="number" step="0.01" value={formData.variants?.[0]?.wholesalePrice || ''} onChange={(e) => handleVariantChange(0, 'wholesalePrice', parseFloat(e.target.value) || 0)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Net Cost / Unit</label>
+                                        <input type="number" step="0.01" value={formData.variants?.[0]?.netPurchasePrice || 0} onChange={(e) => handleVariantChange(0, 'netPurchasePrice', parseFloat(e.target.value) || 0)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Total Stock</label>
+                                        <input type="number" step="0.001" value={formData.variants?.[0]?.stock || 0} onChange={(e) => handleVariantChange(0, 'stock', parseFloat(e.target.value) || 0)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ) : (
-                    <>
-                        {formData.variants?.map((variant, index) => (
-                             <div key={variant.id} className="p-4 rounded-lg bg-theme-main border border-theme-main">
-                                <input value={variant.name} onChange={e => handleVariantChange(index, 'name', e.target.value)} placeholder="Variant Name (e.g., 500g, 10-pack)" className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
-                                <div className="grid grid-cols-2 gap-x-4 gap-y-3 mt-3">
-                                    <div>
-                                        <label className="text-xs font-medium mb-1 block text-theme-muted">Sale Price (MRP)</label>
-                                        <input type="number" step="0.01" value={variant.mrp} onChange={e => handleVariantChange(index, 'mrp', parseFloat(e.target.value) || 0)} className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
+                        ) : (
+                        <>
+                            {formData.variants?.map((variant, index) => (
+                                 <div key={variant.id} className="p-4 rounded-2xl bg-theme-main border border-theme-main">
+                                    <div className="space-y-1 mb-4">
+                                        <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Variant Name</label>
+                                        <input value={variant.name} onChange={e => handleVariantChange(index, 'name', e.target.value)} placeholder="e.g., 500g, 10-pack" className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-medium mb-1 block text-theme-muted">Wholesale Price (Opt.)</label>
-                                        <input type="number" step="0.01" value={variant.wholesalePrice || ''} onChange={e => handleVariantChange(index, 'wholesalePrice', parseFloat(e.target.value) || 0)} placeholder="0" className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Sale Price (MRP)</label>
+                                            <input type="number" step="0.01" value={variant.mrp} onChange={e => handleVariantChange(index, 'mrp', parseFloat(e.target.value) || 0)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Wholesale Price (Opt.)</label>
+                                            <input type="number" step="0.01" value={variant.wholesalePrice || ''} onChange={e => handleVariantChange(index, 'wholesalePrice', parseFloat(e.target.value) || 0)} placeholder="0" className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                        </div>
+                                         <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Net Cost Price</label>
+                                            <input type="number" step="0.01" value={variant.netPurchasePrice} onChange={e => handleVariantChange(index, 'netPurchasePrice', parseFloat(e.target.value) || 0)} placeholder="Price you paid" className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-bold text-theme-muted uppercase tracking-wider">Stock Quantity</label>
+                                            <input type="number" value={variant.stock} onChange={e => handleVariantChange(index, 'stock', parseInt(e.target.value, 10) || 0)} placeholder="Units in stock" className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                        </div>
                                     </div>
-                                     <div>
-                                        <label className="text-xs font-medium mb-1 block text-theme-muted">Net Cost Price</label>
-                                        <input type="number" step="0.01" value={variant.netPurchasePrice} onChange={e => handleVariantChange(index, 'netPurchasePrice', parseFloat(e.target.value) || 0)} placeholder="Price you paid" className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
+                                    {formData.variants && formData.variants.length > 1 && (
+                                    <div className="text-center pt-4 mt-4 border-t border-theme-main">
+                                         <button
+                                            type="button"
+                                            onClick={() => removeVariant(index)}
+                                            className="text-sm text-red-500 hover:text-red-600 font-bold transition-colors"
+                                        >
+                                            Remove Variant
+                                        </button>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-medium mb-1 block text-theme-muted">Stock Quantity</label>
-                                        <input type="number" value={variant.stock} onChange={e => handleVariantChange(index, 'stock', parseInt(e.target.value, 10) || 0)} placeholder="Units in stock" className="w-full p-2 border rounded bg-theme-surface text-theme-main border-theme-main text-sm" />
-                                    </div>
+                                    )}
                                 </div>
-                                {formData.variants && formData.variants.length > 1 && (
-                                <div className="text-center pt-3 mt-3 border-t border-theme-main">
-                                     <button
-                                        type="button"
-                                        onClick={() => removeVariant(index)}
-                                        className="text-sm text-red-600 hover:underline font-semibold"
-                                    >
-                                        Remove Variant
-                                    </button>
-                                </div>
-                                )}
-                            </div>
-                        ))}
-                         <button type="button" onClick={addVariant} className="text-sm font-semibold text-primary-600 hover:text-primary-800">+ Add Variant</button>
-                    </>
-                    )}
+                            ))}
+                             <button type="button" onClick={addVariant} className="text-sm font-bold text-primary-500 hover:text-primary-600 transition-colors">+ Add Variant</button>
+                        </>
+                        )}
+                    </div>
                 </div>
 
-                <h4 className="font-semibold pt-4 border-t border-theme-main text-base text-theme-main">Details</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-sm font-medium text-theme-muted">Sub-Category</label>
-                        <input list="subcategories-list" name="subCategory" value={formData.subCategory} onChange={handleMainChange} placeholder="e.g., Wafers, Cool Drinks" className="w-full mt-1 p-2 border rounded bg-theme-main text-theme-main border-theme-main text-sm focus:ring-1 focus:ring-primary-500"/>
-                        <datalist id="subcategories-list">
-                            {uniqueSubCategories.map(sc => <option key={sc} value={sc} />)}
-                        </datalist>
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium text-theme-muted">Supplier</label>
-                        <input list="suppliers-list" name="supplier" value={formData.supplier} onChange={handleMainChange} placeholder="e.g., Pepsico, ITC" className="w-full mt-1 p-2 border rounded bg-theme-main text-theme-main border-theme-main text-sm focus:ring-1 focus:ring-primary-500"/>
-                         <datalist id="suppliers-list">
-                            {uniqueSuppliers.map(s => <option key={s} value={s} />)}
-                        </datalist>
-                    </div>
-                    <div className="md:col-span-2">
-                        <label className="text-sm font-medium text-theme-muted">HSN Code (Optional)</label>
-                        <input name="hsnCode" value={formData.hsnCode} onChange={handleMainChange} placeholder="HSN Code for GST" className="w-full mt-1 p-2 border rounded bg-theme-main text-theme-main border-theme-main text-sm focus:ring-1 focus:ring-primary-500"/>
+                <div className="pt-4 border-t border-theme-main">
+                    <h4 className="font-bold text-theme-main mb-4">Additional Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Sub-Category</label>
+                            <input list="subcategories-list" name="subCategory" value={formData.subCategory} onChange={handleMainChange} placeholder="e.g., Wafers, Cool Drinks" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"/>
+                            <datalist id="subcategories-list">
+                                {uniqueSubCategories.map(sc => <option key={sc} value={sc} />)}
+                            </datalist>
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Supplier</label>
+                            <input list="suppliers-list" name="supplier" value={formData.supplier} onChange={handleMainChange} placeholder="e.g., Pepsico, ITC" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"/>
+                             <datalist id="suppliers-list">
+                                {uniqueSuppliers.map(s => <option key={s} value={s} />)}
+                            </datalist>
+                        </div>
+                        <div className="md:col-span-2 space-y-1">
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">HSN Code (Optional)</label>
+                            <input name="hsnCode" value={formData.hsnCode} onChange={handleMainChange} placeholder="HSN Code for GST" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"/>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -276,28 +286,71 @@ const StockAdjustmentModal: React.FC<{
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-lg shadow-xl p-6 max-w-md w-full space-y-4 border border-theme-main">
-                <h3 className="text-xl font-bold text-theme-main">Adjust Stock</h3>
-                <p className="text-theme-main"><strong>Product:</strong> {productName} ({variant.name})</p>
-                <p className="text-theme-main"><strong>Current Stock:</strong> {variant.stock}</p>
-                <div className="flex gap-2">
-                    <select value={type} onChange={e => setType(e.target.value as 'add'|'remove')} className="p-2 border rounded bg-theme-main text-theme-main border-theme-main">
-                        <option value="remove">Remove</option>
-                        <option value="add">Add</option>
-                    </select>
-                    <input type="number" value={quantity} onChange={e => setQuantity(parseInt(e.target.value) || 0)} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main" min="1" />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-3xl shadow-2xl p-6 max-w-md w-full space-y-6 border border-theme-main animate-page-fade-in">
+                <div className="border-b border-theme-main pb-4">
+                    <h3 className="text-xl font-bold text-theme-main">Adjust Stock</h3>
+                    <p className="text-sm text-theme-muted mt-1">Update inventory levels for {productName}</p>
                 </div>
-                <select value={reason} onChange={e => setReason(e.target.value as StockAdjustmentReason)} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main">
-                    <option value="Damaged">Damaged Goods</option>
-                    <option value="Internal Consumption">Internal Consumption</option>
-                    <option value="Correction">Stock Count Correction</option>
-                    <option value="Other">Other</option>
-                </select>
-                <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (Optional)" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main" />
-                 <div className="flex justify-end gap-4 pt-4">
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition">Cancel</button>
-                    <button type="submit" className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition">Confirm</button>
+                
+                <div className="space-y-4">
+                    <div className="bg-theme-main p-4 rounded-xl border border-theme-main">
+                        <p className="text-sm text-theme-muted">Variant: <strong className="text-theme-main">{variant.name}</strong></p>
+                        <p className="text-sm text-theme-muted mt-1">Current Stock: <strong className="text-theme-main">{variant.stock}</strong></p>
+                    </div>
+
+                    <div className="flex gap-3">
+                        <div className="w-1/3 space-y-1">
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Action</label>
+                            <select 
+                                value={type} 
+                                onChange={e => setType(e.target.value as 'add'|'remove')} 
+                                className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"
+                            >
+                                <option value="remove">Remove</option>
+                                <option value="add">Add</option>
+                            </select>
+                        </div>
+                        <div className="flex-grow space-y-1">
+                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Quantity</label>
+                            <input 
+                                type="number" 
+                                value={quantity} 
+                                onChange={e => setQuantity(parseInt(e.target.value) || 0)} 
+                                className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" 
+                                min="1" 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Reason</label>
+                        <select 
+                            value={reason} 
+                            onChange={e => setReason(e.target.value as StockAdjustmentReason)} 
+                            className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"
+                        >
+                            <option value="Damaged">Damaged Goods</option>
+                            <option value="Internal Consumption">Internal Consumption</option>
+                            <option value="Correction">Stock Count Correction</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Notes (Optional)</label>
+                        <input 
+                            value={notes} 
+                            onChange={e => setNotes(e.target.value)} 
+                            placeholder="Add any relevant details..." 
+                            className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" 
+                        />
+                    </div>
+                </div>
+
+                 <div className="flex justify-end gap-4 pt-4 border-t border-theme-main">
+                    <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
+                    <button type="submit" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Confirm Adjustment</button>
                 </div>
             </form>
         </div>

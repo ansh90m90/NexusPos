@@ -166,95 +166,111 @@ const ReceiveStockModal: React.FC<{
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+            <div className="bg-theme-surface rounded-3xl shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col border border-theme-main">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="p-4 border-b dark:border-gray-700 flex-shrink-0">
-                         <h3 className="text-xl font-bold">{isPreview ? 'Confirm Purchase' : 'Receive Stock'}</h3>
+                    <div className="p-6 border-b border-theme-main flex-shrink-0">
+                         <h3 className="text-2xl font-bold text-theme-main">{isPreview ? 'Confirm Purchase' : 'Receive Stock'}</h3>
                     </div>
                     
-                    <div className="p-4 flex-grow overflow-y-auto space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                             <select value={supplierId} onChange={e => setSupplierId(Number(e.target.value))} className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" required={!createNewSupplier}>
-                                <option value="">Select Supplier</option>
-                                {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                             </select>
-                             <input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="Invoice Number" className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" />
-                             <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" required />
+                    <div className="p-6 flex-grow overflow-y-auto space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-theme-main mb-1">Supplier</label>
+                                <select value={supplierId} onChange={e => setSupplierId(Number(e.target.value))} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required={!createNewSupplier}>
+                                    <option value="">Select Supplier</option>
+                                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                                <p className="text-xs text-theme-muted mt-2">Select the supplier for this purchase.</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-theme-main mb-1">Invoice Number</label>
+                                <input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="e.g., INV-2023-001" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                <p className="text-xs text-theme-muted mt-2">Optional invoice number from the supplier.</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-theme-main mb-1">Purchase Date</label>
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                                <p className="text-xs text-theme-muted mt-2">The date the stock was received.</p>
+                            </div>
                         </div>
 
-                        <h4 className="font-semibold pt-2 text-sm">Items</h4>
-                        <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
-                            {items.map((item, index) => (
-                                <div key={index} className="p-3 rounded-lg border bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700">
-                                    <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-2 items-end">
-                                        <div className="md:col-span-3">
-                                            <label className="block text-xs font-medium mb-1">Product</label>
-                                            <select value={item.variantId} onChange={e => handleItemChange(index, 'variantId', e.target.value)} className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm mb-2">
-                                                <option value={0}>Select existing product</option>
-                                                {products.map(p => (
-                                                    <optgroup key={p.id} label={p.name}>
-                                                        {p.variants.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                                                    </optgroup>
-                                                ))}
-                                            </select>
-                                            {item.variantId === 0 && (
-                                                <input type="text" value={item.productName || ''} onChange={e => handleItemChange(index, 'productName', e.target.value)} placeholder="New Product Name" className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" required />
-                                            )}
-                                        </div>
-                                         <div className="md:col-span-2">
-                                            <label className="block text-xs font-medium mb-1">Batch No.</label>
-                                            <input type="text" value={batches[index]?.batchNumber || ''} onChange={e => handleBatchChange(index, 'batchNumber', e.target.value)} className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="block text-xs font-medium mb-1">Expiry Date</label>
-                                            <input type="date" value={batches[index]?.expiryDate?.split('T')[0] || ''} onChange={e => handleBatchChange(index, 'expiryDate', e.target.value)} className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" />
-                                        </div>
-                                         <div className="md:col-span-1">
-                                            <label className="block text-xs font-medium mb-1">Qty</label>
-                                            <input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" />
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <label className="block text-xs font-medium mb-1">Net Cost/Unit</label>
-                                            <input type="number" step="0.01" value={item.netRate} onChange={e => handleItemChange(index, 'netRate', e.target.value)} className="w-full p-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 text-sm" />
-                                        </div>
-                                        <div className="md:col-span-1">
-                                            <label className="block text-xs font-medium mb-1">Total</label>
-                                            <p className="p-2 font-bold">₹{(item.quantity * item.netRate).toFixed(2)}</p>
-                                        </div>
-                                        <div className="md:col-span-1 flex items-end justify-end">
-                                            <button type="button" onClick={() => removeItem(index)} className="p-2 text-red-500 hover:text-red-700">
-                                                <Icon name="remove" className="w-5 h-5" />
-                                            </button>
+                        <div>
+                            <h4 className="font-semibold text-theme-main mb-3">Items</h4>
+                            <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
+                                {items.map((item, index) => (
+                                    <div key={index} className="p-4 rounded-2xl border bg-theme-main border-theme-main">
+                                        <div className="grid grid-cols-1 md:grid-cols-12 gap-x-4 gap-y-3 items-end">
+                                            <div className="md:col-span-3">
+                                                <label className="block text-xs font-semibold text-theme-main mb-1">Product</label>
+                                                <select value={item.variantId} onChange={e => handleItemChange(index, 'variantId', e.target.value)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all mb-2">
+                                                    <option value={0}>Select existing product</option>
+                                                    {products.map(p => (
+                                                        <optgroup key={p.id} label={p.name}>
+                                                            {p.variants.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+                                                        </optgroup>
+                                                    ))}
+                                                </select>
+                                                {item.variantId === 0 && (
+                                                    <input type="text" value={item.productName || ''} onChange={e => handleItemChange(index, 'productName', e.target.value)} placeholder="New Product Name" className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                                                )}
+                                            </div>
+                                             <div className="md:col-span-2">
+                                                <label className="block text-xs font-semibold text-theme-main mb-1">Batch No.</label>
+                                                <input type="text" value={batches[index]?.batchNumber || ''} onChange={e => handleBatchChange(index, 'batchNumber', e.target.value)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" placeholder="Optional" />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-semibold text-theme-main mb-1">Expiry Date</label>
+                                                <input type="date" value={batches[index]?.expiryDate?.split('T')[0] || ''} onChange={e => handleBatchChange(index, 'expiryDate', e.target.value)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                            </div>
+                                             <div className="md:col-span-1">
+                                                <label className="block text-xs font-semibold text-theme-main mb-1">Qty</label>
+                                                <input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', e.target.value)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" min="1" />
+                                            </div>
+                                            <div className="md:col-span-2">
+                                                <label className="block text-xs font-semibold text-theme-main mb-1">Net Cost/Unit</label>
+                                                <input type="number" step="0.01" value={item.netRate} onChange={e => handleItemChange(index, 'netRate', e.target.value)} className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                                            </div>
+                                            <div className="md:col-span-1">
+                                                <label className="block text-xs font-semibold text-theme-main mb-1">Total</label>
+                                                <p className="p-2.5 font-bold text-theme-main">₹{(item.quantity * item.netRate).toFixed(2)}</p>
+                                            </div>
+                                            <div className="md:col-span-1 flex items-center justify-end pb-2">
+                                                <button type="button" onClick={() => removeItem(index)} className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-colors">
+                                                    <Icon name="remove" className="w-5 h-5" />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                            <button type="button" onClick={addItem} className="mt-4 text-sm font-semibold text-primary-500 hover:text-primary-600 transition-colors flex items-center gap-1">
+                                <Icon name="plus" className="w-4 h-4" /> Add Item Manually
+                            </button>
                         </div>
-                        <button type="button" onClick={addItem} className="text-sm font-semibold text-primary-600 hover:underline">+ Add Item Manually</button>
                     </div>
 
-                    <div className="p-4 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex-shrink-0">
-                        <div className="flex justify-between items-center mb-4">
-                            <div className="flex items-center gap-2">
-                                <p className="font-bold text-xl">Total: ₹{totalCost.toFixed(2)}</p>
+                    <div className="p-6 border-t border-theme-main bg-theme-main flex-shrink-0 rounded-b-3xl">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-3">
+                                <p className="font-bold text-2xl text-theme-main">Total: ₹{totalCost.toFixed(2)}</p>
                                 <Tooltip content="Add Service Charge / Extra Cost" position="top">
                                     <button 
                                         type="button" 
                                         onClick={() => setExtraCharges([...extraCharges, { description: 'Service Charge', amount: 0 }])}
-                                        className="p-1.5 bg-slate-200 dark:bg-slate-700 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                        className="p-2 bg-theme-surface border border-theme-main rounded-full hover:bg-theme-main transition-colors text-theme-main"
                                     >
                                         <Icon name="plus" className="w-4 h-4" />
                                     </button>
                                 </Tooltip>
                             </div>
                             <div className="flex gap-4">
-                                <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 transition">Cancel</button>
-                                <button type="submit" className="px-4 py-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition font-semibold">Save Purchase</button>
+                                <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-surface text-theme-main hover:bg-theme-main border border-theme-main transition font-medium">Cancel</button>
+                                <button type="submit" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save Purchase</button>
                             </div>
                         </div>
 
                         {extraCharges.length > 0 && (
-                            <div className="space-y-2 pt-2 border-t dark:border-slate-700">
+                            <div className="space-y-3 pt-4 border-t border-theme-main">
                                 {extraCharges.map((charge, idx) => (
                                     <div key={`charge-${idx}`} className="flex items-center gap-3">
                                         <input 
@@ -265,11 +281,11 @@ const ReceiveStockModal: React.FC<{
                                                 newCharges[idx].description = e.target.value;
                                                 setExtraCharges(newCharges);
                                             }}
-                                            className="flex-grow p-1.5 text-xs border rounded dark:bg-slate-900 dark:border-slate-700"
+                                            className="flex-grow p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"
                                             placeholder="Charge Description"
                                         />
-                                        <div className="relative w-24">
-                                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">₹</span>
+                                        <div className="relative w-32">
+                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-theme-muted">₹</span>
                                             <input 
                                                 type="number" 
                                                 value={charge.amount} 
@@ -278,15 +294,15 @@ const ReceiveStockModal: React.FC<{
                                                     newCharges[idx].amount = parseFloat(e.target.value) || 0;
                                                     setExtraCharges(newCharges);
                                                 }}
-                                                className="w-full pl-5 p-1.5 text-xs border rounded dark:bg-slate-900 dark:border-slate-700 font-bold"
+                                                className="w-full pl-7 p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all font-bold"
                                             />
                                         </div>
                                         <button 
                                             type="button" 
                                             onClick={() => setExtraCharges(extraCharges.filter((_, i) => i !== idx))}
-                                            className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                            className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full transition-colors"
                                         >
-                                            <Icon name="close" className="w-4 h-4" />
+                                            <Icon name="close" className="w-5 h-5" />
                                         </button>
                                     </div>
                                 ))}
@@ -306,13 +322,13 @@ const PurchaseDetailPage: React.FC<{
 }> = ({ order, supplier, onClose }) => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
-                <div className="p-6 border-b dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
+            <div className="bg-theme-surface rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-theme-main">
+                <div className="p-6 border-b border-theme-main flex justify-between items-center bg-theme-main">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Purchase Order Details</h2>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Order ID: {order.id} • {new Date(order.date).toLocaleDateString()}</p>
+                        <h2 className="text-2xl font-bold text-theme-main">Purchase Order Details</h2>
+                        <p className="text-sm text-theme-muted">Order ID: {order.id} • {new Date(order.date).toLocaleDateString()}</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors">
+                    <button onClick={onClose} className="p-2 hover:bg-theme-surface rounded-full transition-colors text-theme-muted hover:text-theme-main">
                         <Icon name="close" className="w-6 h-6" />
                     </button>
                 </div>
@@ -321,27 +337,27 @@ const PurchaseDetailPage: React.FC<{
                     {/* Supplier & Info Section */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-4">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Supplier Information</h3>
-                            <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                                <p className="font-bold text-lg text-slate-900 dark:text-white">{supplier?.name || 'Unknown Supplier'}</p>
-                                {supplier?.phone && <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1"><Icon name="phone" className="w-3 h-3" /> {supplier.phone}</p>}
-                                {supplier?.email && <p className="text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2"><Icon name="mail" className="w-3 h-3" /> {supplier.email}</p>}
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-theme-muted">Supplier Information</h3>
+                            <div className="bg-theme-main p-4 rounded-2xl border border-theme-main">
+                                <p className="font-bold text-lg text-theme-main">{supplier?.name || 'Unknown Supplier'}</p>
+                                {supplier?.phone && <p className="text-sm text-theme-muted flex items-center gap-2 mt-1"><Icon name="phone" className="w-3 h-3" /> {supplier.phone}</p>}
+                                {supplier?.email && <p className="text-sm text-theme-muted flex items-center gap-2"><Icon name="mail" className="w-3 h-3" /> {supplier.email}</p>}
                             </div>
                         </div>
                         <div className="space-y-4">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Order Summary</h3>
-                            <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700 space-y-2">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-theme-muted">Order Summary</h3>
+                            <div className="bg-theme-main p-4 rounded-2xl border border-theme-main space-y-2">
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Invoice Number:</span>
-                                    <span className="font-mono font-bold">{order.invoiceNumber || 'N/A'}</span>
+                                    <span className="text-theme-muted">Invoice Number:</span>
+                                    <span className="font-mono font-bold text-theme-main">{order.invoiceNumber || 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-slate-500">Status:</span>
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${order.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{order.status}</span>
+                                    <span className="text-theme-muted">Status:</span>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${order.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>{order.status}</span>
                                 </div>
-                                <div className="flex justify-between text-sm pt-2 border-t dark:border-slate-700">
-                                    <span className="text-slate-500">Total Items:</span>
-                                    <span className="font-bold">{order.items.length}</span>
+                                <div className="flex justify-between text-sm pt-2 border-t border-theme-main">
+                                    <span className="text-theme-muted">Total Items:</span>
+                                    <span className="font-bold text-theme-main">{order.items.length}</span>
                                 </div>
                             </div>
                         </div>
@@ -349,10 +365,10 @@ const PurchaseDetailPage: React.FC<{
 
                     {/* Items Table */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Itemized List</h3>
-                        <div className="border dark:border-slate-700 rounded-xl overflow-hidden">
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-theme-muted">Itemized List</h3>
+                        <div className="border border-theme-main rounded-2xl overflow-hidden">
                             <table className="w-full text-sm text-left">
-                                <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 uppercase text-[10px] font-bold">
+                                <thead className="bg-theme-main text-theme-muted uppercase text-[10px] font-bold border-b border-theme-main">
                                     <tr>
                                         <th className="px-4 py-3">Item Name</th>
                                         <th className="px-4 py-3 text-center">Qty</th>
@@ -362,15 +378,15 @@ const PurchaseDetailPage: React.FC<{
                                         <th className="px-4 py-3 text-right">Total</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y dark:divide-slate-700">
+                                <tbody className="divide-y divide-theme-main bg-theme-surface">
                                     {order.items.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-900/20">
-                                            <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{item.productName}</td>
-                                            <td className="px-4 py-3 text-center">{item.quantity}</td>
-                                            <td className="px-4 py-3 text-right">₹{item.rate.toFixed(2)}</td>
-                                            <td className="px-4 py-3 text-right">{item.gstRate}%</td>
-                                            <td className="px-4 py-3 text-right">₹{item.netRate.toFixed(2)}</td>
-                                            <td className="px-4 py-3 text-right font-bold">₹{(item.quantity * item.netRate).toFixed(2)}</td>
+                                        <tr key={idx} className="hover:bg-theme-main transition-colors">
+                                            <td className="px-4 py-3 font-medium text-theme-main">{item.productName}</td>
+                                            <td className="px-4 py-3 text-center text-theme-main">{item.quantity}</td>
+                                            <td className="px-4 py-3 text-right text-theme-main">₹{item.rate.toFixed(2)}</td>
+                                            <td className="px-4 py-3 text-right text-theme-main">{item.gstRate}%</td>
+                                            <td className="px-4 py-3 text-right text-theme-main">₹{item.netRate.toFixed(2)}</td>
+                                            <td className="px-4 py-3 text-right font-bold text-theme-main">₹{(item.quantity * item.netRate).toFixed(2)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -381,12 +397,12 @@ const PurchaseDetailPage: React.FC<{
                     {/* Extra Charges */}
                     {order.extraCharges && order.extraCharges.length > 0 && (
                         <div className="space-y-4">
-                            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400">Extra Charges</h3>
-                            <div className="bg-slate-50 dark:bg-slate-900/30 p-4 rounded-xl border border-slate-100 dark:border-slate-700 space-y-2">
+                            <h3 className="text-sm font-bold uppercase tracking-wider text-theme-muted">Extra Charges</h3>
+                            <div className="bg-theme-main p-4 rounded-2xl border border-theme-main space-y-2">
                                 {order.extraCharges.map((charge, idx) => (
                                     <div key={idx} className="flex justify-between text-sm">
-                                        <span className="text-slate-500">{charge.description}</span>
-                                        <span className="font-bold">₹{charge.amount.toFixed(2)}</span>
+                                        <span className="text-theme-muted">{charge.description}</span>
+                                        <span className="font-bold text-theme-main">₹{charge.amount.toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -394,14 +410,14 @@ const PurchaseDetailPage: React.FC<{
                     )}
                 </div>
 
-                <div className="p-6 border-t dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+                <div className="p-6 border-t border-theme-main bg-theme-main flex justify-between items-center rounded-b-3xl">
                     <div className="text-right">
-                        <p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Grand Total</p>
-                        <p className="text-3xl font-black text-primary-600 dark:text-primary-400">₹{order.totalCost.toFixed(2)}</p>
+                        <p className="text-xs text-theme-muted uppercase font-bold tracking-widest">Grand Total</p>
+                        <p className="text-3xl font-black text-primary-500">₹{order.totalCost.toFixed(2)}</p>
                     </div>
                     <button 
                         onClick={() => window.print()}
-                        className="px-6 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-lg font-bold hover:scale-105 transition-transform flex items-center gap-2"
+                        className="px-6 py-2.5 bg-theme-surface text-theme-main border border-theme-main rounded-xl font-bold hover:bg-theme-main transition-colors flex items-center gap-2 shadow-sm"
                     >
                         <Icon name="print" className="w-5 h-5" />
                         Print Invoice
@@ -437,44 +453,44 @@ const Procurement: React.FC<ProcurementProps> = ({ products, suppliers, purchase
                 />
             )}
             
-            <div className="flex justify-between items-center">
-                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Purchases</h1>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+                 <h1 className="text-2xl md:text-3xl font-bold text-theme-main">Purchases</h1>
                  <Tooltip content="Create a new purchase order" position="bottom">
                      <button 
                         onClick={() => setModalState({ type: 'add_purchase', data: null })}
-                        className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition flex items-center gap-2 font-semibold"
+                        className="px-6 py-2.5 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-colors shadow-sm flex items-center gap-2 font-semibold text-sm"
                      >
-                        <Icon name="plus" className="w-5 h-5" />
+                        <Icon name="plus" className="w-4 h-4" />
                         New Purchase
                      </button>
                  </Tooltip>
             </div>
 
-             <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
-                <h3 className="p-4 text-lg font-semibold">Recent Purchase Orders</h3>
+             <div className="bg-theme-surface rounded-3xl border border-theme-main shadow-sm overflow-hidden">
+                <h3 className="p-6 text-lg font-semibold text-theme-main border-b border-theme-main">Recent Purchase Orders</h3>
                 <div className="overflow-x-auto hidden lg:block">
-                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700/60">
+                    <table className="w-full text-sm text-left text-theme-muted">
+                        <thead className="text-xs text-theme-muted uppercase bg-theme-main border-b border-theme-main">
                             <tr>
-                                <th className="px-4 py-2">Date</th>
-                                <th className="px-4 py-2">Supplier</th>
-                                <th className="px-4 py-2">Items</th>
-                                <th className="px-4 py-2 text-right">Total</th>
-                                <th className="px-4 py-2 text-center">Status</th>
+                                <th className="px-6 py-4 font-bold tracking-wider">Date</th>
+                                <th className="px-6 py-4 font-bold tracking-wider">Supplier</th>
+                                <th className="px-6 py-4 font-bold tracking-wider">Items</th>
+                                <th className="px-6 py-4 font-bold tracking-wider text-right">Total</th>
+                                <th className="px-6 py-4 font-bold tracking-wider text-center">Status</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-theme-main">
                            {[...purchaseOrders].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(po => {
                                 const supplier = suppliers.find(s => s.id === po.supplierId);
                                 return (
                                 <Tooltip key={po.id} content={`View details for PO from ${supplier?.name || 'Unknown'}`} position="top">
-                                    <tr className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer">
-                                        <td className="px-4 py-2">{new Date(po.date).toLocaleDateString()}</td>
-                                        <td className="px-4 py-2 font-medium text-gray-900 dark:text-white">{supplier?.name || 'Unknown'}</td>
-                                        <td className="px-4 py-2">{po.items.length}</td>
-                                        <td className="px-4 py-2 text-right font-semibold">₹{po.totalCost.toFixed(2)}</td>
-                                        <td className="px-4 py-2 text-center">
-                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${po.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : po.status === 'Draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'}`}>
+                                    <tr onClick={() => setModalState({ type: 'view_purchase', data: po })} className="hover:bg-theme-main transition-colors cursor-pointer">
+                                        <td className="px-6 py-4 font-medium text-theme-main">{new Date(po.date).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 font-bold text-theme-main">{supplier?.name || 'Unknown'}</td>
+                                        <td className="px-6 py-4 text-theme-main">{po.items.length}</td>
+                                        <td className="px-6 py-4 text-right font-bold text-theme-main">₹{po.totalCost.toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={`px-3 py-1 text-xs font-bold rounded-lg border ${po.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : po.status === 'Draft' ? 'bg-theme-main text-theme-muted border-theme-main' : 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'}`}>
                                                 {po.status}
                                             </span>
                                         </td>
@@ -483,30 +499,30 @@ const Procurement: React.FC<ProcurementProps> = ({ products, suppliers, purchase
                             )})}
                         </tbody>
                     </table>
-                     {purchaseOrders.length === 0 && <p className="text-center py-8 text-gray-500 text-sm">No purchase orders recorded.</p>}
+                     {purchaseOrders.length === 0 && <p className="text-center py-8 text-theme-muted text-sm font-medium">No purchase orders recorded.</p>}
                 </div>
-                <div className="lg:hidden space-y-3 p-3">
+                <div className="lg:hidden space-y-3 p-4">
                     {[...purchaseOrders].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(po => {
                         const supplier = suppliers.find(s => s.id === po.supplierId);
                         return (
-                        <div key={po.id} className="bg-white dark:bg-gray-800 rounded-lg p-3 border dark:border-gray-700 shadow-sm">
+                        <div key={po.id} onClick={() => setModalState({ type: 'view_purchase', data: po })} className="bg-theme-main rounded-2xl p-4 border border-theme-main shadow-sm cursor-pointer">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <p className="font-semibold text-sm">{supplier?.name || 'Unknown'}</p>
-                                    <p className="text-xs text-gray-500">{new Date(po.date).toLocaleDateString()}</p>
+                                    <p className="font-bold text-sm text-theme-main">{supplier?.name || 'Unknown'}</p>
+                                    <p className="text-xs text-theme-muted mt-1">{new Date(po.date).toLocaleDateString()}</p>
                                 </div>
-                                <p className="font-bold text-sm">₹{po.totalCost.toFixed(2)}</p>
+                                <p className="font-bold text-sm text-theme-main">₹{po.totalCost.toFixed(2)}</p>
                             </div>
-                            <div className="flex justify-between items-end mt-2 pt-2 border-t dark:border-gray-700">
-                            <p className="text-xs text-gray-500">{po.items.length} items</p>
-                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${po.status === 'Completed' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' : po.status === 'Draft' ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'}`}>
+                            <div className="flex justify-between items-end mt-3 pt-3 border-t border-theme-main">
+                                <p className="text-xs text-theme-muted font-medium">{po.items.length} items</p>
+                                <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-lg border ${po.status === 'Completed' ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800' : po.status === 'Draft' ? 'bg-theme-surface text-theme-muted border-theme-main' : 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800'}`}>
                                     {po.status}
                                 </span>
                             </div>
                         </div>
                         )
                     })}
-                    {purchaseOrders.length === 0 && <p className="text-center text-xs py-4">No recent purchase orders.</p>}
+                    {purchaseOrders.length === 0 && <p className="text-center text-xs py-4 text-theme-muted font-medium">No recent purchase orders.</p>}
                 </div>
             </div>
         </div>

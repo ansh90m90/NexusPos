@@ -52,34 +52,51 @@ const ExpensePanel: React.FC<{
             onClose={onClose}
             footer={
                 <>
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition">Cancel</button>
-                    <button type="submit" form="expense-form" className="px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm">Save Expense</button>
+                    <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
+                    <button type="submit" form="expense-form" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save Expense</button>
                 </>
             }
         >
-            <form id="expense-form" onSubmit={handleSubmit} className="space-y-4">
-                <input name="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Expense Description" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required />
-                <input name="amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })} placeholder="Amount" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required />
-                <select name="category" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required>
-                    {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                </select>
-                <input name="date" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required />
+            <form id="expense-form" onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Description</label>
+                    <input name="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Office Supplies" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                    <p className="text-xs text-theme-muted mt-2">A brief description of the expense.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Amount</label>
+                    <input name="amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })} placeholder="e.g., 150.00" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                    <p className="text-xs text-theme-muted mt-2">The total amount spent.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Category</label>
+                    <select name="category" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required>
+                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                    <p className="text-xs text-theme-muted mt-2">Categorize the expense for reporting.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Date</label>
+                    <input name="date" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                    <p className="text-xs text-theme-muted mt-2">The date the expense occurred.</p>
+                </div>
                 
                  <div>
-                    <label className="block text-sm font-medium mb-1">Attachment (Optional)</label>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Attachment (Optional)</label>
+                    <p className="text-xs text-theme-muted mb-2">Upload a receipt or invoice image.</p>
                     {attachment ? (
-                        <div className="flex items-center gap-3 p-2 border rounded-lg border-theme-main">
-                            <img src={`data:${attachment.mimeType};base64,${attachment.data}`} alt="Receipt thumbnail" className="w-16 h-16 object-cover rounded-md" />
+                        <div className="flex items-center gap-3 p-3 border rounded-xl border-theme-main bg-theme-main">
+                            <img src={`data:${attachment.mimeType};base64,${attachment.data}`} alt="Receipt thumbnail" className="w-16 h-16 object-cover rounded-lg shadow-sm" />
                             <div className="flex-grow">
-                                <p className="text-xs font-semibold text-theme-main">Receipt Attached</p>
+                                <p className="text-sm font-semibold text-theme-main">Receipt Attached</p>
                                 <p className="text-xs text-theme-muted">{attachment.mimeType}</p>
                             </div>
-                            <button type="button" onClick={() => setAttachment(null)} className="p-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full">
-                                <Icon name="delete" className="w-4 h-4"/>
+                            <button type="button" onClick={() => setAttachment(null)} className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors">
+                                <Icon name="delete" className="w-5 h-5"/>
                             </button>
                         </div>
                     ) : (
-                        <input type="file" onChange={handleFileChange} accept="image/*" className="w-full text-sm text-theme-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-theme-main file:text-theme-main hover:file:bg-theme-surface border border-theme-main rounded-lg" />
+                        <input type="file" onChange={handleFileChange} accept="image/*" className="w-full text-sm text-theme-muted file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-theme-main file:text-theme-main hover:file:bg-theme-surface border border-theme-main rounded-xl cursor-pointer transition-all" />
                     )}
                 </div>
             </form>
@@ -137,7 +154,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, onSaveExpense, onDeleteEx
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                  <h1 className="text-2xl md:text-3xl font-bold text-theme-main">Expenses</h1>
                  <Tooltip content="Record a new expense" position="bottom">
-                     <button onClick={() => setModalState({ type: 'add_expense', data: null })} className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition flex items-center gap-1.5 shadow-sm">
+                     <button onClick={() => setModalState({ type: 'add_expense', data: null })} className="px-6 py-2.5 text-sm font-bold rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm flex items-center gap-2">
                         <Icon name="plus" className="w-4 h-4"/>
                         Add Expense
                     </button>
@@ -163,33 +180,33 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, onSaveExpense, onDeleteEx
                     </div>
                 </div>
 
-                <div className="lg:col-span-2 bg-theme-surface rounded-xl border border-theme-main shadow-sm overflow-hidden">
+                <div className="lg:col-span-2 bg-theme-surface rounded-3xl border border-theme-main shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-theme-muted">
-                            <thead className="text-xs text-theme-main uppercase bg-theme-main">
+                            <thead className="text-xs text-theme-muted uppercase bg-theme-main border-b border-theme-main">
                                 <tr>
-                                    <th className="px-4 py-2">Date</th>
-                                    <th className="px-4 py-2">Description</th>
-                                    <th className="px-4 py-2">Category</th>
-                                    <th className="px-4 py-2 text-right">Amount</th>
-                                    <th className="px-4 py-2 text-right">Actions</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider">Date</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider">Description</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider">Category</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider text-right">Amount</th>
+                                    <th className="px-6 py-4 font-bold tracking-wider text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {expenses.map(exp => (
-                                    <tr key={exp.id} className="border-b border-theme-main">
-                                        <td className="px-4 py-2">{new Date(exp.date).toLocaleDateString()}</td>
-                                        <td className="px-4 py-2 font-medium text-theme-main">{exp.description}</td>
-                                        <td className="px-4 py-2">
-                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-theme-main text-theme-main">{exp.category}</span>
+                                    <tr key={exp.id} className="border-b border-theme-main transition-colors hover:bg-theme-main">
+                                        <td className="px-6 py-4 font-medium text-theme-main">{new Date(exp.date).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 font-bold text-theme-main">{exp.description}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-3 py-1 text-xs font-bold rounded-lg bg-theme-main text-theme-main border border-theme-main">{exp.category}</span>
                                         </td>
-                                        <td className="px-4 py-2 text-right font-semibold">₹{exp.amount.toFixed(2)}</td>
-                                        <td className="px-4 py-2 text-right space-x-2">
+                                        <td className="px-6 py-4 text-right font-bold text-theme-main">₹{exp.amount.toFixed(2)}</td>
+                                        <td className="px-6 py-4 text-right space-x-3">
                                             <Tooltip content="Edit Expense" position="top">
-                                                <button onClick={() => setModalState({ type: 'edit_expense', data: exp })} className="font-medium text-primary-500 hover:underline text-xs">Edit</button>
+                                                <button onClick={() => setModalState({ type: 'edit_expense', data: exp })} className="font-bold text-primary-500 hover:text-primary-600 transition-colors">Edit</button>
                                             </Tooltip>
                                             <Tooltip content="Delete Expense" position="top">
-                                                <button onClick={() => setDeleteConfirm(exp)} className="font-medium text-red-500 hover:underline text-xs">Delete</button>
+                                                <button onClick={() => setDeleteConfirm(exp)} className="font-bold text-red-500 hover:text-red-600 transition-colors">Delete</button>
                                             </Tooltip>
                                         </td>
                                     </tr>
@@ -197,7 +214,7 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, onSaveExpense, onDeleteEx
                             </tbody>
                         </table>
                     </div>
-                    {expenses.length === 0 && <p className="text-center py-8 text-sm text-theme-muted">No expenses recorded yet.</p>}
+                    {expenses.length === 0 && <p className="text-center py-8 text-sm text-theme-muted font-medium">No expenses recorded yet.</p>}
                 </div>
             </div>
             <ConfirmationModal

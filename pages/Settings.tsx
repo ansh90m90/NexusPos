@@ -13,12 +13,12 @@ import { Tooltip } from '../components/Tooltip';
 type SettingsTab = 'general' | 'appearance' | 'features' | 'staff' | 'promotions' | 'history' | 'adjustments' | 'data' | 'help' | 'about';
 
 const SettingRow: React.FC<{title: string, description: string, enabled: boolean, onToggle: () => void, disabled?: boolean}> = ({title, description, enabled, onToggle, disabled = false}) => (
-  <div className="flex justify-between items-center bg-theme-main p-4 rounded-lg border border-theme-main">
-    <div>
-        <h3 className="font-semibold text-theme-main">{title}</h3>
-        <p className="text-sm text-theme-muted">{description}</p>
+  <div className="flex justify-between items-center bg-theme-surface p-5 rounded-2xl border border-theme-main shadow-sm hover:border-primary-500/30 transition-colors">
+    <div className="pr-4">
+        <h3 className="font-semibold text-theme-main mb-1">{title}</h3>
+        <p className="text-sm text-theme-muted leading-relaxed">{description}</p>
     </div>
-    <label htmlFor={`toggle-${title.replace(/\s+/g, '-')}`} className={`relative inline-flex items-center ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+    <label htmlFor={`toggle-${title.replace(/\s+/g, '-')}`} className={`relative inline-flex items-center shrink-0 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
       <input 
         type="checkbox" 
         checked={enabled}
@@ -27,7 +27,7 @@ const SettingRow: React.FC<{title: string, description: string, enabled: boolean
         className="sr-only peer"
         disabled={disabled}
       />
-      <div className={`w-11 h-6 bg-theme-surface peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-primary-500 ${disabled ? 'opacity-50' : ''}`}></div>
+      <div className={`w-11 h-6 bg-theme-main peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-primary-500 ${disabled ? 'opacity-50' : ''}`}></div>
     </label>
   </div>
 );
@@ -55,18 +55,41 @@ const StaffModal: React.FC<{
     }
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-lg shadow-xl p-6 max-w-md w-full space-y-4 border border-theme-main">
-                <h3 className="text-xl font-bold text-theme-main">{isEditing ? 'Edit Staff Member' : 'Add New Staff'}</h3>
-                <input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Full Name" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required />
-                <input name="email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="Email Address" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required />
-                <input name="password" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={isEditing ? 'New Password (leave blank to keep current)' : 'Password'} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required={!isEditing} />
-                <select name="role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as EmployeeRole})} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main">
-                    <option value="Cashier">Cashier</option>
-                    <option value="Admin">Admin</option>
-                </select>
-                <div className="flex justify-end gap-4 pt-4">
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition">Cancel</button>
-                    <button type="submit" className="px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm">Save</button>
+            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-3xl shadow-xl p-8 max-w-md w-full space-y-6 border border-theme-main">
+                <h3 className="text-2xl font-bold text-theme-main mb-2">{isEditing ? 'Edit Staff Member' : 'Add New Staff'}</h3>
+                
+                <div className="space-y-5">
+                    <div>
+                        <label className="block text-sm font-semibold text-theme-main mb-1">Full Name</label>
+                        <p className="text-xs text-theme-muted mb-2">The staff member's complete name.</p>
+                        <input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g., Jane Doe" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-semibold text-theme-main mb-1">Email Address</label>
+                        <p className="text-xs text-theme-muted mb-2">Used for logging into the POS system.</p>
+                        <input name="email" type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="e.g., jane@example.com" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-semibold text-theme-main mb-1">Password</label>
+                        <p className="text-xs text-theme-muted mb-2">{isEditing ? 'Leave blank to keep the current password.' : 'A secure password for this account.'}</p>
+                        <input name="password" type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder={isEditing ? 'New Password' : 'Password'} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required={!isEditing} />
+                    </div>
+                    
+                    <div>
+                        <label className="block text-sm font-semibold text-theme-main mb-1">Role</label>
+                        <p className="text-xs text-theme-muted mb-2">Determines the level of access this user has.</p>
+                        <select name="role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value as EmployeeRole})} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all">
+                            <option value="Cashier">Cashier</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-4 pt-4 border-t border-theme-main">
+                    <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
+                    <button type="submit" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save</button>
                 </div>
             </form>
         </div>
@@ -93,50 +116,69 @@ const PromotionModal: React.FC<{
     }
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-theme-main">
-                <div className="p-4 border-b border-theme-main"><h3 className="text-xl font-bold text-theme-main">{isEditing ? 'Edit Promotion' : 'Add New Promotion'}</h3></div>
-                <div className="p-6 space-y-4 overflow-y-auto">
-                    <input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Promotion Name (e.g., Weekend Sale)" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main" required />
-                    <div className="grid grid-cols-2 gap-4">
-                        <select name="type" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as PromotionType})} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main"><option value="PERCENTAGE_OFF">Percentage Off</option><option value="FIXED_AMOUNT_OFF">Fixed Amount Off</option></select>
-                        <input type="number" name="value" value={formData.value} onChange={e => setFormData({...formData, value: parseFloat(e.target.value) || 0})} placeholder={formData.type === 'PERCENTAGE_OFF' ? '% value' : '₹ value'} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main" required />
+            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-3xl shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-theme-main overflow-hidden">
+                <div className="p-6 border-b border-theme-main bg-theme-surface"><h3 className="text-2xl font-bold text-theme-main">{isEditing ? 'Edit Promotion' : 'Add New Promotion'}</h3></div>
+                <div className="p-6 space-y-6 overflow-y-auto bg-theme-main/30">
+                    <div>
+                        <label className="block text-sm font-semibold text-theme-main mb-1">Promotion Name</label>
+                        <p className="text-xs text-theme-muted mb-2">A clear name to identify this discount.</p>
+                        <input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g., Weekend Sale" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
                     </div>
-                    <h4 className="font-semibold pt-2 text-sm border-t border-theme-main text-theme-main">Conditions</h4>
-                    <div className="space-y-3">
-                        <div><label className="text-xs font-medium text-theme-muted">Minimum Purchase (₹)</label><input type="number" value={formData.conditions?.minPurchase || ''} onChange={e => handleConditionChange('minPurchase', parseFloat(e.target.value) || 0)} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main" placeholder="0 for no minimum" /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="text-xs font-medium text-theme-muted">Applies To</label>
-                            <select value={formData.conditions?.appliesTo} onChange={e => handleConditionChange('appliesTo', e.target.value as PromotionConditionTarget)} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main">
-                                <option value="ENTIRE_CART">Entire Cart</option>
-                                <option value="SPECIFIC_PRODUCTS">Specific Products</option>
-                                <option value="SPECIFIC_CATEGORIES">Specific Categories</option>
-                            </select>
+                            <label className="block text-sm font-semibold text-theme-main mb-1">Discount Type</label>
+                            <p className="text-xs text-theme-muted mb-2">How the discount is calculated.</p>
+                            <select name="type" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as PromotionType})} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"><option value="PERCENTAGE_OFF">Percentage Off</option><option value="FIXED_AMOUNT_OFF">Fixed Amount Off</option></select>
                         </div>
-                        {formData.conditions?.appliesTo === 'SPECIFIC_PRODUCTS' && (
-                            <div className="max-h-40 overflow-y-auto p-2 border rounded border-theme-main">
-                                {products.flatMap(p => p.variants).map(v => (
-                                    <label key={v.id} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-theme-main text-theme-main">
-                                        <input type="checkbox" checked={formData.conditions?.applicableIds?.includes(v.id)} onChange={() => handleApplicableIdChange(v.id)} />
-                                        {products.find(p => p.id === v.productId)?.name} - {v.name}
-                                    </label>
-                                ))}
+                        <div>
+                            <label className="block text-sm font-semibold text-theme-main mb-1">Discount Value</label>
+                            <p className="text-xs text-theme-muted mb-2">The amount or percentage to deduct.</p>
+                            <input type="number" name="value" value={formData.value} onChange={e => setFormData({...formData, value: parseFloat(e.target.value) || 0})} placeholder={formData.type === 'PERCENTAGE_OFF' ? '% value' : '₹ value'} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                        </div>
+                    </div>
+                    <div className="pt-4 border-t border-theme-main">
+                        <h4 className="font-bold text-lg text-theme-main mb-4">Conditions</h4>
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-sm font-semibold text-theme-main mb-1">Minimum Purchase (₹)</label>
+                                <p className="text-xs text-theme-muted mb-2">The minimum cart total required to apply this promotion.</p>
+                                <input type="number" value={formData.conditions?.minPurchase || ''} onChange={e => handleConditionChange('minPurchase', parseFloat(e.target.value) || 0)} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" placeholder="0 for no minimum" />
                             </div>
-                        )}
-                        {formData.conditions?.appliesTo === 'SPECIFIC_CATEGORIES' && (
-                            <div className="max-h-40 overflow-y-auto p-2 border rounded border-theme-main">
-                                {allSubCategories.map(cat => (
-                                     <label key={cat} className="flex items-center gap-2 text-sm p-1 rounded hover:bg-theme-main text-theme-main">
-                                        <input type="checkbox" checked={formData.conditions?.applicableIds?.includes(cat)} onChange={() => handleApplicableIdChange(cat)} />
-                                        {cat}
-                                    </label>
-                                ))}
+                            <div>
+                                <label className="block text-sm font-semibold text-theme-main mb-1">Applies To</label>
+                                <p className="text-xs text-theme-muted mb-2">Which items this promotion is valid for.</p>
+                                <select value={formData.conditions?.appliesTo} onChange={e => handleConditionChange('appliesTo', e.target.value as PromotionConditionTarget)} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all">
+                                    <option value="ENTIRE_CART">Entire Cart</option>
+                                    <option value="SPECIFIC_PRODUCTS">Specific Products</option>
+                                    <option value="SPECIFIC_CATEGORIES">Specific Categories</option>
+                                </select>
                             </div>
-                        )}
+                            {formData.conditions?.appliesTo === 'SPECIFIC_PRODUCTS' && (
+                                <div className="max-h-48 overflow-y-auto p-4 rounded-xl border border-theme-main bg-theme-surface shadow-inner">
+                                    {products.flatMap(p => p.variants).map(v => (
+                                        <label key={v.id} className="flex items-center gap-3 text-sm p-2 rounded-lg hover:bg-theme-main text-theme-main cursor-pointer transition-colors">
+                                            <input type="checkbox" checked={formData.conditions?.applicableIds?.includes(v.id)} onChange={() => handleApplicableIdChange(v.id)} className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500" />
+                                            {products.find(p => p.id === v.productId)?.name} - {v.name}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                            {formData.conditions?.appliesTo === 'SPECIFIC_CATEGORIES' && (
+                                <div className="max-h-48 overflow-y-auto p-4 rounded-xl border border-theme-main bg-theme-surface shadow-inner">
+                                    {allSubCategories.map(cat => (
+                                         <label key={cat} className="flex items-center gap-3 text-sm p-2 rounded-lg hover:bg-theme-main text-theme-main cursor-pointer transition-colors">
+                                            <input type="checkbox" checked={formData.conditions?.applicableIds?.includes(cat)} onChange={() => handleApplicableIdChange(cat)} className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500" />
+                                            {cat}
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-                <div className="p-4 border-t border-theme-main mt-auto bg-theme-main flex justify-end gap-4">
-                     <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-theme-surface text-theme-main hover:bg-theme-main border border-theme-main transition">Cancel</button>
-                     <button type="submit" className="px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm">Save</button>
+                <div className="p-6 border-t border-theme-main bg-theme-surface flex justify-end gap-4">
+                     <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
+                     <button type="submit" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save</button>
                 </div>
             </form>
         </div>
@@ -166,7 +208,7 @@ interface SettingsProps {
 
 const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSaveUser, onDeleteUser, onSavePromotion, onDeletePromotion, onTogglePromotionStatus, onHardReset, onRestoreItem, uiScale, setUiScale, isTutorialActive, onStartTutorial, onEndTutorial, modalState, setModalState, onDeleteAccount }) => {
     const { products, users, promotions, history, stockAdjustments, expenses, appSettings } = accountState;
-    const [activeTab, setActiveTab] = useState<SettingsTab>('general');
+    const [activeTab, setActiveTab] = useState<SettingsTab | null>(() => typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'general' : null);
     const { theme, setTheme, accentColor, setAccentColor } = useContext(ThemeContext);
 
     const [resetConfirm, setResetConfirm] = useState(false);
@@ -215,10 +257,45 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
         switch (activeTab) {
             case 'general':
                 return (
-                    <div className="space-y-4">
-                        <input value={appSettings.shopName} onChange={e => handleAppSettingsChange('shopName', e.target.value)} placeholder="Shop Name" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
-                        <input value={appSettings.upiId} onChange={e => handleAppSettingsChange('upiId', e.target.value)} placeholder="UPI ID (for QR codes)" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
-                        <input value={appSettings.receiptFooter} onChange={e => handleAppSettingsChange('receiptFooter', e.target.value)} placeholder="Receipt Footer Message" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
+                    <div className="space-y-6 max-w-3xl">
+                        <div className="bg-theme-surface rounded-3xl p-6 border border-theme-main shadow-sm">
+                            <h2 className="text-xl font-bold text-theme-main mb-6">Business Information</h2>
+                            
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-theme-main mb-1">Shop Name</label>
+                                    <p className="text-xs text-theme-muted mb-2">The official name of your business as it appears on receipts and the dashboard.</p>
+                                    <input 
+                                        value={appSettings.shopName} 
+                                        onChange={e => handleAppSettingsChange('shopName', e.target.value)} 
+                                        placeholder="e.g., Nexus POS Store" 
+                                        className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" 
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-theme-main mb-1">UPI ID (for QR Codes)</label>
+                                    <p className="text-xs text-theme-muted mb-2">Your business UPI ID. This will be used to generate payment QR codes on customer receipts.</p>
+                                    <input 
+                                        value={appSettings.upiId} 
+                                        onChange={e => handleAppSettingsChange('upiId', e.target.value)} 
+                                        placeholder="e.g., yourname@upi" 
+                                        className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" 
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-theme-main mb-1">Receipt Footer Message</label>
+                                    <p className="text-xs text-theme-muted mb-2">A custom message printed at the bottom of customer receipts.</p>
+                                    <input 
+                                        value={appSettings.receiptFooter} 
+                                        onChange={e => handleAppSettingsChange('receiptFooter', e.target.value)} 
+                                        placeholder="e.g., Thank you for shopping with us!" 
+                                        className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" 
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 );
             case 'appearance': {
@@ -405,11 +482,30 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                 </div>
             );
             case 'help': return (
-                <div className="space-y-4">
-                    <button onClick={isTutorialActive ? onEndTutorial : onStartTutorial} className="w-full text-left p-4 rounded-lg bg-theme-main hover:bg-theme-surface border border-theme-main text-theme-main">
-                        <h3 className="font-semibold">{isTutorialActive ? 'End Tutorial' : 'Restart Welcome Tutorial'}</h3>
-                        <p className="text-sm text-theme-muted">Get a guided tour of the application's main features.</p>
-                    </button>
+                <div className="space-y-4 max-w-3xl">
+                    <div className="bg-theme-surface rounded-3xl p-6 border border-theme-main shadow-sm">
+                        <h2 className="text-xl font-bold text-theme-main mb-4">Help & Support</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <a href="mailto:core.inbox1999@gmail.com" className="flex items-center gap-4 p-4 rounded-2xl bg-theme-main hover:bg-theme-surface border border-theme-main transition-colors group">
+                                <div className="w-12 h-12 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
+                                    <Icon name="send" className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-theme-main">Email Support</h3>
+                                    <p className="text-sm text-theme-muted">core.inbox1999@gmail.com</p>
+                                </div>
+                            </a>
+                            <button onClick={isTutorialActive ? onEndTutorial : onStartTutorial} className="flex items-center gap-4 p-4 rounded-2xl bg-theme-main hover:bg-theme-surface border border-theme-main transition-colors group text-left">
+                                <div className="w-12 h-12 rounded-full bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
+                                    <Icon name="star" className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-theme-main">{isTutorialActive ? 'End Tutorial' : 'App Tour'}</h3>
+                                    <p className="text-sm text-theme-muted">Guided walkthrough</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             );
             case 'about': return (
@@ -427,11 +523,20 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                             <p className="text-theme-muted"><span className="font-medium text-theme-main">Instagram:</span> <a href="https://instagram.com/core_dev.ansh" target="_blank" rel="noopener noreferrer" className="text-primary-500 hover:underline">@core_dev.ansh</a></p>
                         </div>
 
-                        <div className="w-full bg-theme-main rounded-2xl p-6 text-left border border-theme-main">
+                        <div className="w-full bg-theme-main rounded-2xl p-6 mb-6 text-left border border-theme-main">
                             <h3 className="text-lg font-semibold text-theme-main mb-2">Thank You</h3>
                             <p className="text-theme-muted leading-relaxed">
                                 Thank you for using Nexus POS! We built this application to help businesses manage their operations smoothly and efficiently. Your support means the world to us.
                             </p>
+                        </div>
+
+                        <div className="w-full bg-theme-main rounded-2xl p-6 flex flex-col items-center justify-center border border-theme-main">
+                            <h3 className="text-lg font-semibold text-theme-main mb-2">Support the Developer</h3>
+                            <p className="text-sm text-theme-muted mb-4 text-center">If you find this app helpful, consider buying me a coffee!</p>
+                            <div className="bg-white p-2 rounded-xl shadow-sm mb-2">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=6351790053@fam&pn=Ansh%20Singh" alt="Donation QR Code" className="w-32 h-32" />
+                            </div>
+                            <p className="text-xs font-mono text-theme-muted">UPI: 6351790053@fam</p>
                         </div>
                     </div>
 
@@ -465,22 +570,28 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
         <div className="space-y-6">
             <h1 className="text-3xl font-bold text-theme-main">Settings</h1>
             <div className="flex flex-col lg:flex-row gap-8">
-                <nav className="lg:w-1/4 xl:w-1/5">
-                    <ul className="space-y-1">
+                <nav className={`lg:w-1/4 xl:w-1/5 ${activeTab ? 'hidden lg:block' : 'block'}`}>
+                    <ul className="space-y-2">
                         {TABS.map(tab => (
                             <li key={tab.id}>
-                                <Tooltip content={`Go to ${tab.label} settings`} position="right">
-                                    <button onClick={() => setActiveTab(tab.id)} className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-md font-semibold text-sm transition-colors ${activeTab === tab.id ? 'bg-theme-surface text-primary-500 border border-theme-main shadow-sm' : 'text-theme-muted hover:bg-theme-main hover:text-theme-main'}`}>
-                                        <Icon name={tab.icon} className="w-5 h-5"/>
-                                        {tab.label}
-                                    </button>
-                                </Tooltip>
+                                <button onClick={() => setActiveTab(tab.id)} className={`w-full text-left flex items-center gap-4 px-4 py-4 rounded-2xl font-semibold text-sm transition-colors ${activeTab === tab.id ? 'bg-theme-surface text-primary-500 border border-theme-main shadow-sm' : 'bg-theme-main text-theme-muted hover:bg-theme-surface hover:text-theme-main border border-transparent'}`}>
+                                    <Icon name={tab.icon} className="w-6 h-6"/>
+                                    <span className="text-base">{tab.label}</span>
+                                    <Icon name="arrow-right" className="w-5 h-5 ml-auto lg:hidden opacity-50" />
+                                </button>
                             </li>
                         ))}
                     </ul>
                 </nav>
-                <div className="flex-1">
-                    {renderContent()}
+                <div className={`flex-1 ${!activeTab ? 'hidden lg:block' : 'block'}`}>
+                    {activeTab && (
+                        <div className="lg:hidden mb-6">
+                            <button onClick={() => setActiveTab(null)} className="flex items-center gap-2 text-theme-muted hover:text-theme-main font-medium bg-theme-surface px-4 py-2 rounded-full border border-theme-main shadow-sm">
+                                <Icon name="arrow-left" className="w-5 h-5" /> Back to Settings
+                            </button>
+                        </div>
+                    )}
+                    {activeTab && renderContent()}
                 </div>
             </div>
             {(modalState.type === 'add_user' || modalState.type === 'edit_user') && <StaffModal user={modalState.data} onClose={() => setModalState({ type: null, data: null})} onSave={(user) => { onSaveUser(user); setModalState({ type: null, data: null }); }} />}
@@ -525,21 +636,25 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
             {/* Business Delete Modal */}
             {businessDeleteConfirm && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-                    <div className="bg-theme-surface rounded-lg shadow-xl max-w-md w-full border border-theme-main">
-                         <div className="p-6 text-center">
-                            <h3 className="text-lg font-bold text-red-500">Delete Business</h3>
-                             <p className="text-sm text-theme-muted mt-2">This action is permanent and cannot be undone. All data associated with "{appSettings.shopName}" will be erased.</p>
-                             <p className="text-sm text-theme-muted mt-4">To confirm, type the name of the business below:</p>
-                            <input
-                                type="text"
-                                value={businessDeleteName}
-                                onChange={e => setBusinessDeleteName(e.target.value)}
-                                className="w-full mt-2 p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-red-500"
-                                placeholder={appSettings.shopName}
-                            />
+                    <div className="bg-theme-surface rounded-3xl shadow-xl max-w-md w-full border border-theme-main overflow-hidden">
+                         <div className="p-8 text-center">
+                            <h3 className="text-2xl font-bold text-red-500 mb-2">Delete Business</h3>
+                             <p className="text-sm text-theme-muted mb-6">This action is permanent and cannot be undone. All data associated with "{appSettings.shopName}" will be erased.</p>
+                             
+                             <div className="text-left">
+                                 <label className="block text-sm font-semibold text-theme-main mb-1">Confirm Business Name</label>
+                                 <p className="text-xs text-theme-muted mb-2">To confirm, type the name of the business below:</p>
+                                <input
+                                    type="text"
+                                    value={businessDeleteName}
+                                    onChange={e => setBusinessDeleteName(e.target.value)}
+                                    className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-red-500 focus:outline-none transition-all"
+                                    placeholder={appSettings.shopName}
+                                />
+                             </div>
                         </div>
-                        <div className="p-4 bg-theme-main flex justify-end gap-4">
-                            <button onClick={() => { setBusinessDeleteConfirm(false); setBusinessDeleteName(''); }} className="px-4 py-2 rounded-lg bg-theme-surface text-theme-main hover:bg-theme-main border border-theme-main transition">Cancel</button>
+                        <div className="p-6 bg-theme-main flex justify-end gap-4 border-t border-theme-main">
+                            <button onClick={() => { setBusinessDeleteConfirm(false); setBusinessDeleteName(''); }} className="px-6 py-2.5 rounded-xl bg-theme-surface text-theme-main hover:bg-theme-main border border-theme-main transition font-medium">Cancel</button>
                             <button 
                                 onClick={async () => {
                                     if (businessDeleteName === appSettings.shopName) {
@@ -552,7 +667,7 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                                     }
                                 }}
                                 disabled={businessDeleteName !== appSettings.shopName}
-                                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition font-semibold disabled:opacity-50 shadow-sm"
+                                className="px-6 py-2.5 rounded-xl bg-red-500 text-white hover:bg-red-600 transition font-semibold disabled:opacity-50 shadow-sm"
                             >
                                 Delete Business
                             </button>

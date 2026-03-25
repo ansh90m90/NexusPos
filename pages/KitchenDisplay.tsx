@@ -20,29 +20,33 @@ const KDS: React.FC<KDSProps> = ({ orders, setOrders }) => {
     };
 
     return (
-        <div className="bg-gray-100 dark:bg-gray-900 p-4 h-full overflow-y-auto rounded-lg">
+        <div className="bg-theme-surface p-6 h-full overflow-y-auto rounded-3xl border border-theme-main shadow-sm animate-page-fade-in">
             {pendingOrders.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                    <div className="text-center text-gray-500">
-                        <Icon name="check" className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">All Caught Up!</h3>
-                        <p className="mt-1 text-sm">No pending orders in the kitchen.</p>
+                <div className="flex items-center justify-center h-full min-h-[400px]">
+                    <div className="text-center text-theme-muted">
+                        <div className="bg-theme-main w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border border-theme-main shadow-sm">
+                            <Icon name="check" className="h-10 w-10 text-primary-500" />
+                        </div>
+                        <h3 className="mt-2 text-xl font-bold text-theme-main">All Caught Up!</h3>
+                        <p className="mt-2 text-sm font-medium">No pending orders in the kitchen.</p>
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {pendingOrders.map(order => (
-                        <div key={order.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 flex flex-col justify-between modal-content">
+                        <div key={order.id} className="bg-theme-main rounded-3xl shadow-sm border border-theme-main p-5 flex flex-col justify-between hover:shadow-md transition-shadow">
                             <div>
-                                <div className="flex justify-between items-center border-b dark:border-gray-700 pb-2 mb-2">
-                                    <h3 className="text-xl font-bold text-primary-600 dark:text-primary-400">Order #{order.orderNumber}</h3>
-                                    <span className="text-xs text-gray-500">{new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <div className="flex justify-between items-center border-b border-theme-main pb-3 mb-4">
+                                    <h3 className="text-xl font-bold text-primary-500">Order #{order.orderNumber}</h3>
+                                    <span className="text-xs font-bold text-theme-muted uppercase tracking-wider bg-theme-surface px-2 py-1 rounded-lg border border-theme-main">
+                                        {new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
                                 </div>
-                                <ul className="space-y-2">
+                                <ul className="space-y-3">
                                     {order.items.map((item, index) => (
-                                        <li key={index} className="flex justify-between items-center">
-                                            <span className="font-semibold text-gray-800 dark:text-gray-200">{item.dish.name}</span>
-                                            <span className="font-bold text-lg">x{item.quantity}</span>
+                                        <li key={index} className="flex justify-between items-center bg-theme-surface p-3 rounded-xl border border-theme-main">
+                                            <span className="font-bold text-theme-main">{item.dish.name}</span>
+                                            <span className="font-bold text-lg text-primary-500 bg-primary-50 dark:bg-primary-900/20 px-3 py-1 rounded-lg">x{item.quantity}</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -50,9 +54,9 @@ const KDS: React.FC<KDSProps> = ({ orders, setOrders }) => {
                             <Tooltip content={`Mark Order #${order.orderNumber} as completed`} position="top">
                                 <button
                                     onClick={() => handleCompleteOrder(order.id)}
-                                    className="mt-4 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded transition-colors"
+                                    className="mt-6 w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2"
                                 >
-                                    Complete
+                                    <Icon name="check" className="w-5 h-5" /> Complete Order
                                 </button>
                             </Tooltip>
                         </div>

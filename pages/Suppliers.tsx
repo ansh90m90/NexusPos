@@ -27,14 +27,14 @@ const AddSupplierPaymentModal: React.FC<{
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-lg shadow-xl p-6 max-w-sm w-full border border-theme-main">
-                <h3 className="text-xl font-bold mb-2 text-theme-main">Add Payment</h3>
-                <p className="text-theme-muted mb-4">To: <span className="font-semibold text-theme-main">{supplier.name}</span></p>
+            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-3xl shadow-xl p-8 max-w-md w-full border border-theme-main">
+                <h3 className="text-2xl font-bold mb-2 text-theme-main">Add Payment</h3>
+                <p className="text-theme-muted mb-6">To: <span className="font-semibold text-theme-main">{supplier.name}</span></p>
                 
                 {supplier.upiId && paymentAmount > 0 && (
-                    <div className="flex flex-col items-center justify-center p-4 bg-theme-main rounded-xl border border-theme-main mb-4">
-                        <p className="text-sm font-bold text-theme-muted mb-2">Scan to Pay Supplier via UPI</p>
-                        <div className="bg-white p-2 rounded-xl">
+                    <div className="flex flex-col items-center justify-center p-6 bg-theme-main rounded-2xl border border-theme-main mb-6">
+                        <p className="text-sm font-bold text-theme-muted mb-3">Scan to Pay Supplier via UPI</p>
+                        <div className="bg-white p-3 rounded-2xl shadow-sm">
                             <QRCodeSVG 
                                 value={`upi://pay?pa=${supplier.upiId}&pn=${encodeURIComponent(supplier.name)}&am=${paymentAmount.toFixed(2)}&cu=INR`} 
                                 size={150} 
@@ -44,12 +44,18 @@ const AddSupplierPaymentModal: React.FC<{
                     </div>
                 )}
 
-                <label htmlFor="payment" className="block text-sm font-medium mb-1 text-theme-main">Enter Amount Paid</label>
-                <input id="payment" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" step="0.01" autoFocus required />
-                <p className="text-xs text-theme-muted mt-1">Current Due: ₹{supplier.creditBalance.toFixed(2)}</p>
-                <div className="flex justify-end gap-4 mt-6">
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition">Cancel</button>
-                    <button type="submit" className="px-6 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm">Add Payment</button>
+                <div className="space-y-5">
+                    <div>
+                        <label htmlFor="payment" className="block text-sm font-semibold mb-1 text-theme-main">Payment Amount</label>
+                        <input id="payment" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" step="0.01" autoFocus required placeholder="e.g., 500" />
+                        <p className="text-xs text-theme-muted mt-2">Enter the amount paid to the supplier.</p>
+                        <p className="text-xs text-theme-muted mt-1">Current Due: <span className="font-semibold">₹{supplier.creditBalance.toFixed(2)}</span></p>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-4 mt-8 border-t border-theme-main pt-4">
+                    <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
+                    <button type="submit" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Add Payment</button>
                 </div>
             </form>
         </div>
@@ -98,19 +104,43 @@ const SupplierPanel: React.FC<{
                         )}
                     </div>
                     <div className="flex gap-4">
-                        <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition">Cancel</button>
-                        <button type="submit" form="supplier-form" className="px-4 py-2 rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm">Save</button>
+                        <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
+                        <button type="submit" form="supplier-form" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save</button>
                     </div>
                 </div>
             }
         >
-            <form id="supplier-form" onSubmit={handleSubmit} className="space-y-4">
-                <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Company or Business Name" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" required />
-                <input name="contactPerson" value={formData.contactPerson} onChange={e => setFormData({ ...formData, contactPerson: e.target.value })} placeholder="Contact Person's Name (optional)" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
-                <input name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="Supplier's Phone Number" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
-                <input name="email" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="Supplier's Email Address" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
-                <input name="address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Supplier's Full Address" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
-                <input name="upiId" value={formData.upiId} onChange={e => setFormData({ ...formData, upiId: e.target.value })} placeholder="Supplier's UPI ID (e.g. name@bank)" className="w-full p-2 border rounded bg-theme-main text-theme-main border-theme-main focus:ring-1 focus:ring-primary-500" />
+            <form id="supplier-form" onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Company / Business Name</label>
+                    <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Acme Corp" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                    <p className="text-xs text-theme-muted mt-2">The official name of the supplier.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Contact Person</label>
+                    <input name="contactPerson" value={formData.contactPerson} onChange={e => setFormData({ ...formData, contactPerson: e.target.value })} placeholder="e.g., Jane Smith" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <p className="text-xs text-theme-muted mt-2">Name of your primary contact at the company.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Phone Number</label>
+                    <input name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="e.g., +91 98765 43210" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <p className="text-xs text-theme-muted mt-2">Primary contact number for the supplier.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Email Address</label>
+                    <input name="email" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="e.g., supplier@example.com" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <p className="text-xs text-theme-muted mt-2">Email for sending purchase orders or inquiries.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">Full Address</label>
+                    <input name="address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="e.g., 456 Market St, City" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <p className="text-xs text-theme-muted mt-2">Physical address of the supplier.</p>
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-theme-main mb-1">UPI ID</label>
+                    <input name="upiId" value={formData.upiId} onChange={e => setFormData({ ...formData, upiId: e.target.value })} placeholder="e.g., name@bank" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <p className="text-xs text-theme-muted mt-2">Used for making payments via UPI.</p>
+                </div>
             </form>
         </SlideOverPanel>
         <ConfirmationModal 
