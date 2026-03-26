@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User, AccountState, AccountInfo } from '../types';
+import { User, AccountState, BusinessInfo } from '../types';
 import { createTestAccountState } from '../data/mockData';
 import Icon from '../components/Icon';
 import { auth, db } from '../firebase';
@@ -9,7 +9,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { Tooltip } from '../components/Tooltip';
 
 interface LoginProps {
-    onLogin: (account: AccountState, user: User, accounts: AccountInfo[]) => void;
+    onLogin: (account: AccountState, user: User, accounts: BusinessInfo[]) => void;
 }
 
 const LeftPanel: React.FC = () => (
@@ -44,19 +44,20 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data();
+                const testAccount = createTestAccountState();
                 const user: User = {
                     id: firebaseUser.uid as any,
                     name: userData.name || firebaseUser.displayName || 'User',
                     email: userData.email || firebaseUser.email || '',
                     role: 'Admin',
+                    accountId: testAccount.id,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
                 
                 // For demo purposes, if no account state exists, we use mock data
                 // In a real app, we would fetch the account state from Firestore
-                const testAccount = createTestAccountState();
-                const accounts: AccountInfo[] = userData.accounts || [{ id: testAccount.id, name: testAccount.name }];
+                const accounts: BusinessInfo[] = userData.accounts || [{ id: testAccount.id, name: testAccount.name }];
                 
                 onLogin(testAccount, user, accounts);
             } else {
@@ -67,6 +68,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     name: firebaseUser.displayName || 'User',
                     email: firebaseUser.email || '',
                     role: 'Admin',
+                    accountId: testAccount.id,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
@@ -82,22 +84,21 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const handleDemoLogin = () => {
         setIsLoading(true);
         setError('');
-        try {
-            // Use a timeout to simulate a brief loading period for better UX
-            setTimeout(() => {
+        setTimeout(() => {
+            try {
                 const testAccount = createTestAccountState();
                 const demoUser = testAccount.users.find(u => u.role === 'Admin')!;
-                const demoAccountInfo: AccountInfo = {
+                const demoAccountInfo: BusinessInfo = {
                     id: testAccount.id,
                     name: testAccount.name
                 };
                 onLogin(testAccount, demoUser, [demoAccountInfo]);
-            }, 500);
-        } catch (err) {
-            console.error("Failed to load demo account. Details:", err);
-            setError("Failed to load demo account. Something went wrong with the mock data generator.");
-            setIsLoading(false);
-        }
+            } catch (err) {
+                console.error("Failed to load demo account. Details:", err);
+                setError("Failed to load demo account. Something went wrong with the mock data generator.");
+                setIsLoading(false);
+            }
+        }, 500);
     };
 
     return (

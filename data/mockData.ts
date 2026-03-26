@@ -11,7 +11,6 @@ export const createInitialAccountState = (id: string, name: string, shopTypes: S
       enableRashanCategory: false,
       enableAdvancedInventory: true,
       enableStaffManagement: true,
-      enableAiFeatures: true,
       enableCreditSystem: true,
       enableWholesale: true,
       receiptFooter: 'Thank you for your visit!',
@@ -88,7 +87,7 @@ export const createTestAccountState = (): AccountState => {
     state.isTest = true;
     state.appSettings.tutorialCompleted = true;
 
-    state.users.push({ id: 999, name: 'Demo User', email: 'demo@example.com', role: 'Admin', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    state.users.push({ id: '999', name: 'Demo User', email: 'demo@example.com', role: 'Admin', accountId: 'test-account', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     
     supplierNames.forEach((name, i) => state.suppliers.push({ 
         id: i + 1, 

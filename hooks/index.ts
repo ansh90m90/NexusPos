@@ -1,9 +1,9 @@
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { applyOperation } from '../reducer';
 import type { AccountState, User, Promotion, Dish, RawMaterial, Supplier, PurchaseOrder, Batch, StockAdjustmentReason, ItemType, Expense, AppSettings, HeldCart, Operation } from '../types';
 import { saveBusinessState, pushOperation, subscribeToOperations } from '../services/syncService';
-import type { ToastContextType } from '../components/Toast';
+import type { ToastContextType } from '../components/ToastContext';
 
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'offline';
 

@@ -71,14 +71,10 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                         // Remove empty batches
                         newState.batches = newState.batches.filter(b => b.quantity > 0);
 
-                        // Recalculate total stock for the variant from remaining batches to ensure consistency
                         const product = newState.products.find(p => String(p.id) === String(item.productId));
                         const variant = product?.variants.find(v => String(v.id) === String(variantId));
                         if (variant) {
-                            const newStock = newState.batches
-                                .filter(b => String(b.variantId) === String(variantId))
-                                .reduce((sum, b) => sum + b.quantity, 0);
-                            variant.stock = newStock;
+                            variant.stock -= cartItem.quantity;
                         }
                     } else {
                         // Simple logic if advanced inventory is off
@@ -185,23 +181,24 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                     const variant = product?.variants.find(v => String(v.id) === String(item.id));
                     if (variant) {
                         if (newState.appSettings.enableAdvancedInventory) {
-                            // Create a return batch instead of just adding to stock
-                            const newReturnBatch: Batch = {
-                                id: `B-RET-${Date.now()}-${variant.id}`,
-                                variantId: variant.id,
-                                quantity: cartItem.quantity,
-                                receivedDate: now, // The date of the return
-                                netPurchasePrice: variant.netPurchasePrice, // Use the variant's average price
-                                batchNumber: 'RETURN'
-                            };
-                            newState.batches.push(newReturnBatch);
-
-                            // Recalculate total stock for consistency
-                            const newStock = newState.batches
-                                .filter(b => String(b.variantId) === String(variant.id))
-                                .reduce((sum, b) => sum + b.quantity, 0);
-                            variant.stock = newStock;
-
+                            let quantityToAdd = cartItem.quantity;
+                            if (variant.stock < 0) {
+                                const amountToCover = Math.min(Math.abs(variant.stock), quantityToAdd);
+                                quantityToAdd -= amountToCover;
+                            }
+                            if (quantityToAdd > 0) {
+                                // Create a return batch instead of just adding to stock
+                                const newReturnBatch: Batch = {
+                                    id: `B-RET-${Date.now()}-${variant.id}`,
+                                    variantId: variant.id,
+                                    quantity: quantityToAdd,
+                                    receivedDate: now, // The date of the return
+                                    netPurchasePrice: variant.netPurchasePrice, // Use the variant's average price
+                                    batchNumber: 'RETURN'
+                                };
+                                newState.batches.push(newReturnBatch);
+                            }
+                            variant.stock += cartItem.quantity;
                         } else {
                             // Simple logic: just add back to stock
                             variant.stock += cartItem.quantity;
@@ -274,10 +271,54 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                                     }
                                 }
                                 if (variantChanges.length > 0) changes.push(...variantChanges);
+
+                                if (newState.appSettings.enableAdvancedInventory && v.stock !== undefined && v.stock !== originalVariant.stock) {
+                                    const currentBatchesSum = newState.batches
+                                        .filter(b => String(b.variantId) === String(v.id))
+                                        .reduce((sum, b) => sum + b.quantity, 0);
+                                    const targetBatchesSum = Math.max(0, v.stock);
+                                    const batchDiff = targetBatchesSum - currentBatchesSum;
+
+                                    if (batchDiff > 0) {
+                                        newState.batches.push({
+                                            id: `B-INIT-${Date.now()}-${v.id}`,
+                                            variantId: v.id,
+                                            quantity: batchDiff,
+                                            receivedDate: now,
+                                            netPurchasePrice: v.netPurchasePrice || 0,
+                                            batchNumber: 'INIT-ADD'
+                                        });
+                                    } else if (batchDiff < 0) {
+                                        let quantityToRemove = Math.abs(batchDiff);
+                                        const relevantBatches = newState.batches
+                                            .filter(b => String(b.variantId) === String(v.id))
+                                            .sort((a, b) => new Date(a.receivedDate).getTime() - new Date(b.receivedDate).getTime());
+
+                                        for (const batch of relevantBatches) {
+                                            if (quantityToRemove <= 0) break;
+                                            const deductFromThisBatch = Math.min(quantityToRemove, batch.quantity);
+                                            batch.quantity -= deductFromThisBatch;
+                                            quantityToRemove -= deductFromThisBatch;
+                                        }
+                                        newState.batches = newState.batches.filter(b => b.quantity > 0);
+                                    }
+                                }
+
                                 return { ...originalVariant, ...v, updatedAt: now };
                             }
                             changes.push(`Added new variant: '${v.name}'`);
-                            return { ...v, id: getNextId(allVariants), productId: updatedProduct.id, createdAt: now, updatedAt: now };
+                            const newId = getNextId(allVariants);
+                            if (newState.appSettings.enableAdvancedInventory && v.stock && v.stock > 0) {
+                                newState.batches.push({
+                                    id: `B-INIT-${Date.now()}-${newId}`,
+                                    variantId: newId,
+                                    quantity: v.stock,
+                                    receivedDate: now,
+                                    netPurchasePrice: v.netPurchasePrice || 0,
+                                    batchNumber: 'INIT-ADD'
+                                });
+                            }
+                            return { ...v, id: newId, productId: updatedProduct.id, createdAt: now, updatedAt: now };
                         });
                     }
                     
@@ -304,6 +345,16 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                     const newId = getNextId(allVariants);
                     const newV = { ...v, id: newId, productId: newProduct.id, createdAt: now, updatedAt: now } as ProductVariant;
                     allVariants.push(newV);
+                    if (newState.appSettings.enableAdvancedInventory && newV.stock > 0) {
+                        newState.batches.push({
+                            id: `B-INIT-${Date.now()}-${newId}`,
+                            variantId: newId,
+                            quantity: newV.stock,
+                            receivedDate: now,
+                            netPurchasePrice: newV.netPurchasePrice || 0,
+                            batchNumber: 'INIT-ADD'
+                        });
+                    }
                     return newV;
                 });
                 newState.products.push(newProduct);
@@ -499,21 +550,31 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                 if(variant && matchingItem) {
                     const batchNetPrice = matchingItem.netRate;
                     // Update variant stock and average cost price
-                    const oldTotalValue = variant.stock * variant.netPurchasePrice;
+                    const oldTotalValue = Math.max(0, variant.stock) * variant.netPurchasePrice;
                     const newBatchValue = batch.quantity * batchNetPrice;
+                    
+                    let quantityToAdd = batch.quantity;
+                    if (variant.stock < 0) {
+                        const amountToCover = Math.min(Math.abs(variant.stock), quantityToAdd);
+                        quantityToAdd -= amountToCover;
+                    }
+
                     variant.stock += batch.quantity;
                     const newAverageCost = variant.stock > 0 ? (oldTotalValue + newBatchValue) / variant.stock : batchNetPrice;
                     variant.netPurchasePrice = parseFloat(newAverageCost.toFixed(4));
                     variant.updatedAt = now;
                     
-                    // Add the new batch
-                    newState.batches.push({ 
-                        ...batch, 
-                        variantId: variantIdForBatch,
-                        id: `B-${Date.now()}-${Math.random()}`, 
-                        receivedDate: order.date,
-                        netPurchasePrice: batchNetPrice
-                    } as Batch);
+                    if (quantityToAdd > 0) {
+                        // Add the new batch
+                        newState.batches.push({ 
+                            ...batch, 
+                            quantity: quantityToAdd,
+                            variantId: variantIdForBatch,
+                            id: `B-${Date.now()}-${Math.random()}`, 
+                            receivedDate: order.date,
+                            netPurchasePrice: batchNetPrice
+                        } as Batch);
+                    }
                 }
             });
             return newState;
@@ -711,15 +772,22 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
             if (variant) {
                 if (newState.appSettings.enableAdvancedInventory) {
                     if (quantityChange > 0) { // Adding stock
-                        const newBatch: Batch = {
-                            id: `B-ADJ-${Date.now()}-${variantId}`,
-                            variantId: variantId,
-                            quantity: quantityChange,
-                            receivedDate: now,
-                            netPurchasePrice: variant.netPurchasePrice, // Use current average cost for the adjustment
-                            batchNumber: 'ADJUST-ADD'
-                        };
-                        newState.batches.push(newBatch);
+                        let quantityToAdd = quantityChange;
+                        if (variant.stock < 0) {
+                            const amountToCover = Math.min(Math.abs(variant.stock), quantityToAdd);
+                            quantityToAdd -= amountToCover;
+                        }
+                        if (quantityToAdd > 0) {
+                            const newBatch: Batch = {
+                                id: `B-ADJ-${Date.now()}-${variantId}`,
+                                variantId: variantId,
+                                quantity: quantityToAdd,
+                                receivedDate: now,
+                                netPurchasePrice: variant.netPurchasePrice, // Use current average cost for the adjustment
+                                batchNumber: 'ADJUST-ADD'
+                            };
+                            newState.batches.push(newBatch);
+                        }
                     } else { // Removing stock
                         let quantityToRemove = Math.abs(quantityChange);
                         const relevantBatches = newState.batches
@@ -734,11 +802,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                         }
                         newState.batches = newState.batches.filter(b => b.quantity > 0);
                     }
-                    // Always recalculate total stock from batches to ensure consistency
-                    const newStock = newState.batches
-                        .filter(b => b.variantId === variantId)
-                        .reduce((sum, b) => sum + b.quantity, 0);
-                    variant.stock = newStock;
+                    variant.stock += quantityChange;
                 } else {
                     // Simple logic when advanced inventory is off
                     variant.stock += quantityChange;

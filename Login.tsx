@@ -351,13 +351,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, onDeleteBusiness }) => {
         setIsLoading(true);
         setError('');
         setTimeout(() => {
-            const testAccount = createTestAccountState();
-            const demoUser = testAccount.users.find(u => u.role === 'Admin')!;
-            const demoBusinessInfo: BusinessInfo = {
-                id: testAccount.id,
-                name: testAccount.name
-            };
-            onLogin(testAccount, demoUser as any, [demoBusinessInfo]);
+            try {
+                const testAccount = createTestAccountState();
+                const demoUser = testAccount.users.find(u => u.role === 'Admin')!;
+                const demoBusinessInfo: BusinessInfo = {
+                    id: testAccount.id,
+                    name: testAccount.name
+                };
+                onLogin(testAccount, demoUser as any, [demoBusinessInfo]);
+            } catch (err) {
+                console.error("Failed to load demo account. Details:", err);
+                setError("Failed to load demo account. Something went wrong with the mock data generator.");
+                setIsLoading(false);
+            }
         }, 500);
     };
 

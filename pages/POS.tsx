@@ -833,11 +833,11 @@ const POS: React.FC<POSProps> = (props) => {
     const handleHoldCart = useCallback(() => {
         if (cart.length === 0) return;
         const newHeldCart: HeldCart = {
-            id: Date.now(),
+            id: Date.now().toString(),
+            name: customer ? `Order for ${customer.name}` : `Order ${Date.now().toString().slice(-4)}`,
+            cart: cart,
             customer: customer || undefined,
-            items: cart,
-            date: new Date().toISOString(),
-            total: cart.reduce((sum, i) => sum + i.appliedPrice * i.quantity, 0)
+            date: new Date().toISOString()
         };
         setHeldCarts(prev => [...prev, newHeldCart]);
         setCart([]);

@@ -24,8 +24,6 @@ const NotificationBell: React.FC<NotificationBellProps> = ({ notifications, onOp
 
     const getIcon = (type: AppNotification['type']) => {
         switch (type) {
-            case 'ai_suggestion':
-                return <span className="text-blue-500">💡</span>;
             case 'low_stock':
                 return <span className="text-red-500">📦</span>;
             case 'expiring':
