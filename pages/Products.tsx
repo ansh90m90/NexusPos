@@ -7,7 +7,7 @@ import Icon from '../components/Icon';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { Tooltip } from '../components/Tooltip';
 import ComboBox from '../components/ComboBox';
-import { fuzzySearch } from '../lib/searchUtils';
+import { fuzzySearch, normalizePhonetic } from '../lib/searchUtils';
 
 type ProductSortKeys = 'name' | 'subCategory' | 'supplier' | 'variants';
 type SortDirection = 'asc' | 'desc';
@@ -73,7 +73,20 @@ const ProductPanel: React.FC<{
 
     const uniqueSuppliers = useMemo(() => [...new Set(suppliers.map(s => s.name))].sort(), [suppliers]);
     const uniqueSubCategories = useMemo(() => [...new Set(products.map(p => p.subCategory).filter(Boolean) as string[])].sort(), [products]);
-    const commonHsnCodes = ['1006', '1001', '1905', '2106', '0902', '1701', '1512']; // Rice, Wheat, Biscuits, Snacks, Tea, Sugar, Oil
+    const uniqueHsnCodes = useMemo(() => {
+        const fromProducts = products.map(p => p.hsnCode).filter(Boolean) as string[];
+        const defaults = ['1006', '1001', '1905', '2106', '0902', '1701', '1512'];
+        return [...new Set([...defaults, ...fromProducts])].sort();
+    }, [products]);
+
+    const similarProduct = useMemo(() => {
+        if (!formData.name || formData.name.trim().length < 3) return null;
+        return products.find(p => 
+            p.id !== product?.id && 
+            !p.isDeleted &&
+            (p.name.toLowerCase() === formData.name?.toLowerCase() || normalizePhonetic(p.name) === normalizePhonetic(formData.name!))
+        );
+    }, [formData.name, products, product?.id]);
 
     const handleMainChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -148,7 +161,13 @@ const ProductPanel: React.FC<{
             <form id="product-form" onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-1">
                     <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Product Name *</label>
-                    <input name="name" value={formData.name} onChange={handleMainChange} placeholder="e.g., Lays Classic" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required/>
+                    <input name="name" value={formData.name} onChange={handleMainChange} placeholder="e.g., Lays Classic" className={`w-full p-3 rounded-xl bg-theme-main text-theme-main border focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all ${similarProduct ? 'border-yellow-500' : 'border-theme-main'}`} required/>
+                    {similarProduct && (
+                        <div className="flex items-center gap-2 mt-1 text-yellow-600 dark:text-yellow-400 text-[10px] font-bold uppercase animate-pulse">
+                            <Icon name="alert" className="w-3 h-3" />
+                            <span>Warning: Similar product already exists ({similarProduct.name})</span>
+                        </div>
+                    )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -264,7 +283,7 @@ const ProductPanel: React.FC<{
                             label="HSN Code"
                             value={formData.hsnCode || ''}
                             onChange={(val) => setFormData(prev => ({ ...prev, hsnCode: val }))}
-                            options={commonHsnCodes}
+                            options={uniqueHsnCodes}
                             placeholder="e.g., 1006"
                         />
                     </div>
