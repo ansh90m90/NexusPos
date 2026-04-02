@@ -69,10 +69,11 @@ const ReceiveStockModal: React.FC<{
                 '33DDDDD3333D1Z9': { name: 'South Connect Logistics', address: '12, Anna Salai, Little Mount, Chennai, Tamil Nadu 600015', contact: 'Meera Iyer' },
                 '19EEEEE4444E1Z7': { name: 'Eastern Enterprises', address: 'Salt Lake City, Sector V, Kolkata, West Bengal 700091', contact: 'Amit Banerjee' },
                 '24ECBPP9497K1ZT': { name: 'Gujarat Garment Hub', address: 'Shop 45, Textile Market, Ring Road, Surat, Gujarat 395002', contact: 'Pankaj Patel' },
+                '29FFFFF5555F1Z4': { name: 'Karnataka Tech Supplies', address: '101, MG Road, Bangalore, Karnataka 560001', contact: 'Kiran Rao' },
             };
             const details = mockDetails[newSupplierGstin.toUpperCase()] || {
                 name: `Business ${newSupplierGstin.slice(0, 5)}`,
-                address: 'Plot No. ' + Math.floor(Math.random() * 500) + ', Industrial Area, Phase ' + (Math.floor(Math.random() * 3) + 1) + ', Business District, State Code ' + newSupplierGstin.slice(0, 2),
+                address: `Plot No. ${Math.floor(Math.random() * 500)}, Industrial Area, Phase ${Math.floor(Math.random() * 3) + 1}, Business District, State Code ${newSupplierGstin.slice(0, 2)}`,
                 contact: 'Authorized Signatory'
             };
             setSupplierName(details.name);

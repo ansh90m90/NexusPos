@@ -76,17 +76,21 @@ const ProductPanel: React.FC<{
     const uniqueHsnCodes = useMemo(() => {
         const fromProducts = products.map(p => p.hsnCode).filter(Boolean) as string[];
         const defaults = ['1006', '1001', '1905', '2106', '0902', '1701', '1512'];
-        return [...new Set([...defaults, ...fromProducts])].sort();
-    }, [products]);
+        // Ensure the current formData.hsnCode is also in the list if it's not already
+        const current = formData.hsnCode ? [formData.hsnCode] : [];
+        return [...new Set([...defaults, ...fromProducts, ...current])].sort();
+    }, [products, formData.hsnCode]);
 
     const similarProduct = useMemo(() => {
         if (!formData.name || formData.name.trim().length < 3) return null;
         return products.find(p => 
             p.id !== product?.id && 
             !p.isDeleted &&
-            (p.name.toLowerCase() === formData.name?.toLowerCase() || normalizePhonetic(p.name) === normalizePhonetic(formData.name!))
+            (p.name.toLowerCase().trim() === formData.name?.toLowerCase().trim() || normalizePhonetic(p.name) === normalizePhonetic(formData.name!))
         );
     }, [formData.name, products, product?.id]);
+
+    const [showDuplicateConfirm, setShowDuplicateConfirm] = useState(false);
 
     const handleMainChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -142,12 +146,17 @@ const ProductPanel: React.FC<{
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (similarProduct && !showDuplicateConfirm) {
+            setShowDuplicateConfirm(true);
+            return;
+        }
         onSave(formData);
     };
 
     const isPerUnit = formData.pricingType === 'per_unit';
 
     return (
+        <>
         <SlideOverPanel
             title={product ? 'Edit Product' : 'Add New Product'}
             onClose={onClose}
@@ -290,6 +299,20 @@ const ProductPanel: React.FC<{
                 </div>
             </form>
         </SlideOverPanel>
+
+        <ConfirmationModal
+            isOpen={showDuplicateConfirm}
+            title="Duplicate Product Warning"
+            message={`A product with a similar name "${similarProduct?.name}" already exists. Are you sure you want to save this as a new product?`}
+            onConfirm={() => {
+                setShowDuplicateConfirm(false);
+                onSave(formData);
+            }}
+            onCancel={() => setShowDuplicateConfirm(false)}
+            confirmText="Yes, Save Anyway"
+            cancelText="No, Go Back"
+        />
+        </>
     );
 };
 

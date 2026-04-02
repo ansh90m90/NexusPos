@@ -163,6 +163,7 @@ const CartView: React.FC<{
     onRemoveItem: (itemId: number | string, isProduct: boolean) => void,
     onClearCart: () => void,
     onHoldCart: () => void,
+    onOpenHeldOrders: () => void,
     onSelectCustomer: () => void,
     onPay: (total: number, subtotal: number, discount?: any) => void,
     promotions: Promotion[],
@@ -173,7 +174,7 @@ const CartView: React.FC<{
     onAddExtraCharge: (charge: { description: string, amount: number }) => void;
     onRemoveExtraCharge: (index: number) => void;
     onOpenCustomCharge: () => void;
-}> = ({ cart, customer, onUpdateItem, onRemoveItem, onHoldCart, onSelectCustomer, onPay, promotions, products, topCustomers, onSetCustomer, extraCharges, onRemoveExtraCharge, onOpenCustomCharge }) => {
+}> = ({ cart, customer, onUpdateItem, onRemoveItem, onHoldCart, onOpenHeldOrders, onSelectCustomer, onPay, promotions, products, topCustomers, onSetCustomer, extraCharges, onRemoveExtraCharge, onOpenCustomCharge }) => {
     const { subtotal, total, discountInfo } = useMemo(() => {
         const sub = cart.reduce((acc, item) => acc + item.appliedPrice * item.quantity, 0);
         const extra = extraCharges.reduce((acc, c) => acc + c.amount, 0);
@@ -230,9 +231,16 @@ const CartView: React.FC<{
             <div className="p-3 border-b border-theme-main">
                 <div className="flex justify-between items-center mb-3">
                     <h2 className="font-bold text-lg text-theme-main">Current Order</h2>
-                    <Tooltip content="Hold Order" position="bottom">
-                        <button onClick={onHoldCart} className="p-2 rounded-full hover:bg-theme-main transition-colors"><Icon name="hold-order" className="w-5 h-5 text-theme-main"/></button>
-                    </Tooltip>
+                    <div className="flex items-center gap-1">
+                        <Tooltip content="Held Orders" position="bottom">
+                            <button onClick={onOpenHeldOrders} className="p-2 rounded-full hover:bg-theme-main transition-colors relative">
+                                <Icon name="categories" className="w-5 h-5 text-theme-main"/>
+                            </button>
+                        </Tooltip>
+                        <Tooltip content="Hold Order" position="bottom">
+                            <button onClick={onHoldCart} className="p-2 rounded-full hover:bg-theme-main transition-colors"><Icon name="hold-order" className="w-5 h-5 text-theme-main"/></button>
+                        </Tooltip>
+                    </div>
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2">
@@ -785,6 +793,87 @@ const PaymentModal: React.FC<{
     );
 };
 
+const HeldOrdersModal: React.FC<{
+    heldCarts: HeldCart[];
+    onClose: () => void;
+    onRestore: (heldCart: HeldCart) => void;
+    onDelete: (id: string) => void;
+}> = ({ heldCarts, onClose, onRestore, onDelete }) => {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-theme-surface rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl border border-theme-main overflow-hidden">
+                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-main/50">
+                    <div>
+                        <h2 className="text-xl font-bold text-theme-main">Held Orders (Queue)</h2>
+                        <p className="text-xs text-theme-muted">Manage orders for long-term customers</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-theme-main rounded-full transition-colors">
+                        <Icon name="close" className="w-6 h-6 text-theme-main" />
+                    </button>
+                </div>
+                
+                <div className="flex-grow overflow-y-auto p-4">
+                    {heldCarts.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-theme-muted">
+                            <Icon name="categories" className="w-16 h-16 mb-4 opacity-20" />
+                            <p className="text-lg font-medium">No held orders found</p>
+                            <p className="text-sm">Orders you put on hold will appear here.</p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-3">
+                            {heldCarts.map(hc => (
+                                <div key={hc.id} className="bg-theme-main/30 border border-theme-main rounded-xl p-4 flex justify-between items-center hover:border-theme-accent transition-colors group">
+                                    <div className="flex-grow">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="font-bold text-theme-main">{hc.name}</span>
+                                            <span className="text-[10px] bg-theme-accent/10 text-theme-accent px-2 py-0.5 rounded-full font-bold">
+                                                {hc.cart.length} items
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-3 text-xs text-theme-muted">
+                                            <span className="flex items-center gap-1">
+                                                <Icon name="receipt" className="w-3 h-3" />
+                                                ₹{hc.cart.reduce((t, i) => t + i.appliedPrice * i.quantity, 0).toFixed(2)}
+                                            </span>
+                                            <span>•</span>
+                                            <span>{new Date(hc.date).toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button 
+                                            onClick={() => onDelete(hc.id)}
+                                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            title="Delete Order"
+                                        >
+                                            <Icon name="delete" className="w-5 h-5" />
+                                        </button>
+                                        <button 
+                                            onClick={() => onRestore(hc)}
+                                            className="bg-theme-accent text-white px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                        >
+                                            <Icon name="sync-reload" className="w-4 h-4" />
+                                            Restore
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                
+                <div className="p-4 border-t border-theme-main bg-theme-main/20 flex justify-end">
+                    <button 
+                        onClick={onClose}
+                        className="px-6 py-2 bg-theme-main text-theme-main rounded-lg font-bold hover:bg-theme-surface transition-colors border border-theme-main"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const POS: React.FC<POSProps> = (props) => {
     const { products, dishes, rawMaterials, customers, onTransaction, appSettings, promotions, allocatedRawMaterials, heldCarts, setHeldCarts, transactions, onUpdateAppSettings, onSaveCustomer } = props;
     
@@ -800,6 +889,9 @@ const POS: React.FC<POSProps> = (props) => {
     const { showToast } = useToast();
     
     const [isQRScannerOpen, setQRScannerOpen] = useState(false);
+    const [isHeldOrdersModalOpen, setHeldOrdersModalOpen] = useState(false);
+    const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
+    const [holdName, setHoldName] = useState('');
     const [extraCharges, setExtraCharges] = useState<{ description: string, amount: number }[]>([]);
 
     const handleAddExtraCharge = useCallback((charge: { description: string, amount: number }) => {
@@ -865,23 +957,51 @@ const POS: React.FC<POSProps> = (props) => {
     const handleClearCart = useCallback(() => {
         setCart([]);
         setCustomer(null);
+        setExtraCharges([]);
     }, []);
 
     const handleHoldCart = useCallback(() => {
-        if (cart.length === 0) return;
+        if (cart.length === 0) {
+            showToast('Cart is empty', 'error');
+            return;
+        }
+        
+        const name = holdName.trim() || (customer ? customer.name : `Order ${new Date().toLocaleTimeString()}`);
+        
         const newHeldCart: HeldCart = {
             id: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-            name: customer ? `Order for ${customer.name}` : `Order ${Date.now().toString().slice(-4)}`,
-            cart: cart,
+            name,
+            cart: [...cart],
             customer: customer || undefined,
             date: new Date().toISOString()
         };
+
         setHeldCarts(prev => [...prev, newHeldCart]);
         setCart([]);
         setCustomer(null);
         setExtraCharges([]);
-        showToast('Order put on hold', 'success');
-    }, [cart, customer, setHeldCarts, showToast]);
+        setHoldName('');
+        setIsHoldModalOpen(false);
+        showToast(`Order "${name}" held successfully`, 'success');
+    }, [cart, customer, setHeldCarts, holdName, showToast]);
+
+    const handleRestoreHeldCart = useCallback((heldCart: HeldCart) => {
+        if (cart.length > 0) {
+            // If current cart is not empty, maybe we should ask? 
+            // For now, let's just hold the current cart and load the new one
+            handleHoldCart();
+        }
+        setCart(heldCart.cart);
+        setCustomer(heldCart.customer || null);
+        setHeldCarts(prev => prev.filter(c => c.id !== heldCart.id));
+        setHeldOrdersModalOpen(false);
+        showToast('Order restored', 'success');
+    }, [cart, handleHoldCart, setHeldCarts, showToast]);
+
+    const handleDeleteHeldCart = useCallback((id: string) => {
+        setHeldCarts(prev => prev.filter(c => c.id !== id));
+        showToast('Held order deleted', 'info');
+    }, [setHeldCarts, showToast]);
 
     const handlePay = useCallback((total: number, subtotal: number, discount?: any) => {
         setPaymentData({ total, subtotal, discount });
@@ -1089,7 +1209,15 @@ const POS: React.FC<POSProps> = (props) => {
                         onUpdateItem={handleUpdateItem} 
                         onRemoveItem={handleRemoveItem} 
                         onClearCart={handleClearCart} 
-                        onHoldCart={handleHoldCart} 
+                        onHoldCart={() => {
+                            if (cart.length === 0) {
+                                showToast('Cart is empty', 'error');
+                                return;
+                            }
+                            setHoldName(customer ? customer.name : '');
+                            setIsHoldModalOpen(true);
+                        }}
+                        onOpenHeldOrders={() => setHeldOrdersModalOpen(true)}
                         onSelectCustomer={() => setCustomerModalOpen(true)} 
                         onPay={handlePay} 
                         promotions={promotions} 
@@ -1131,7 +1259,15 @@ const POS: React.FC<POSProps> = (props) => {
                             onUpdateItem={handleUpdateItem} 
                             onRemoveItem={handleRemoveItem} 
                             onClearCart={handleClearCart} 
-                            onHoldCart={handleHoldCart} 
+                            onHoldCart={() => {
+                                if (cart.length === 0) {
+                                    showToast('Cart is empty', 'error');
+                                    return;
+                                }
+                                setHoldName(customer ? customer.name : '');
+                                setIsHoldModalOpen(true);
+                            }}
+                            onOpenHeldOrders={() => setHeldOrdersModalOpen(true)}
                             onSelectCustomer={() => setCustomerModalOpen(true)} 
                             onPay={handlePay} 
                             promotions={promotions} 
@@ -1183,6 +1319,57 @@ const POS: React.FC<POSProps> = (props) => {
                     onClose={() => setQRScannerOpen(false)} 
                     onScan={handleQRScan} 
                 />
+            )}
+
+            {isHeldOrdersModalOpen && (
+                <HeldOrdersModal 
+                    heldCarts={heldCarts}
+                    onClose={() => setHeldOrdersModalOpen(false)}
+                    onRestore={handleRestoreHeldCart}
+                    onDelete={handleDeleteHeldCart}
+                />
+            )}
+
+            {isHoldModalOpen && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+                    <div className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main">
+                        <div className="p-4 border-b border-theme-main bg-theme-main flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-theme-main">Hold Current Order</h3>
+                            <button onClick={() => setIsHoldModalOpen(false)} className="p-2 hover:bg-theme-surface rounded-full transition-colors">
+                                <Icon name="close" className="w-5 h-5 text-theme-main" />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-bold text-theme-muted uppercase">Order Name / Table Number</label>
+                                <input 
+                                    type="text" 
+                                    value={holdName} 
+                                    onChange={e => setHoldName(e.target.value)}
+                                    className="w-full p-3 bg-theme-main border border-theme-main rounded-xl focus:ring-2 focus:ring-theme-accent outline-none text-theme-main"
+                                    placeholder={customer ? customer.name : "e.g. Table 5, John Doe..."}
+                                    autoFocus
+                                    onKeyDown={e => e.key === 'Enter' && handleHoldCart()}
+                                />
+                                <p className="text-[10px] text-theme-muted italic">This helps you identify the order later.</p>
+                            </div>
+                            <div className="flex gap-3 pt-2">
+                                <button 
+                                    onClick={() => setIsHoldModalOpen(false)}
+                                    className="flex-1 px-4 py-3 border border-theme-main rounded-xl font-bold text-theme-main hover:bg-theme-main transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleHoldCart}
+                                    className="flex-1 px-4 py-3 bg-theme-accent hover:bg-theme-accent/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-theme-accent/20"
+                                >
+                                    Hold Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
