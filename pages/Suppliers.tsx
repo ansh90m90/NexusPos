@@ -95,13 +95,17 @@ const SupplierPanel: React.FC<{
             
             // Mock data based on common GSTIN patterns
             const mockDetails: Record<string, any> = {
-                '07AAAAA0000A1Z5': { name: 'Acme Retail Solutions', address: '123 Business Hub, New Delhi', contact: 'John Doe' },
-                '27BBBBB1111B1Z2': { name: 'Global Traders Pvt Ltd', address: '456 Industrial Estate, Mumbai', contact: 'Sarah Smith' },
+                '07AAAAA0000A1Z5': { name: 'Acme Retail Solutions', address: '123 Business Hub, Okhla Phase III, New Delhi, 110020', contact: 'John Doe' },
+                '27BBBBB1111B1Z2': { name: 'Global Traders Pvt Ltd', address: '456 Industrial Estate, Andheri East, Mumbai, Maharashtra 400069', contact: 'Sarah Smith' },
+                '09CCCCC2222C1Z0': { name: 'Bharat Electronics & Co', address: 'Plot 78, Sector 18, Noida, Uttar Pradesh 201301', contact: 'Rajesh Kumar' },
+                '33DDDDD3333D1Z9': { name: 'South Connect Logistics', address: '12, Anna Salai, Little Mount, Chennai, Tamil Nadu 600015', contact: 'Meera Iyer' },
+                '19EEEEE4444E1Z7': { name: 'Eastern Enterprises', address: 'Salt Lake City, Sector V, Kolkata, West Bengal 700091', contact: 'Amit Banerjee' },
+                '24ECBPP9497K1ZT': { name: 'Gujarat Garment Hub', address: 'Shop 45, Textile Market, Ring Road, Surat, Gujarat 395002', contact: 'Pankaj Patel' },
             };
 
             const details = mockDetails[formData.gstin.toUpperCase()] || {
                 name: `Business ${formData.gstin.slice(0, 5)}`,
-                address: 'Auto-filled address from GST records',
+                address: 'Plot No. ' + Math.floor(Math.random() * 500) + ', Industrial Area, Phase ' + (Math.floor(Math.random() * 3) + 1) + ', Business District, State Code ' + formData.gstin.slice(0, 2),
                 contact: 'Authorized Signatory'
             };
 
@@ -112,7 +116,7 @@ const SupplierPanel: React.FC<{
                 contactPerson: details.contact
             }));
             toast.showToast('Supplier details fetched from GSTIN successfully!', 'success');
-        } catch (err) {
+        } catch (_err) {
             toast.showToast('Failed to fetch details from GSTIN.', 'error');
         } finally {
             setIsFetchingGst(false);
@@ -158,7 +162,10 @@ const SupplierPanel: React.FC<{
                         <input 
                             name="gstin" 
                             value={formData.gstin} 
-                            onChange={e => setFormData({ ...formData, gstin: e.target.value.toUpperCase() })} 
+                            onChange={e => {
+                                const val = e.target.value.toUpperCase();
+                                setFormData(prev => ({ ...prev, gstin: val }));
+                            }} 
                             placeholder="15-digit GSTIN" 
                             className="flex-grow p-3 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all font-mono text-sm" 
                             maxLength={15}
@@ -178,32 +185,50 @@ const SupplierPanel: React.FC<{
 
                 <div>
                     <label className="block text-sm font-semibold text-theme-main mb-1">Company / Business Name</label>
-                    <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Acme Corp" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                    <input name="name" value={formData.name} onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, name: val }));
+                    }} placeholder="e.g., Acme Corp" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
                     <p className="text-xs text-theme-muted mt-2">The official name of the supplier.</p>
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-theme-main mb-1">Contact Person</label>
-                    <input name="contactPerson" value={formData.contactPerson} onChange={e => setFormData({ ...formData, contactPerson: e.target.value })} placeholder="e.g., Jane Smith" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <input name="contactPerson" value={formData.contactPerson} onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, contactPerson: val }));
+                    }} placeholder="e.g., Jane Smith" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
                     <p className="text-xs text-theme-muted mt-2">Name of your primary contact at the company.</p>
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-theme-main mb-1">Phone Number</label>
-                    <input name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="e.g., +91 98765 43210" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <input name="phone" value={formData.phone} onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, phone: val }));
+                    }} placeholder="e.g., +91 98765 43210" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
                     <p className="text-xs text-theme-muted mt-2">Primary contact number for the supplier.</p>
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-theme-main mb-1">Email Address</label>
-                    <input name="email" type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="e.g., supplier@example.com" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <input name="email" type="email" value={formData.email} onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, email: val }));
+                    }} placeholder="e.g., supplier@example.com" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
                     <p className="text-xs text-theme-muted mt-2">Email for sending purchase orders or inquiries.</p>
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-theme-main mb-1">Full Address</label>
-                    <input name="address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="e.g., 456 Market St, City" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <input name="address" value={formData.address} onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, address: val }));
+                    }} placeholder="e.g., 456 Market St, City" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
                     <p className="text-xs text-theme-muted mt-2">Physical address of the supplier.</p>
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-theme-main mb-1">UPI ID</label>
-                    <input name="upiId" value={formData.upiId} onChange={e => setFormData({ ...formData, upiId: e.target.value })} placeholder="e.g., name@bank" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
+                    <input name="upiId" value={formData.upiId} onChange={e => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, upiId: val }));
+                    }} placeholder="e.g., name@bank" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
                     <p className="text-xs text-theme-muted mt-2">Used for making payments via UPI.</p>
                 </div>
             </form>

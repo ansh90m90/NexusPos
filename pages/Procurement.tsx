@@ -11,7 +11,14 @@ interface ProcurementProps {
   products: Product[];
   suppliers: Supplier[];
   purchaseOrders: PurchaseOrder[];
-  onNewPurchase: (order: PurchaseOrder, batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], newSupplierName?: string, newSupplierGstin?: string) => void;
+  onNewPurchase: (
+    order: PurchaseOrder, 
+    batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], 
+    newSupplierName?: string, 
+    newSupplierGstin?: string,
+    newSupplierAddress?: string,
+    newSupplierContact?: string
+  ) => void;
   transactions: Transaction[];
   modalState: { type: string | null; data: any };
   setModalState: (state: { type: string | null; data: any }) => void;
@@ -20,7 +27,14 @@ interface ProcurementProps {
 const ReceiveStockModal: React.FC<{
     products: Product[];
     suppliers: Supplier[];
-    onSave: (order: PurchaseOrder, batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], newSupplierName?: string, newSupplierGstin?: string) => void;
+    onSave: (
+        order: PurchaseOrder, 
+        batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], 
+        newSupplierName?: string, 
+        newSupplierGstin?: string,
+        newSupplierAddress?: string,
+        newSupplierContact?: string
+    ) => void;
     onClose: () => void;
     initialData?: Partial<PurchaseOrder>;
 }> = ({ products, suppliers, onSave, onClose, initialData }) => {
@@ -34,6 +48,8 @@ const ReceiveStockModal: React.FC<{
     const [date, setDate] = useState(initialData?.date ? initialData.date.split('T')[0] : new Date().toISOString().split('T')[0]);
     const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || '');
     const [newSupplierGstin, setNewSupplierGstin] = useState('');
+    const [newSupplierAddress, setNewSupplierAddress] = useState('');
+    const [newSupplierContact, setNewSupplierContact] = useState('');
     const [isFetchingGst, setIsFetchingGst] = useState(false);
     const toast = useToast();
 
@@ -47,15 +63,23 @@ const ReceiveStockModal: React.FC<{
         try {
             await new Promise(resolve => setTimeout(resolve, 1500));
             const mockDetails: Record<string, any> = {
-                '07AAAAA0000A1Z5': { name: 'Acme Retail Solutions' },
-                '27BBBBB1111B1Z2': { name: 'Global Traders Pvt Ltd' },
+                '07AAAAA0000A1Z5': { name: 'Acme Retail Solutions', address: '123 Business Hub, Okhla Phase III, New Delhi, 110020', contact: 'John Doe' },
+                '27BBBBB1111B1Z2': { name: 'Global Traders Pvt Ltd', address: '456 Industrial Estate, Andheri East, Mumbai, Maharashtra 400069', contact: 'Sarah Smith' },
+                '09CCCCC2222C1Z0': { name: 'Bharat Electronics & Co', address: 'Plot 78, Sector 18, Noida, Uttar Pradesh 201301', contact: 'Rajesh Kumar' },
+                '33DDDDD3333D1Z9': { name: 'South Connect Logistics', address: '12, Anna Salai, Little Mount, Chennai, Tamil Nadu 600015', contact: 'Meera Iyer' },
+                '19EEEEE4444E1Z7': { name: 'Eastern Enterprises', address: 'Salt Lake City, Sector V, Kolkata, West Bengal 700091', contact: 'Amit Banerjee' },
+                '24ECBPP9497K1ZT': { name: 'Gujarat Garment Hub', address: 'Shop 45, Textile Market, Ring Road, Surat, Gujarat 395002', contact: 'Pankaj Patel' },
             };
             const details = mockDetails[newSupplierGstin.toUpperCase()] || {
-                name: `Business ${newSupplierGstin.slice(0, 5)}`
+                name: `Business ${newSupplierGstin.slice(0, 5)}`,
+                address: 'Plot No. ' + Math.floor(Math.random() * 500) + ', Industrial Area, Phase ' + (Math.floor(Math.random() * 3) + 1) + ', Business District, State Code ' + newSupplierGstin.slice(0, 2),
+                contact: 'Authorized Signatory'
             };
             setSupplierName(details.name);
-            toast.showToast('Supplier name fetched from GSTIN!', 'success');
-        } catch (err) {
+            setNewSupplierAddress(details.address);
+            setNewSupplierContact(details.contact);
+            toast.showToast('Supplier details fetched from GSTIN!', 'success');
+        } catch (_err) {
             toast.showToast('Failed to fetch details.', 'error');
         } finally {
             setIsFetchingGst(false);
@@ -197,7 +221,7 @@ const ReceiveStockModal: React.FC<{
             extraCharges: extraCharges,
             invoiceNumber: invoiceNumber,
             status: 'Completed'
-        }, finalBatches, newSupplierName, newSupplierGstin);
+        }, finalBatches, newSupplierName, newSupplierGstin, newSupplierAddress, newSupplierContact);
     };
 
     return (
@@ -222,27 +246,52 @@ const ReceiveStockModal: React.FC<{
                                 <p className="text-xs text-theme-muted mt-2">Select the supplier for this purchase.</p>
                             </div>
                             {!suppliers.some(s => s.name === supplierName) && supplierName.trim() !== '' && (
-                                <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-2xl border border-primary-100 dark:border-primary-900/30">
-                                    <label className="block text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-2">New Supplier GSTIN</label>
-                                    <div className="flex gap-2">
-                                        <input 
-                                            value={newSupplierGstin} 
-                                            onChange={e => setNewSupplierGstin(e.target.value.toUpperCase())} 
-                                            placeholder="15-digit GSTIN" 
-                                            className="flex-grow p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all font-mono text-xs" 
-                                            maxLength={15}
-                                        />
-                                        <button 
-                                            type="button" 
-                                            onClick={handleGstLookup}
-                                            disabled={isFetchingGst || !newSupplierGstin}
-                                            className="px-3 py-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
-                                        >
-                                            {isFetchingGst ? <Icon name="spinner" className="w-3 h-3 animate-spin" /> : <Icon name="sync-reload" className="w-3 h-3" />}
-                                            <span className="text-[10px] font-bold uppercase">Fetch</span>
-                                        </button>
+                                <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-2xl border border-primary-100 dark:border-primary-900/30 space-y-4">
+                                    <h4 className="text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider">New Supplier Details</h4>
+                                    
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-1">GSTIN</label>
+                                        <div className="flex gap-2">
+                                            <input 
+                                                value={newSupplierGstin} 
+                                                onChange={e => setNewSupplierGstin(e.target.value.toUpperCase())} 
+                                                placeholder="15-digit GSTIN" 
+                                                className="flex-grow p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all font-mono text-xs" 
+                                                maxLength={15}
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={handleGstLookup}
+                                                disabled={isFetchingGst || !newSupplierGstin}
+                                                className="px-3 py-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                                            >
+                                                {isFetchingGst ? <Icon name="spinner" className="w-3 h-3 animate-spin" /> : <Icon name="sync-reload" className="w-3 h-3" />}
+                                                <span className="text-[10px] font-bold uppercase">Fetch</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <p className="text-[10px] text-theme-muted mt-2 italic">Enter GSTIN to fetch business name.</p>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-1">Contact Person</label>
+                                            <input 
+                                                value={newSupplierContact} 
+                                                onChange={e => setNewSupplierContact(e.target.value)} 
+                                                placeholder="Contact Person" 
+                                                className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-xs" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-1">Full Address</label>
+                                            <input 
+                                                value={newSupplierAddress} 
+                                                onChange={e => setNewSupplierAddress(e.target.value)} 
+                                                placeholder="Full Address" 
+                                                className="w-full p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-xs" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-theme-muted italic">Details fetched from GSTIN can be edited before saving.</p>
                                 </div>
                             )}
                             <div>
@@ -502,7 +551,10 @@ const Procurement: React.FC<ProcurementProps> = ({ products, suppliers, purchase
                 <ReceiveStockModal 
                     products={products} 
                     suppliers={suppliers}
-                    onSave={(order, batches, newSupplierName) => { onNewPurchase(order, batches, newSupplierName); handleCloseModal(); }}
+                    onSave={(order, batches, newSupplierName, newSupplierGstin, newSupplierAddress, newSupplierContact) => { 
+                        onNewPurchase(order, batches, newSupplierName, newSupplierGstin, newSupplierAddress, newSupplierContact); 
+                        handleCloseModal(); 
+                    }}
                     onClose={handleCloseModal}
                     initialData={modalState.data || undefined}
                 />

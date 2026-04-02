@@ -217,8 +217,22 @@ export const useAccountActions = ({ dispatchOperation, currentUser, setModalStat
         toast.showToast('Product saved.', 'success');
     };
     const handleDeleteProduct = (productId: number) => dispatchOperation('DELETE_PRODUCT', withUser({ productId }));
-    const handleNewPurchase = (order: PurchaseOrder, batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], newSupplierName?: string) => {
-        dispatchOperation('CREATE_PURCHASE', withUser({ order, batches, newSupplierName }));
+    const handleNewPurchase = (
+        order: PurchaseOrder, 
+        batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], 
+        newSupplierName?: string,
+        newSupplierGstin?: string,
+        newSupplierAddress?: string,
+        newSupplierContact?: string
+    ) => {
+        dispatchOperation('CREATE_PURCHASE', withUser({ 
+            order, 
+            batches, 
+            newSupplierName, 
+            newSupplierGstin,
+            newSupplierAddress,
+            newSupplierContact
+        }));
     };
      const handleAdjustStock = (variantId: number, productName: string, quantityChange: number, reason: StockAdjustmentReason, notes?: string) => {
         dispatchOperation('ADJUST_STOCK', withUser({ variantId, productName, quantityChange, reason, notes }));

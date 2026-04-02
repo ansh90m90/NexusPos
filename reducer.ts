@@ -486,17 +486,24 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
         }
 
         case 'CREATE_PURCHASE': {
-            const { order, batches, newSupplierName } = payload as { order: PurchaseOrder, batches: (Omit<Batch, 'id'|'receivedDate'> & { productName?: string })[], newSupplierName?: string };
+            const { order, batches, newSupplierName, newSupplierGstin, newSupplierAddress, newSupplierContact } = payload as { 
+                order: PurchaseOrder, 
+                batches: (Omit<Batch, 'id'|'receivedDate'> & { productName?: string })[], 
+                newSupplierName?: string,
+                newSupplierGstin?: string,
+                newSupplierAddress?: string,
+                newSupplierContact?: string
+            };
             
             if (newSupplierName) {
                 const newSupplier: Supplier = {
                     id: getNextId(newState.suppliers),
                     name: newSupplierName,
-                    contactPerson: '',
+                    contactPerson: newSupplierContact || '',
                     phone: '',
                     email: '',
-                    address: '',
-                    gstin: operation.payload.newSupplierGstin || '',
+                    address: newSupplierAddress || '',
+                    gstin: newSupplierGstin || '',
                     creditBalance: 0,
                     creditLedger: [],
                     createdAt: now,
