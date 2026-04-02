@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
+import { fuzzySearch } from '../lib/searchUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import type { Product, Dish, Customer, CartItem, PaymentMethod, Transaction, ProductVariant, HeldCart, AppSettings, Payment, RawMaterial, Promotion } from '../types';
@@ -422,10 +423,11 @@ const CustomerSelectModal: React.FC<{
     const [isAddingNew, setIsAddingNew] = useState(false);
     const [newName, setNewName] = useState('');
     const [newPhone, setNewPhone] = useState('');
+    const [newGstin, setNewGstin] = useState('');
 
     const filtered = customers.filter(c => 
-        c.name.toLowerCase().includes(search.toLowerCase()) || 
-        c.phone.includes(search)
+        fuzzySearch(search, c.name) || 
+        fuzzySearch(search, c.phone)
     );
 
     const pinnedCustomers = customers.filter(c => pinnedIds.includes(c.id));
@@ -435,6 +437,7 @@ const CustomerSelectModal: React.FC<{
         onSaveCustomer({
             name: newName,
             phone: newPhone,
+            gstin: newGstin,
             email: '',
             address: '',
             creditBalance: 0,
@@ -446,6 +449,7 @@ const CustomerSelectModal: React.FC<{
         setIsAddingNew(false);
         setNewName('');
         setNewPhone('');
+        setNewGstin('');
     };
 
     return (
@@ -486,6 +490,17 @@ const CustomerSelectModal: React.FC<{
                                 onChange={e => setNewPhone(e.target.value)}
                                 className="w-full p-3 bg-theme-main border border-theme-main rounded-xl focus:ring-2 focus:ring-theme-accent outline-none text-theme-main"
                                 placeholder="Enter phone number"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-xs font-bold text-theme-muted uppercase">GSTIN (Optional)</label>
+                            <input 
+                                type="text" 
+                                value={newGstin} 
+                                onChange={e => setNewGstin(e.target.value.toUpperCase())}
+                                className="w-full p-3 bg-theme-main border border-theme-main rounded-xl focus:ring-2 focus:ring-theme-accent outline-none text-theme-main font-mono text-sm"
+                                placeholder="15-digit GSTIN"
+                                maxLength={15}
                             />
                         </div>
                         <div className="flex gap-3 pt-4">
@@ -538,6 +553,28 @@ const CustomerSelectModal: React.FC<{
                         </div>
 
                         <div className="flex-grow overflow-y-auto p-2 custom-scrollbar">
+                            {search !== '' && !customers.some(c => c.name.toLowerCase() === search.toLowerCase()) && (
+                                <div 
+                                    onClick={() => {
+                                        setNewName(search);
+                                        setIsAddingNew(true);
+                                    }}
+                                    className="flex items-center gap-3 p-3 bg-amber-500/10 hover:bg-amber-500/20 rounded-xl cursor-pointer transition-all border border-amber-500/30 group mb-2"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center text-white">
+                                        <Icon name="plus" className="w-6 h-6" />
+                                    </div>
+                                    <div className="flex-grow">
+                                        <p className="font-bold text-amber-600 flex items-center gap-1.5">
+                                            Create "{search}"
+                                            <span className="text-[10px] bg-amber-500 text-white px-1.5 py-0.5 rounded uppercase tracking-tighter">New</span>
+                                        </p>
+                                        <p className="text-xs text-amber-600/70">Click to add this as a new customer</p>
+                                    </div>
+                                    <Icon name="arrow-right" className="w-5 h-5 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                            )}
+
                             {search === '' && pinnedCustomers.length > 0 && (
                                 <div className="mb-4">
                                     <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-theme-muted">Pinned Customers</p>
@@ -833,7 +870,7 @@ const POS: React.FC<POSProps> = (props) => {
     const handleHoldCart = useCallback(() => {
         if (cart.length === 0) return;
         const newHeldCart: HeldCart = {
-            id: Date.now().toString(),
+            id: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             name: customer ? `Order for ${customer.name}` : `Order ${Date.now().toString().slice(-4)}`,
             cart: cart,
             customer: customer || undefined,
@@ -853,7 +890,7 @@ const POS: React.FC<POSProps> = (props) => {
 
     const handleCompleteTransaction = (payment: Payment) => {
         const transaction: Transaction = {
-            id: `TXN-${Date.now()}`,
+            id: `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             date: new Date().toISOString(),
             items: cart,
             subtotal: paymentData?.subtotal || 0,
@@ -874,12 +911,12 @@ const POS: React.FC<POSProps> = (props) => {
     };
 
     const filteredProducts = useMemo(() => {
-        return products.filter(p => !p.isDeleted && p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        return products.filter(p => !p.isDeleted && fuzzySearch(searchTerm, p.name));
     }, [products, searchTerm]);
 
     const filteredDishes = useMemo(() => {
         const cartRequirements = getCartIngredients(cart);
-        return dishes.filter(d => !d.isDeleted && d.name.toLowerCase().includes(searchTerm.toLowerCase())).map(dish => {
+        return dishes.filter(d => !d.isDeleted && fuzzySearch(searchTerm, d.name)).map(dish => {
             const isOutOfStock = dish.ingredients.some(ing => {
                 const material = rawMaterials.find(rm => rm.id === ing.id);
                 const available = (material?.stock || 0) - (allocatedRawMaterials[ing.id] || 0) - (cartRequirements[ing.id] || 0);

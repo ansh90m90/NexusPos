@@ -6,6 +6,8 @@ import BarcodeScannerModal from '../components/BarcodeScannerModal';
 import Icon from '../components/Icon';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { Tooltip } from '../components/Tooltip';
+import ComboBox from '../components/ComboBox';
+import { fuzzySearch } from '../lib/searchUtils';
 
 type ProductSortKeys = 'name' | 'subCategory' | 'supplier' | 'variants';
 type SortDirection = 'asc' | 'desc';
@@ -65,12 +67,13 @@ const ProductPanel: React.FC<{
             supplier: '', 
             hsnCode: '', 
             minStock: 10,
-            variants: [{ id: -Date.now(), productId: 0, name: category === 'Rashan' ? 'per kg' : 'Standard', mrp: 0, wholesalePrice: 0, netPurchasePrice: 0, stock: 0, sku: '', unit: category === 'Rashan' ? 'kg' : 'pcs' }] 
+            variants: [{ id: -Date.now() - Math.floor(Math.random() * 1000), productId: 0, name: category === 'Rashan' ? 'per kg' : 'Standard', mrp: 0, wholesalePrice: 0, netPurchasePrice: 0, stock: 0, sku: '', unit: category === 'Rashan' ? 'kg' : 'pcs' }] 
         }
     );
 
     const uniqueSuppliers = useMemo(() => [...new Set(suppliers.map(s => s.name))].sort(), [suppliers]);
     const uniqueSubCategories = useMemo(() => [...new Set(products.map(p => p.subCategory).filter(Boolean) as string[])].sort(), [products]);
+    const commonHsnCodes = ['1006', '1001', '1905', '2106', '0902', '1701', '1512']; // Rice, Wheat, Biscuits, Snacks, Tea, Sugar, Oil
 
     const handleMainChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -105,7 +108,7 @@ const ProductPanel: React.FC<{
     
     const addVariant = () => {
         const newVariant: Partial<ProductVariant> = {
-            id: -(Date.now()),
+            id: -(Date.now() + Math.floor(Math.random() * 1000)),
             productId: formData.id || 0,
             name: '',
             mrp: 0,
@@ -243,24 +246,27 @@ const ProductPanel: React.FC<{
                 <div className="pt-4 border-t border-theme-main">
                     <h4 className="font-bold text-theme-main mb-4">Additional Details</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Sub-Category</label>
-                            <input list="subcategories-list" name="subCategory" value={formData.subCategory} onChange={handleMainChange} placeholder="e.g., Wafers, Cool Drinks" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"/>
-                            <datalist id="subcategories-list">
-                                {uniqueSubCategories.map(sc => <option key={sc} value={sc} />)}
-                            </datalist>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Supplier</label>
-                            <input list="suppliers-list" name="supplier" value={formData.supplier} onChange={handleMainChange} placeholder="e.g., Pepsico, ITC" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"/>
-                             <datalist id="suppliers-list">
-                                {uniqueSuppliers.map(s => <option key={s} value={s} />)}
-                            </datalist>
-                        </div>
-                        <div className="md:col-span-2 space-y-1">
-                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">HSN Code (Optional)</label>
-                            <input name="hsnCode" value={formData.hsnCode} onChange={handleMainChange} placeholder="HSN Code for GST" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all"/>
-                        </div>
+                        <ComboBox
+                            label="Sub-Category"
+                            value={formData.subCategory || ''}
+                            onChange={(val) => setFormData(prev => ({ ...prev, subCategory: val }))}
+                            options={uniqueSubCategories}
+                            placeholder="e.g., Wafers, Cool Drinks"
+                        />
+                        <ComboBox
+                            label="Supplier"
+                            value={formData.supplier || ''}
+                            onChange={(val) => setFormData(prev => ({ ...prev, supplier: val }))}
+                            options={uniqueSuppliers}
+                            placeholder="e.g., Pepsico, ITC"
+                        />
+                        <ComboBox
+                            label="HSN Code"
+                            value={formData.hsnCode || ''}
+                            onChange={(val) => setFormData(prev => ({ ...prev, hsnCode: val }))}
+                            options={commonHsnCodes}
+                            placeholder="e.g., 1006"
+                        />
                     </div>
                 </div>
             </form>
@@ -426,12 +432,17 @@ const ProductList: React.FC<{
                                 <td className="px-4 py-3"><Highlighted text={p.subCategory || ''} highlight={searchTerm} /></td>
                                 <td className="px-4 py-3"><Highlighted text={p.supplier} highlight={searchTerm} /></td>
                                 <td className="px-4 py-3">
-                                    {p.variants.map(v => (
-                                        <div key={v.id} className="flex justify-between items-center text-xs py-0.5" title={`SKU: ${v.sku}`}>
-                                            <span className="text-theme-muted">{v.name}</span>
-                                            <span className="font-semibold text-theme-main">{v.stock}</span>
-                                        </div>
-                                    ))}
+                                    <div className="flex flex-col gap-1">
+                                        {p.variants.map(v => (
+                                            <div key={v.id} className="flex justify-between items-center text-xs py-0.5" title={`SKU: ${v.sku}`}>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-theme-muted">{v.name}</span>
+                                                    <button onClick={() => setModalState({ type: 'adjust_stock', data: { variant: v, productName: p.name }})} className="text-[10px] font-bold text-primary-500 hover:text-primary-600 transition-colors">Adjust</button>
+                                                </div>
+                                                <span className="font-semibold text-theme-main">{v.stock}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3 w-40">
                                     {p.minStock && p.variants.map(v => <StockLevelBar key={v.id} stock={v.stock} minStock={p.minStock!} />)}
@@ -542,10 +553,10 @@ const Products: React.FC<ProductsProps> = ({
   const filteredProducts = useMemo(() => {
     const productsToFilter = activeTab === 'store' ? storeProducts : rashanProducts;
     return productsToFilter.filter(p =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.subCategory || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.supplier || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.variants.some(v => (v.sku || '').toLowerCase().includes(searchTerm.toLowerCase()))
+      fuzzySearch(searchTerm, p.name) ||
+      fuzzySearch(searchTerm, p.subCategory || '') ||
+      fuzzySearch(searchTerm, p.supplier || '') ||
+      p.variants.some(v => fuzzySearch(searchTerm, v.sku || ''))
     );
   }, [activeTab, storeProducts, rashanProducts, searchTerm]);
 

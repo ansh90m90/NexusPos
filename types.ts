@@ -217,6 +217,7 @@ export interface Supplier {
     phone: string;
     email: string;
     address: string;
+    gstin?: string;
     upiId?: string;
     creditBalance: number;
     creditLedger: LedgerEntry[];

@@ -62,7 +62,7 @@ const Marketing: React.FC<MarketingProps> = ({ promotions, onSavePromotion, setM
                                 </Tooltip>
                                 <Tooltip content={`Duplicate ${promotion.name}`} position="top">
                                     <button 
-                                        onClick={() => handleCreatePromotion({ ...promotion, id: `promo_${Date.now()}`, isActive: true })}
+                                        onClick={() => handleCreatePromotion({ ...promotion, id: `promo_${Date.now()}_${Math.floor(Math.random() * 1000)}`, isActive: true })}
                                         className="flex-1 px-3 py-2 text-sm font-semibold rounded-lg bg-theme-accent/10 text-theme-accent hover:bg-theme-accent/20 transition"
                                     >
                                         Duplicate

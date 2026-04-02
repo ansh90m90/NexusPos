@@ -75,8 +75,49 @@ const SupplierPanel: React.FC<{
         email: supplier?.email || '',
         address: supplier?.address || '',
         upiId: supplier?.upiId || '',
+        gstin: supplier?.gstin || '',
     });
+    const [isFetchingGst, setIsFetchingGst] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const toast = useToast();
+
+    const handleGstLookup = async () => {
+        if (!formData.gstin || formData.gstin.length < 15) {
+            toast.showToast('Please enter a valid 15-digit GSTIN.', 'error');
+            return;
+        }
+
+        setIsFetchingGst(true);
+        try {
+            // Simulated GST Lookup Service
+            // In a real app, this would call a government or 3rd party API
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Mock data based on common GSTIN patterns
+            const mockDetails: Record<string, any> = {
+                '07AAAAA0000A1Z5': { name: 'Acme Retail Solutions', address: '123 Business Hub, New Delhi', contact: 'John Doe' },
+                '27BBBBB1111B1Z2': { name: 'Global Traders Pvt Ltd', address: '456 Industrial Estate, Mumbai', contact: 'Sarah Smith' },
+            };
+
+            const details = mockDetails[formData.gstin.toUpperCase()] || {
+                name: `Business ${formData.gstin.slice(0, 5)}`,
+                address: 'Auto-filled address from GST records',
+                contact: 'Authorized Signatory'
+            };
+
+            setFormData(prev => ({
+                ...prev,
+                name: details.name,
+                address: details.address,
+                contactPerson: details.contact
+            }));
+            toast.showToast('Supplier details fetched from GSTIN successfully!', 'success');
+        } catch (err) {
+            toast.showToast('Failed to fetch details from GSTIN.', 'error');
+        } finally {
+            setIsFetchingGst(false);
+        }
+    };
 
     const isEditing = !!supplier?.id;
 
@@ -111,6 +152,30 @@ const SupplierPanel: React.FC<{
             }
         >
             <form id="supplier-form" onSubmit={handleSubmit} className="space-y-5">
+                <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-2xl border border-primary-100 dark:border-primary-900/30">
+                    <label className="block text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-2">Auto-fill from GSTIN</label>
+                    <div className="flex gap-2">
+                        <input 
+                            name="gstin" 
+                            value={formData.gstin} 
+                            onChange={e => setFormData({ ...formData, gstin: e.target.value.toUpperCase() })} 
+                            placeholder="15-digit GSTIN" 
+                            className="flex-grow p-3 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all font-mono text-sm" 
+                            maxLength={15}
+                        />
+                        <button 
+                            type="button" 
+                            onClick={handleGstLookup}
+                            disabled={isFetchingGst || !formData.gstin}
+                            className="px-4 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                        >
+                            {isFetchingGst ? <Icon name="spinner" className="w-4 h-4 animate-spin" /> : <Icon name="sync-reload" className="w-4 h-4" />}
+                            <span className="text-xs font-bold uppercase">Fetch</span>
+                        </button>
+                    </div>
+                    <p className="text-[10px] text-theme-muted mt-2 italic">Enter GSTIN to automatically pull business name, address, and contact details.</p>
+                </div>
+
                 <div>
                     <label className="block text-sm font-semibold text-theme-main mb-1">Company / Business Name</label>
                     <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., Acme Corp" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />

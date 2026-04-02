@@ -10,7 +10,7 @@ import ConfirmationModal from '../components/ConfirmationModal';
 import { useToast } from '../components/Toast';
 import { Tooltip } from '../components/Tooltip';
 
-type SettingsTab = 'general' | 'appearance' | 'features' | 'staff' | 'promotions' | 'history' | 'adjustments' | 'data' | 'help' | 'about';
+type SettingsTab = 'general' | 'appearance' | 'features' | 'staff_promos' | 'logs' | 'data' | 'help' | 'about';
 
 const SettingRow: React.FC<{title: string, description: string, enabled: boolean, onToggle: () => void, disabled?: boolean}> = ({title, description, enabled, onToggle, disabled = false}) => (
   <div className="flex justify-between items-center bg-theme-surface p-5 rounded-2xl border border-theme-main shadow-sm hover:border-primary-500/30 transition-colors">
@@ -222,10 +222,8 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
         { id: 'general', label: 'General', icon: 'settings' },
         { id: 'appearance', label: 'Appearance', icon: 'sun' },
         { id: 'features', label: 'Features', icon: 'products' },
-        { id: 'staff', label: 'Staff', icon: 'customers' },
-        { id: 'promotions', label: 'Promotions', icon: 'marketing' },
-        { id: 'history', label: 'Change History', icon: 'receipt' },
-        { id: 'adjustments', label: 'Stock Adjustments', icon: 'pos' },
+        { id: 'staff_promos', label: 'Staff & Promotions', icon: 'customers' },
+        { id: 'logs', label: 'History & Adjustments', icon: 'receipt' },
         { id: 'data', label: 'Data Management', icon: 'sync-reload' },
         { id: 'help', label: 'Help & Support', icon: 'more' },
         { id: 'about', label: 'About Us', icon: 'user' },
@@ -394,64 +392,130 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                         <SettingRow title="QR Scanner" description="Enable QR code scanning in POS." enabled={appSettings.enableQrScanner} onToggle={() => handleAppSettingsChange('enableQrScanner', !appSettings.enableQrScanner)} />
                     </div>
                 );
-            case 'staff':
+            case 'staff_promos':
                 return (
-                    <div>
-                        <Tooltip content="Add a new staff member" position="bottom">
-                            <button onClick={() => setModalState({ type: 'add_user', data: null })} className="mb-4 px-4 py-2 text-sm font-semibold rounded-lg bg-theme-main text-primary-500 border border-theme-main hover:bg-theme-surface transition">Add Staff</button>
-                        </Tooltip>
-                        <div className="space-y-2">
-                           {users.map(user => (
-                               <div key={user.id} className="flex justify-between items-center p-3 bg-theme-main border border-theme-main rounded-lg">
-                                    <div className="flex items-center gap-3">
-                                        <Avatar name={user.name} />
-                                        <div>
-                                            <p className="font-semibold text-theme-main">{user.name}</p>
-                                            <p className="text-sm text-theme-muted">{user.role}</p>
+                    <div className="space-y-8">
+                        <section>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold text-theme-main">Staff Management</h3>
+                                <Tooltip content="Add a new staff member" position="bottom">
+                                    <button onClick={() => setModalState({ type: 'add_user', data: null })} className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary-500 text-white hover:bg-primary-600 transition shadow-sm">Add Staff</button>
+                                </Tooltip>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {users.map((user, index) => (
+                                    <div key={`${user.id}-${index}`} className="flex justify-between items-center p-4 bg-theme-surface border border-theme-main rounded-2xl shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar name={user.name} size="sm" />
+                                            <div>
+                                                <p className="font-bold text-theme-main">{user.name}</p>
+                                                <p className="text-xs text-theme-muted">{user.role} &bull; {user.email}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setModalState({ type: 'edit_user', data: user })} className="p-2 rounded-full hover:bg-theme-main text-theme-muted hover:text-primary-500 transition-colors">
+                                                <Icon name="edit" className="w-4 h-4" />
+                                            </button>
+                                            <button onClick={() => setUserToDelete(user)} className="p-2 rounded-full hover:bg-theme-main text-theme-muted hover:text-red-500 transition-colors">
+                                                <Icon name="delete" className="w-4 h-4" />
+                                            </button>
                                         </div>
                                     </div>
-                                    <div>
-                                        <Tooltip content="Edit staff member" position="bottom">
-                                            <button onClick={() => setModalState({ type: 'edit_user', data: user })} className="text-sm font-medium text-primary-600 hover:underline mr-4">Edit</button>
-                                        </Tooltip>
-                                        <Tooltip content="Delete staff member" position="bottom">
-                                            <button onClick={() => setUserToDelete(user)} className="text-sm font-medium text-red-600 hover:underline">Delete</button>
-                                        </Tooltip>
+                                ))}
+                            </div>
+                        </section>
+
+                        <section className="pt-8 border-t border-theme-main">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-lg font-bold text-theme-main">Promotions & Offers</h3>
+                                <Tooltip content="Add a new promotion" position="bottom">
+                                    <button onClick={() => setModalState({ type: 'add_promo', data: null })} className="px-4 py-2 text-sm font-semibold rounded-lg bg-theme-main text-primary-500 border border-theme-main hover:bg-theme-surface transition">Add Promotion</button>
+                                </Tooltip>
+                            </div>
+                            <div className="space-y-3">
+                                {promotions.length === 0 ? (
+                                    <div className="text-center py-8 bg-theme-main rounded-2xl border border-dashed border-theme-main">
+                                        <p className="text-theme-muted text-sm">No promotions created yet.</p>
                                     </div>
-                               </div>
-                           ))}
-                        </div>
+                                ) : (
+                                    promotions.map((promo, index) => (
+                                        <div key={`${promo.id}-${index}`} className="flex justify-between items-center p-4 bg-theme-surface border border-theme-main rounded-2xl shadow-sm">
+                                            <div>
+                                                <p className="font-bold text-theme-main">{promo.name}</p>
+                                                <p className="text-xs text-theme-muted">{promo.type === 'PERCENTAGE_OFF' ? `${promo.value}% off` : `₹${promo.value} off`} &bull; {promo.isActive ? 'Active' : 'Inactive'}</p>
+                                            </div>
+                                            <div className='flex items-center gap-2'>
+                                                <div className="scale-75 origin-right">
+                                                    <SettingRow title="" description="" enabled={promo.isActive} onToggle={() => onTogglePromotionStatus(promo.id)} />
+                                                </div>
+                                                <button onClick={() => setModalState({ type: 'edit_promo', data: promo })} className="p-2 rounded-full hover:bg-theme-main text-theme-muted hover:text-primary-500 transition-colors">
+                                                    <Icon name="edit" className="w-4 h-4" />
+                                                </button>
+                                                <button onClick={() => setPromotionToDelete(promo)} className="p-2 rounded-full hover:bg-theme-main text-theme-muted hover:text-red-500 transition-colors">
+                                                    <Icon name="delete" className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </section>
                     </div>
                 );
-            case 'promotions':
-                 return (
-                    <div>
-                        <Tooltip content="Create a new promotion" position="bottom">
-                            <button onClick={() => setModalState({ type: 'add_promo', data: null })} className="mb-4 px-4 py-2 text-sm font-semibold rounded-lg bg-theme-main text-primary-500 border border-theme-main hover:bg-theme-surface transition">Add Promotion</button>
-                        </Tooltip>
-                        <div className="space-y-2">
-                            {promotions.map(promo => (
-                                <div key={promo.id} className="flex justify-between items-center p-3 bg-theme-main border border-theme-main rounded-lg">
-                                    <div>
-                                        <p className="font-semibold text-theme-main">{promo.name}</p>
-                                        <p className="text-sm text-theme-muted">{promo.type === 'PERCENTAGE_OFF' ? `${promo.value}% off` : `₹${promo.value} off`}</p>
+            case 'logs':
+                return (
+                    <div className="space-y-8">
+                        <section>
+                            <h3 className="text-lg font-bold text-theme-main mb-4">Stock Adjustments</h3>
+                            <div className="space-y-2">
+                                {stockAdjustments.length === 0 ? (
+                                    <div className="text-center py-12 bg-theme-main rounded-2xl border border-dashed border-theme-main">
+                                        <Icon name="pos" className="w-12 h-12 text-theme-muted mx-auto mb-3 opacity-20" />
+                                        <p className="text-theme-muted font-medium">No stock adjustments recorded yet.</p>
+                                        <p className="text-xs text-theme-muted mt-1">Adjustments can be made from the Products page.</p>
                                     </div>
-                                    <div className='flex items-center gap-4'>
-                                        <SettingRow title="" description="" enabled={promo.isActive} onToggle={() => onTogglePromotionStatus(promo.id)} />
-                                        <Tooltip content="Edit promotion" position="bottom">
-                                            <button onClick={() => setModalState({ type: 'edit_promo', data: promo })} className="text-sm font-medium text-primary-600 hover:underline">Edit</button>
-                                        </Tooltip>
-                                        <Tooltip content="Delete promotion" position="bottom">
-                                            <button onClick={() => setPromotionToDelete(promo)} className="text-sm font-medium text-red-600 hover:underline">Delete</button>
-                                        </Tooltip>
+                                ) : (
+                                    stockAdjustments.slice(-50).reverse().map((a, index) => (
+                                        <div key={`${a.id}-${index}`} className="text-sm p-4 bg-theme-surface border border-theme-main rounded-xl text-theme-main">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="font-bold text-theme-main">{a.productName}</span>
+                                                <span className={`font-bold ${a.quantityChange > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {a.quantityChange > 0 ? '+' : ''}{a.quantityChange}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px] text-theme-muted">
+                                                <span>Reason: {a.reason} &bull; By: {a.user}</span>
+                                                <span className="font-mono">{new Date(a.timestamp).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </section>
+
+                        <section className="pt-8 border-t border-theme-main">
+                            <h3 className="text-lg font-bold text-theme-main mb-4">Change History</h3>
+                            <div className="space-y-2">
+                                {history.length === 0 ? (
+                                    <div className="text-center py-12 bg-theme-main rounded-2xl border border-dashed border-theme-main">
+                                        <Icon name="receipt" className="w-12 h-12 text-theme-muted mx-auto mb-3 opacity-20" />
+                                        <p className="text-theme-muted font-medium">No change history recorded yet.</p>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
+                                ) : (
+                                    history.slice(-50).reverse().map((h, index) => (
+                                        <div key={`${h.id}-${index}`} className="text-sm p-4 bg-theme-surface border border-theme-main rounded-xl text-theme-main flex justify-between items-center">
+                                            <div>
+                                                <span className="font-bold text-primary-500 mr-2 uppercase text-[10px] tracking-wider">{h.action}</span>
+                                                <span>{h.itemType} "{h.itemName}"</span>
+                                            </div>
+                                            <span className="text-[10px] text-theme-muted font-mono">{new Date(h.timestamp).toLocaleString()}</span>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </section>
                     </div>
                 );
-            case 'history': return <div>{history.slice(-20).reverse().map(h => <div key={h.id} className="text-sm p-2 border-b border-theme-main text-theme-main">{h.timestamp}: {h.user} {h.action}d {h.itemType} "{h.itemName}"</div>)}</div>;
-            case 'adjustments': return <div>{stockAdjustments.slice(-20).reverse().map(a => <div key={a.id} className="text-sm p-2 border-b border-theme-main text-theme-main">{a.timestamp}: {a.user} adjusted stock for {a.productName} by {a.quantityChange} ({a.reason})</div>)}</div>;
             case 'data': return (
                 <div className="space-y-4">
                     <button onClick={() => setModalState({type: 'data_transfer', data: null})} className="w-full text-left p-4 rounded-lg bg-theme-main hover:bg-theme-surface border border-theme-main text-theme-main">

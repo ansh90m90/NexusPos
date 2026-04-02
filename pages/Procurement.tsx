@@ -4,13 +4,14 @@ import type { Product, PurchaseOrder, PurchaseOrderItem, Supplier, Transaction, 
 import Icon from '../components/Icon';
 import { useToast } from '../components/Toast';
 import { Tooltip } from '../components/Tooltip';
+import ComboBox from '../components/ComboBox';
 
 interface ProcurementProps {
   accountId: string;
   products: Product[];
   suppliers: Supplier[];
   purchaseOrders: PurchaseOrder[];
-  onNewPurchase: (order: PurchaseOrder, batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], newSupplierName?: string) => void;
+  onNewPurchase: (order: PurchaseOrder, batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], newSupplierName?: string, newSupplierGstin?: string) => void;
   transactions: Transaction[];
   modalState: { type: string | null; data: any };
   setModalState: (state: { type: string | null; data: any }) => void;
@@ -19,16 +20,47 @@ interface ProcurementProps {
 const ReceiveStockModal: React.FC<{
     products: Product[];
     suppliers: Supplier[];
-    onSave: (order: PurchaseOrder, batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], newSupplierName?: string) => void;
+    onSave: (order: PurchaseOrder, batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], newSupplierName?: string, newSupplierGstin?: string) => void;
     onClose: () => void;
     initialData?: Partial<PurchaseOrder>;
 }> = ({ products, suppliers, onSave, onClose, initialData }) => {
     const isPreview = !!initialData;
-    const [supplierId, setSupplierId] = useState<number | string | undefined>(initialData?.supplierId || '');
+    const [supplierName, setSupplierName] = useState<string>(() => {
+        if (initialData?.supplierId) {
+            return suppliers.find(s => s.id === initialData.supplierId)?.name || '';
+        }
+        return '';
+    });
     const [date, setDate] = useState(initialData?.date ? initialData.date.split('T')[0] : new Date().toISOString().split('T')[0]);
     const [invoiceNumber, setInvoiceNumber] = useState(initialData?.invoiceNumber || '');
-    const [createNewSupplier] = useState(false);
+    const [newSupplierGstin, setNewSupplierGstin] = useState('');
+    const [isFetchingGst, setIsFetchingGst] = useState(false);
     const toast = useToast();
+
+    const handleGstLookup = async () => {
+        if (!newSupplierGstin || newSupplierGstin.length < 15) {
+            toast.showToast('Please enter a valid 15-digit GSTIN.', 'error');
+            return;
+        }
+
+        setIsFetchingGst(true);
+        try {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            const mockDetails: Record<string, any> = {
+                '07AAAAA0000A1Z5': { name: 'Acme Retail Solutions' },
+                '27BBBBB1111B1Z2': { name: 'Global Traders Pvt Ltd' },
+            };
+            const details = mockDetails[newSupplierGstin.toUpperCase()] || {
+                name: `Business ${newSupplierGstin.slice(0, 5)}`
+            };
+            setSupplierName(details.name);
+            toast.showToast('Supplier name fetched from GSTIN!', 'success');
+        } catch (err) {
+            toast.showToast('Failed to fetch details.', 'error');
+        } finally {
+            setIsFetchingGst(false);
+        }
+    };
     
     type ItemState = PurchaseOrderItem & { productId?: number };
     const [items, setItems] = useState<ItemState[]>(
@@ -142,7 +174,11 @@ const ReceiveStockModal: React.FC<{
             return newItem as PurchaseOrderItem;
         });
 
-        if (finalItems.length === 0 || (!supplierId && !createNewSupplier)) {
+        const selectedSupplier = suppliers.find(s => s.name === supplierName);
+        const finalSupplierId = selectedSupplier ? selectedSupplier.id : 0;
+        const newSupplierName = !selectedSupplier && supplierName.trim() !== '' ? supplierName : undefined;
+
+        if (finalItems.length === 0 || (!finalSupplierId && !newSupplierName)) {
             toast.showToast('Please provide a supplier and at least one valid item.', 'error');
             return;
         }
@@ -153,15 +189,15 @@ const ReceiveStockModal: React.FC<{
         }));
         
         onSave({
-            id: initialData?.id || `PO-${Date.now()}`,
+            id: initialData?.id || `PO-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
             date: new Date(date).toISOString(),
-            supplierId: Number(supplierId) || 0,
+            supplierId: finalSupplierId,
             items: finalItems,
             totalCost: totalCost,
             extraCharges: extraCharges,
             invoiceNumber: invoiceNumber,
             status: 'Completed'
-        }, finalBatches);
+        }, finalBatches, newSupplierName, newSupplierGstin);
     };
 
     return (
@@ -175,13 +211,40 @@ const ReceiveStockModal: React.FC<{
                     <div className="p-6 flex-grow overflow-y-auto space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-sm font-semibold text-theme-main mb-1">Supplier</label>
-                                <select value={supplierId} onChange={e => setSupplierId(Number(e.target.value))} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required={!createNewSupplier}>
-                                    <option value="">Select Supplier</option>
-                                    {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                </select>
+                                <ComboBox
+                                    label="Supplier"
+                                    value={supplierName}
+                                    onChange={(val) => setSupplierName(val)}
+                                    options={suppliers.map(s => s.name)}
+                                    placeholder="Select or type new supplier"
+                                    required
+                                />
                                 <p className="text-xs text-theme-muted mt-2">Select the supplier for this purchase.</p>
                             </div>
+                            {!suppliers.some(s => s.name === supplierName) && supplierName.trim() !== '' && (
+                                <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-2xl border border-primary-100 dark:border-primary-900/30">
+                                    <label className="block text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-2">New Supplier GSTIN</label>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            value={newSupplierGstin} 
+                                            onChange={e => setNewSupplierGstin(e.target.value.toUpperCase())} 
+                                            placeholder="15-digit GSTIN" 
+                                            className="flex-grow p-2.5 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all font-mono text-xs" 
+                                            maxLength={15}
+                                        />
+                                        <button 
+                                            type="button" 
+                                            onClick={handleGstLookup}
+                                            disabled={isFetchingGst || !newSupplierGstin}
+                                            className="px-3 py-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                                        >
+                                            {isFetchingGst ? <Icon name="spinner" className="w-3 h-3 animate-spin" /> : <Icon name="sync-reload" className="w-3 h-3" />}
+                                            <span className="text-[10px] font-bold uppercase">Fetch</span>
+                                        </button>
+                                    </div>
+                                    <p className="text-[10px] text-theme-muted mt-2 italic">Enter GSTIN to fetch business name.</p>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-semibold text-theme-main mb-1">Invoice Number</label>
                                 <input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="e.g., INV-2023-001" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />

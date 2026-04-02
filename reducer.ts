@@ -17,7 +17,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
 
     const addHistory = (action: 'create' | 'update' | 'delete' | 'restore', itemType: ItemType, itemId: number | string, itemName: string, details?: string) => {
         newState.history.push({
-            id: `hist-${Date.now()}`,
+            id: `hist-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
             timestamp: now,
             user: payload.user || 'System',
             action,
@@ -91,7 +91,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                         const lowStockNotificationExists = newState.notifications.some(n => n.link?.context?.variantId === variant?.id);
                         if (!lowStockNotificationExists) {
                             newState.notifications.push({
-                                id: `lowstock-${variant.id}-${Date.now()}`,
+                                id: `lowstock-${variant.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                                 type: 'low_stock',
                                 message: `${product.name} (${variant.name}) is low on stock (${variant.stock} remaining).`,
                                 link: { page: 'Products', context: { productId: product.id, variantId: variant.id } },
@@ -189,7 +189,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                             if (quantityToAdd > 0) {
                                 // Create a return batch instead of just adding to stock
                                 const newReturnBatch: Batch = {
-                                    id: `B-RET-${Date.now()}-${variant.id}`,
+                                    id: `B-RET-${Date.now()}-${variant.id}-${Math.floor(Math.random() * 1000)}`,
                                     variantId: variant.id,
                                     quantity: quantityToAdd,
                                     receivedDate: now, // The date of the return
@@ -245,6 +245,27 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
             const { product: productData } = payload as { product: Partial<Product> };
             let details = '';
 
+            // Auto-create supplier if it doesn't exist
+            if (productData.supplier && productData.supplier.trim() !== '') {
+                const supplierExists = newState.suppliers.some(s => s.name.toLowerCase() === productData.supplier!.toLowerCase());
+                if (!supplierExists) {
+                    const newSupplier: Supplier = {
+                        id: getNextId(newState.suppliers),
+                        name: productData.supplier,
+                        contactPerson: '',
+                        phone: '',
+                        email: '',
+                        address: '',
+                        creditBalance: 0,
+                        creditLedger: [],
+                        createdAt: now,
+                        updatedAt: now
+                    };
+                    newState.suppliers.push(newSupplier);
+                    addHistory('create', 'Supplier', newSupplier.id, newSupplier.name, 'Auto-created from product save');
+                }
+            }
+
             if (productData.id && productData.id > 0) { // Edit
                 const index = newState.products.findIndex(p => p.id === productData.id);
                 if (index > -1) {
@@ -281,7 +302,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
 
                                     if (batchDiff > 0) {
                                         newState.batches.push({
-                                            id: `B-INIT-${Date.now()}-${v.id}`,
+                                            id: `B-INIT-${Date.now()}-${v.id}-${Math.floor(Math.random() * 1000)}`,
                                             variantId: v.id,
                                             quantity: batchDiff,
                                             receivedDate: now,
@@ -310,7 +331,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                             const newId = getNextId(allVariants);
                             if (newState.appSettings.enableAdvancedInventory && v.stock && v.stock > 0) {
                                 newState.batches.push({
-                                    id: `B-INIT-${Date.now()}-${newId}`,
+                                    id: `B-INIT-${Date.now()}-${newId}-${Math.floor(Math.random() * 1000)}`,
                                     variantId: newId,
                                     quantity: v.stock,
                                     receivedDate: now,
@@ -347,7 +368,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                     allVariants.push(newV);
                     if (newState.appSettings.enableAdvancedInventory && newV.stock > 0) {
                         newState.batches.push({
-                            id: `B-INIT-${Date.now()}-${newId}`,
+                            id: `B-INIT-${Date.now()}-${newId}-${Math.floor(Math.random() * 1000)}`,
                             variantId: newId,
                             quantity: newV.stock,
                             receivedDate: now,
@@ -475,6 +496,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                     phone: '',
                     email: '',
                     address: '',
+                    gstin: operation.payload.newSupplierGstin || '',
                     creditBalance: 0,
                     creditLedger: [],
                     createdAt: now,
@@ -570,7 +592,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                             ...batch, 
                             quantity: quantityToAdd,
                             variantId: variantIdForBatch,
-                            id: `B-${Date.now()}-${Math.random()}`, 
+                            id: `B-${Date.now()}-${Math.floor(Math.random() * 1000000)}`, 
                             receivedDate: order.date,
                             netPurchasePrice: batchNetPrice
                         } as Batch);
@@ -709,7 +731,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                 }
             } else {
                 const newPromotion = {
-                    id: `promo-${Date.now()}`,
+                    id: `promo-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                     ...promotion,
                     createdAt: now,
                     updatedAt: now,
@@ -779,7 +801,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                         }
                         if (quantityToAdd > 0) {
                             const newBatch: Batch = {
-                                id: `B-ADJ-${Date.now()}-${variantId}`,
+                                id: `B-ADJ-${Date.now()}-${variantId}-${Math.floor(Math.random() * 1000)}`,
                                 variantId: variantId,
                                 quantity: quantityToAdd,
                                 receivedDate: now,
@@ -815,7 +837,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                     const lowStockNotificationExists = newState.notifications.some(n => n.link?.context?.variantId === variant.id);
                     if (!lowStockNotificationExists) {
                         newState.notifications.push({
-                            id: `lowstock-${variant.id}-${Date.now()}`,
+                            id: `lowstock-${variant.id}-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                             type: 'low_stock',
                             message: `${product.name} (${variant.name}) is low on stock (${variant.stock} remaining).`,
                             link: { page: 'Products', context: { productId: product.id, variantId: variant.id } },
@@ -826,7 +848,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                 }
 
                 const adjustment: StockAdjustment = {
-                    id: `adj-${Date.now()}`,
+                    id: `adj-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                     timestamp: now,
                     user: payload.user || 'System',
                     variantId,
@@ -893,7 +915,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                     addHistory('update', 'Expense', expense.id, expense.description || newState.expenses[index].description);
                 }
             } else {
-                const newExpense = { ...expense, id: `exp-${Date.now()}`, createdAt: now, updatedAt: now };
+                const newExpense = { ...expense, id: `exp-${Date.now()}-${Math.floor(Math.random() * 1000)}`, createdAt: now, updatedAt: now };
                 newState.expenses.push(newExpense);
                 addHistory('create', 'Expense', newExpense.id, newExpense.description);
             }
