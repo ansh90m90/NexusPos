@@ -67,7 +67,7 @@ export type IconName =
   | 'hold-order' | 'categories' | 'sync-check' | 'sync-spin' | 'sync-error' 
   | 'sync-offline' | 'sync-reload' | 'sales-chart' | 'receipt' | 'credit-card' 
   | 'receive-stock' | 'activity-sale' | 'activity-customer' | 'activity-low-stock' 
-  | 'activity-purchase' | 'access-denied' | 'ai-sparkle' | 'ai' | 'send' | 'link-external'
+  | 'activity-purchase' | 'access-denied' | 'send' | 'link-external'
   | 'cash' | 'online' | 'credit' | 'camera' | 'upload' | 'spinner' | 'check' | 'star' | 'user' | 'user-plus' | 'zap';
 
 interface IconProps {
@@ -138,8 +138,6 @@ const iconMap: Record<IconName, React.ElementType> = {
   'activity-low-stock': AlertTriangle,
   'activity-purchase': CloudDownload,
   'access-denied': ShieldAlert,
-  'ai-sparkle': Sparkles,
-  ai: Sparkles,
   send: Send,
   'link-external': ExternalLink,
   cash: DollarSign,

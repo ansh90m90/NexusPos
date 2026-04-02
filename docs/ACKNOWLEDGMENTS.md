@@ -3,7 +3,6 @@
 We're grateful for the support of the following organizations and projects!
 
 ## Organizations
-- **Google AI Studio**: For providing the platform for Nexus.
 - **Vite**: For providing the fast and modern build tool.
 - **React**: For providing the robust and predictable UI library.
 - **Tailwind CSS**: For providing the utility-first styling framework.

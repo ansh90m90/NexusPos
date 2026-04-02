@@ -8,7 +8,6 @@ We're grateful for the support of the following people and projects!
 - **The Nexus Community**: For their feedback and support.
 
 ## Projects
-- **Google AI Studio**: For providing the platform for Nexus.
 - **Vite**: For providing the fast and modern build tool.
 - **React**: For providing the robust and predictable UI library.
 - **Tailwind CSS**: For providing the utility-first styling framework.
