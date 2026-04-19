@@ -49,7 +49,7 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
                 whileHover={!isOutOfStock ? { y: -4, scale: 1.02 } : {}}
                 whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
                 onClick={() => !isOutOfStock && tileRef.current && onAdd(variant, tileRef.current)}
-                className={`group relative flex flex-col p-4 rounded-3xl border transition-all duration-300 overflow-hidden ${
+                className={`group relative flex flex-col p-4 rounded-xl border transition-all duration-300 overflow-hidden ${
                     isOutOfStock 
                         ? 'bg-theme-main/50 border-theme-main opacity-60 cursor-not-allowed' 
                         : 'bg-theme-surface/80 backdrop-blur-md border-theme-main shadow-sm hover:shadow-xl hover:shadow-primary-500/10 hover:border-primary-500/50 cursor-pointer'
@@ -111,7 +111,7 @@ const MasterProductTile: React.FC<{
                 whileHover={{ y: -4, scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onOpenVariants(product)}
-                className="group relative flex flex-col p-4 rounded-3xl border border-theme-main bg-theme-surface/80 backdrop-blur-md shadow-sm hover:shadow-2xl hover:border-primary-500/50 cursor-pointer overflow-hidden aspect-[4/5] min-h-[180px]"
+                className="group relative flex flex-col p-4 rounded-xl border border-theme-main bg-theme-surface/80 backdrop-blur-md shadow-sm hover:shadow-2xl hover:border-primary-500/50 cursor-pointer overflow-hidden aspect-[4/5] min-h-[180px]"
             >
                 <div className="flex-grow flex flex-col">
                     {product.subCategory && (
@@ -172,13 +172,13 @@ const DishTile: React.FC<{
                         onAdd(variant, tileRef.current);
                     }
                 }}
-                className={`group relative rounded-[2.5rem] border transition-all duration-500 overflow-hidden aspect-[4/5] ${
+                className={`group relative rounded-2xl border transition-all duration-500 overflow-hidden aspect-[4/5] ${
                     isOutOfStock 
                         ? 'border-theme-main opacity-60 cursor-not-allowed grayscale' 
                         : 'border-theme-main shadow-xl shadow-theme-main/10 hover:shadow-2xl cursor-pointer'
                 }`}
             >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 opacity-90 group-hover:opacity-95 transition-all duration-500"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 opacity-90 group-hover:opacity-95 transition-all duration-500"></div>
                 <img 
                     src={dish.imageUrl || 'https://picsum.photos/seed/dish/400/500'} 
                     alt={dish.name} 
@@ -241,7 +241,7 @@ const CustomItemTile: React.FC<{ onAdd: (name: string, price: number) => void }>
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.9 }}
                         onClick={() => setShowForm(true)}
-                        className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-800/10 hover:border-primary-500 hover:bg-primary-500/5 transition-all cursor-pointer group"
+                        className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-theme-main rounded-2xl bg-theme-surface hover:border-primary-500 hover:bg-primary-500/5 transition-all cursor-pointer group"
                     >
                         <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-lg group-hover:shadow-primary-500/30">
                             <Icon name="plus" size={32} />
@@ -254,7 +254,7 @@ const CustomItemTile: React.FC<{ onAdd: (name: string, price: number) => void }>
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="w-full h-full p-6 flex flex-col border-2 border-primary-500 rounded-[2.5rem] bg-white dark:bg-slate-950 shadow-2xl shadow-primary-500/20 z-30"
+                        className="w-full h-full p-6 flex flex-col border-2 border-primary-500 rounded-2xl bg-theme-surface shadow-2xl shadow-primary-500/20 z-30"
                     >
                         <h4 className="text-xs font-black text-primary-500 uppercase tracking-widest mb-4">Add Custom Item</h4>
                         <div className="space-y-4 flex-grow">
@@ -327,7 +327,7 @@ const VariantGridModal: React.FC<{
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative bg-theme-surface rounded-[3rem] shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-theme-main"
+                className="relative bg-theme-surface rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-theme-main"
             >
                 {/* Header */}
                 <div className="p-8 border-b border-theme-main flex justify-between items-center bg-theme-main/30">
@@ -347,13 +347,7 @@ const VariantGridModal: React.FC<{
 
                 {/* Grid */}
                 <div className="flex-grow overflow-y-auto p-10 custom-scrollbar">
-                    <div className={`grid gap-6 ${
-                        variants.length <= 4 
-                            ? 'grid-cols-2' 
-                            : variants.length <= 8 
-                                ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' 
-                                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
-                    }`}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                         {variants.map((v, i) => {
                             const quantityInCart = cart.find(ci => ci.item.id === v.id)?.quantity || 0;
                             const isProduct = 'stock' in v;
@@ -371,7 +365,7 @@ const VariantGridModal: React.FC<{
                                         if (isOutOfStock) return;
                                         onAddVariant(v, e.currentTarget as HTMLDivElement);
                                     }}
-                                    className={`relative p-5 rounded-[2rem] border transition-all duration-300 flex flex-col items-center text-center cursor-pointer min-h-[140px] group ${
+                                    className={`relative p-5 rounded-xl border transition-all duration-300 flex flex-col items-center text-center cursor-pointer min-h-[140px] group ${
                                         isOutOfStock 
                                             ? 'bg-theme-main/50 border-theme-main opacity-40 grayscale cursor-not-allowed' 
                                             : 'bg-theme-surface border-theme-main shadow-lg hover:shadow-2xl hover:border-primary-500/50'
@@ -404,23 +398,23 @@ const VariantGridModal: React.FC<{
                 </div>
 
                 {/* Footer */}
-                <div className="p-8 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center backdrop-blur-md">
+                <div className="p-8 bg-theme-surface border-t border-theme-main flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <div className="flex -space-x-3">
                             {variants.slice(0, 5).map((v, i) => (
-                                <div key={i} className="w-10 h-10 rounded-full bg-indigo-500 text-white border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-black shadow-md" style={{ zIndex: 10 - i }}>
+                                <div key={i} className="w-10 h-10 rounded-full bg-primary-500 text-white border-2 border-theme-surface flex items-center justify-center text-[10px] font-black shadow-md" style={{ zIndex: 10 - i }}>
                                     {v.name.charAt(0)}
                                 </div>
                             ))}
                             {variants.length > 5 && (
-                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-black shadow-md">
+                                <div className="w-10 h-10 rounded-full bg-theme-main text-theme-muted border-2 border-theme-surface flex items-center justify-center text-[10px] font-black shadow-md">
                                     +{variants.length - 5}
                                 </div>
                             )}
                         </div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-2">Displaying {variants.length} options for checkout</p>
+                        <p className="text-xs font-bold text-theme-muted uppercase tracking-[0.2em] ml-2">Displaying {variants.length} options for checkout</p>
                     </div>
-                    <button onClick={onClose} className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:scale-105 transition-all shadow-xl dark:shadow-none">Finish Selecting</button>
+                    <button onClick={onClose} className="px-10 py-4 bg-primary-500 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-primary-600 transition-all shadow-xl">Finish Selecting</button>
                 </div>
             </motion.div>
         </div>
@@ -558,8 +552,8 @@ const CartView: React.FC<{
     }, [cart, promotions, products, extraCharges]);
 
     return (
-        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/50 dark:shadow-none h-full flex flex-col overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-slate-800/50">
+        <div className="bg-theme-surface rounded-2xl border border-theme-main shadow-2xl h-full flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-theme-main">
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">Current Order</h2>
@@ -725,7 +719,7 @@ const CustomChargeModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd:
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 10 }} 
                 animate={{ opacity: 1, scale: 1, y: 0 }} 
-                className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800"
+                className="relative bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main"
             >
                 <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/30">
                     <div>
@@ -1074,7 +1068,7 @@ const PaymentModal: React.FC<{
             <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 dark:border-slate-800/50"
+                className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main"
             >
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                     <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Complete Payment</h3>
@@ -1586,7 +1580,7 @@ const POS: React.FC<POSProps> = (props) => {
                             placeholder="Search products or dishes..." 
                             value={searchTerm} 
                             onChange={e => setSearchTerm(e.target.value)} 
-                            className="w-full p-5 pl-14 bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-800/60 rounded-[2rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all text-slate-900 dark:text-white shadow-xl shadow-slate-200/20 dark:shadow-none font-bold text-lg" 
+                            className="w-full p-5 pl-14 bg-theme-surface border border-theme-main rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all text-theme-main shadow-xl shadow-theme-main/10 font-bold text-lg" 
                         />
                     </div>
                     {props.appSettings.enableBarcodeScanner && (
@@ -1602,16 +1596,16 @@ const POS: React.FC<POSProps> = (props) => {
                 </div>
                 
                 {props.appSettings.shopTypes.includes('Restaurant') && props.appSettings.shopTypes.includes('Retail') && (
-                    <div className="flex items-center bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md rounded-[1.5rem] p-2 self-start w-fit border border-slate-200/50 dark:border-slate-800/50">
+                    <div className="flex items-center bg-theme-main/20 rounded-xl p-2 self-start w-fit border border-theme-main">
                         <button 
                             onClick={() => setActiveTab('products')} 
-                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-500 ${activeTab === 'products' ? 'bg-white dark:bg-slate-700 text-primary-500 shadow-xl shadow-primary-500/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'products' ? 'bg-theme-surface text-primary-500 shadow-lg' : 'text-theme-muted hover:text-theme-main'}`}
                         >
                             Products
                         </button>
                         <button 
                             onClick={() => setActiveTab('dishes')} 
-                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-500 ${activeTab === 'dishes' ? 'bg-white dark:bg-slate-700 text-primary-500 shadow-xl shadow-primary-500/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'dishes' ? 'bg-theme-surface text-primary-500 shadow-lg' : 'text-theme-muted hover:text-theme-main'}`}
                         >
                             Dishes
                         </button>
@@ -1818,38 +1812,38 @@ const POS: React.FC<POSProps> = (props) => {
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 dark:border-slate-800/50"
+                        className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main"
                     >
-                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Hold Current Order</h3>
-                            <button onClick={() => setIsHoldModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-                                <Icon name="close" className="w-5 h-5 text-slate-400" />
+                        <div className="p-6 border-b border-theme-main flex justify-between items-center">
+                            <h3 className="text-xl font-black text-theme-main tracking-tighter uppercase">Hold Current Order</h3>
+                            <button onClick={() => setIsHoldModalOpen(false)} className="p-2 hover:bg-theme-main rounded-full transition-colors">
+                                <Icon name="close" className="w-5 h-5 text-theme-muted" />
                             </button>
                         </div>
                         <div className="p-8 space-y-8">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Order Name / Table Number</label>
+                                <label className="text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Order Name / Table Number</label>
                                 <input 
                                     type="text" 
                                     value={holdName} 
                                     onChange={e => setHoldName(e.target.value)}
-                                    className="w-full p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none text-slate-900 dark:text-white font-bold text-lg transition-all"
+                                    className="w-full p-5 bg-theme-main border border-theme-main rounded-xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none text-theme-main font-bold text-lg transition-all"
                                     placeholder={customer ? customer.name : "e.g. Table 5, John Doe..."}
                                     autoFocus
                                     onKeyDown={e => e.key === 'Enter' && handleHoldCart()}
                                 />
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-2">This helps you identify the order later</p>
+                                <p className="text-[10px] text-theme-muted font-bold uppercase tracking-widest ml-2">This helps you identify the order later</p>
                             </div>
                             <div className="flex gap-4 pt-2">
                                 <button 
                                     onClick={() => setIsHoldModalOpen(false)}
-                                    className="flex-1 px-6 py-4 border border-slate-200 dark:border-slate-700 rounded-2xl font-black uppercase tracking-widest text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                                    className="flex-1 px-6 py-4 border border-theme-main rounded-xl font-black uppercase tracking-widest text-xs text-theme-muted hover:bg-theme-main transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={handleHoldCart}
-                                    className="flex-1 px-6 py-4 bg-primary-500 hover:bg-primary-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-primary-500/25"
+                                    className="flex-1 px-6 py-4 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-primary-500/25"
                                 >
                                     Hold Order
                                 </button>
