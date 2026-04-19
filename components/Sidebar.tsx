@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Page, EmployeeRole, AppSettings } from '../types';
 import { navItems } from '../constants';
 import Icon from './Icon';
@@ -21,21 +22,28 @@ const NavItem: React.FC<{
 }> = ({ page, label, iconName, currentPage, onNavigate }) => {
     const isActive = currentPage === page;
     return (
-        <Tooltip content={`Navigate to ${label}`} position="right">
-            <a
+        <Tooltip content={label} position="right">
+            <button
                 data-tutorial-id={`nav-${page}`}
-                href="#"
                 onClick={(e) => {
                     e.preventDefault();
                     onNavigate(page);
                 }}
-                className={`group relative flex items-center justify-center p-3 rounded-lg text-theme-muted hover:bg-primary-500/10 hover:text-primary-600 dark:hover:text-primary-400 transition-all duration-200 ${
-                    isActive ? 'bg-primary-500/20 text-primary-600 dark:text-primary-400' : ''
+                className={`group relative flex items-center justify-center p-3 rounded-2xl transition-all duration-300 ${
+                    isActive 
+                    ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30 scale-110' 
+                    : 'text-theme-muted hover:text-primary-500 hover:bg-theme-main'
                 }`}
             >
-                {isActive && <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-primary-500 rounded-r-full hidden md:block"></div>}
-                <Icon name={iconName} className="w-6 h-6" />
-            </a>
+                <Icon name={iconName} size={24} />
+                {isActive && (
+                    <motion.div 
+                        layoutId="activeNav"
+                        className="absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-1.5 bg-primary-500 rounded-r-full hidden md:block"
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                )}
+            </button>
         </Tooltip>
     )
 };
@@ -70,12 +78,17 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, employee
   const hiddenItems = accessibleNavItems.slice(MAX_VISIBLE_ICONS_MOBILE);
 
   return (
-      <nav id="sidebar" className="fixed bottom-0 left-0 z-40 w-full h-16 bg-theme-surface/90 backdrop-blur-md border-t border-theme-main md:top-0 md:left-0 md:h-screen md:w-20 md:border-t-0 md:border-r transition-all duration-300" aria-label="Sidebar">
-        <div className="flex flex-row items-center justify-around h-full md:flex-col md:justify-start md:py-4 md:gap-2">
-            <a href="#" onClick={(e) => { e.preventDefault(); handleNavigation('Dashboard'); }} className="hidden md:block p-2 mb-4" title={appSettings.shopName}>
-               <Icon name="logo" className="h-9 w-9 text-primary-500" />
-            </a>
-            <ul className="flex flex-row items-center justify-around w-full md:flex-col md:space-y-2">
+      <nav id="sidebar" className="fixed bottom-0 left-0 z-40 w-full h-20 bg-theme-surface/80 backdrop-blur-xl border-t border-theme-main md:top-0 md:left-0 md:h-screen md:w-24 md:border-t-0 md:border-r transition-all duration-300" aria-label="Sidebar">
+        <div className="flex flex-row items-center justify-around h-full md:flex-col md:justify-start md:py-8 md:gap-8">
+            <button 
+                onClick={(e) => { e.preventDefault(); handleNavigation('Dashboard'); }} 
+                className="hidden md:flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-xl shadow-primary-500/20 hover:scale-105 transition-transform" 
+                title={appSettings.shopName}
+            >
+               <Icon name="logo" size={32} className="text-white" />
+            </button>
+            
+            <ul className="flex flex-row items-center justify-around w-full md:flex-col md:gap-4">
                  {/* Desktop: Show all items */}
                  {accessibleNavItems.map((item) => (
                     <li key={item.page} className="hidden md:block">
@@ -91,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, employee
 
                  {/* Mobile: Show only visible items */}
                  {visibleItems.map((item) => (
-                     <li key={item.page} className="block md:hidden">
+                      <li key={item.page} className="block md:hidden">
                         <NavItem
                             page={item.page}
                             label={item.label}
@@ -104,29 +117,41 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, employee
                  
                  {/* Mobile: "More" menu button and panel */}
                  {hiddenItems.length > 0 && (
-                     <li className="relative block md:hidden" ref={moreMenuRef}>
-                        <a
-                            href="#"
+                      <li className="relative block md:hidden" ref={moreMenuRef}>
+                        <button
                             onClick={(e) => { e.preventDefault(); setIsMoreMenuOpen(prev => !prev); }}
                             title="More"
-                            className={`group flex items-center justify-center p-3 rounded-lg text-theme-muted hover:bg-theme-main transition-all duration-200 ${isMoreMenuOpen ? 'bg-theme-main' : ''}`}
+                            className={`group flex items-center justify-center p-3 rounded-2xl transition-all duration-200 ${isMoreMenuOpen ? 'bg-theme-main text-primary-500' : 'text-theme-muted hover:bg-theme-main/50'}`}
                         >
-                            <Icon name="more" className="w-6 h-6" />
-                        </a>
-                        {isMoreMenuOpen && (
-                            <div className="absolute bottom-full right-0 mb-2 w-48 bg-theme-surface rounded-md shadow-lg border border-theme-main z-50">
-                                <ul>
-                                    {hiddenItems.map(item => (
-                                        <li key={item.page}>
-                                            <a href="#" onClick={(e) => { e.preventDefault(); handleNavigation(item.page); }} className={`flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-colors ${currentPage === item.page ? 'text-primary-600 bg-primary-500/10 dark:text-primary-400' : 'text-theme-main hover:bg-theme-main'}`}>
-                                                <Icon name={item.iconName} className="w-5 h-5" />
+                            <Icon name="more" size={24} />
+                        </button>
+                        <AnimatePresence>
+                            {isMoreMenuOpen && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute bottom-full right-0 mb-4 w-56 bg-theme-surface rounded-3xl shadow-2xl border border-theme-main z-50 overflow-hidden p-2"
+                                >
+                                    <div className="space-y-1">
+                                        {hiddenItems.map(item => (
+                                            <button 
+                                                key={item.page}
+                                                onClick={(e) => { e.preventDefault(); handleNavigation(item.page); }} 
+                                                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-2xl transition-all ${
+                                                    currentPage === item.page 
+                                                    ? 'text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-500/10' 
+                                                    : 'text-theme-muted hover:bg-theme-main'
+                                                }`}
+                                            >
+                                                <Icon name={item.iconName} size={20} />
                                                 <span>{item.label}</span>
-                                            </a>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                      </li>
                  )}
             </ul>

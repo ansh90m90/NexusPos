@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { applyOperation } from '../reducer';
 import type { AccountState, User, Promotion, Dish, RawMaterial, Supplier, PurchaseOrder, Batch, StockAdjustmentReason, ItemType, Expense, AppSettings, HeldCart, Operation } from '../types';
 import { saveBusinessState, pushOperation, subscribeToOperations } from '../services/syncService';
@@ -63,12 +63,18 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, React.Disp
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [key]);
+  }, [key, initialValue]);
 
   const setValue: React.Dispatch<React.SetStateAction<T>> = useCallback((value) => {
     setStoredValue(prevStoredValue => {
       try {
         const valueToStore = value instanceof Function ? value(prevStoredValue) : value;
+        
+        // Optimization: Don't update if value is the same
+        if (JSON.stringify(valueToStore) === JSON.stringify(prevStoredValue)) {
+          return prevStoredValue;
+        }
+
         if (typeof window !== 'undefined') {
           window.localStorage.setItem(key, JSON.stringify(valueToStore));
         }
@@ -104,18 +110,25 @@ export const useSync = (
         setAccountStateRef.current = setAccountState;
     }, [setAccountState]);
 
+    const syncTimeoutRef = useRef<any>(null);
+
     const runSync = useCallback(async () => {
         const currentAccountState = accountStateRef.current;
         if (!currentAccountState || currentAccountState.isTest || !accountId || !businessId) return;
 
-        setSyncStatus('syncing');
-        try {
-            await saveBusinessState(accountId, businessId, currentAccountState);
-            setSyncStatus('synced');
-        } catch (error) {
-            console.error('Sync failed:', error);
-            setSyncStatus('error');
-        }
+        // Debounce sync to prevent exhausting Firestore write quota
+        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+        
+        syncTimeoutRef.current = setTimeout(async () => {
+            setSyncStatus('syncing');
+            try {
+                await saveBusinessState(accountId, businessId, currentAccountState);
+                setSyncStatus('synced');
+            } catch (error) {
+                console.error('Sync failed:', error);
+                setSyncStatus('error');
+            }
+        }, 2000); // 2 second debounce
     }, [accountId, businessId]);
 
     const dispatchOperation = useCallback((type: string, payload: any, skipSync = false) => {
@@ -156,6 +169,9 @@ export const useSync = (
             return;
         }
 
+        // Only subscribe once per businessId
+        if (unsubscribeRef.current) return;
+
         const lastSyncId = accountState?.lastSyncId || 0;
 
         unsubscribeRef.current = subscribeToOperations(accountId, businessId, lastSyncId, (newOps) => {
@@ -182,7 +198,8 @@ export const useSync = (
                 unsubscribeRef.current = null;
             }
         };
-    }, [accountId, businessId, accountState?.isTest, accountState?.lastSyncId, clientId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [accountId, businessId, accountState?.isTest, clientId]);
 
     return { syncStatus, runSync, dispatchOperation };
 };
@@ -200,24 +217,25 @@ interface AccountActionsProps {
 
 export const useAccountActions = ({ dispatchOperation, currentUser, setModalState, toast, accountState, setCurrentUser }: AccountActionsProps) => {
     
-    const withUser = (payload: any) => ({ ...payload, user: currentUser?.name || 'Unknown' });
+    const withUser = useCallback((payload: any) => ({ ...payload, user: currentUser?.name || 'Unknown' }), [currentUser?.name]);
 
     // --- Transaction & POS Actions ---
-    const handleNewTransaction = (transaction: any) => dispatchOperation('CREATE_TRANSACTION', withUser({ transaction }));
-    const handleCancelTransaction = (transactionId: string) => dispatchOperation('CANCEL_TRANSACTION', withUser({ transactionId }));
-    const handleUpdateHeldCarts = (updater: React.SetStateAction<HeldCart[]>) => {
+    const handleNewTransaction = useCallback((transaction: any) => dispatchOperation('CREATE_TRANSACTION', withUser({ transaction })), [dispatchOperation, withUser]);
+    const handleCancelTransaction = useCallback((transactionId: string) => dispatchOperation('CANCEL_TRANSACTION', withUser({ transactionId })), [dispatchOperation, withUser]);
+    const handleUpdateHeldCarts = useCallback((updater: React.SetStateAction<HeldCart[]>) => {
         const newCarts = typeof updater === 'function' ? updater(accountState.heldCarts) : updater;
         dispatchOperation('UPDATE_HELD_CARTS', { carts: newCarts }, true); // Local only
-    }
+    }, [dispatchOperation, accountState.heldCarts]);
 
     // --- Product & Inventory Actions ---
-    const handleSaveProduct = (product: any) => {
+    const handleSaveProduct = useCallback((product: any) => {
         dispatchOperation('SAVE_PRODUCT', withUser({ product }));
         setModalState({ type: null, data: null });
         toast.showToast('Product saved.', 'success');
-    };
-    const handleDeleteProduct = (productId: number) => dispatchOperation('DELETE_PRODUCT', withUser({ productId }));
-    const handleNewPurchase = (
+    }, [dispatchOperation, withUser, setModalState, toast]);
+    const handleDeleteProduct = useCallback((productId: number) => dispatchOperation('DELETE_PRODUCT', withUser({ productId })), [dispatchOperation, withUser]);
+    const handleDeletePurchase = useCallback((purchaseId: string) => dispatchOperation('DELETE_PURCHASE', withUser({ purchaseId })), [dispatchOperation, withUser]);
+    const handleNewPurchase = useCallback((
         order: PurchaseOrder, 
         batches: (Omit<Batch, 'id' | 'receivedDate'> & { productName?: string })[], 
         newSupplierName?: string,
@@ -233,32 +251,29 @@ export const useAccountActions = ({ dispatchOperation, currentUser, setModalStat
             newSupplierAddress,
             newSupplierContact
         }));
-    };
-     const handleAdjustStock = (variantId: number, productName: string, quantityChange: number, reason: StockAdjustmentReason, notes?: string) => {
+    }, [dispatchOperation, withUser]);
+    const handleAdjustStock = useCallback((variantId: number, productName: string, quantityChange: number, reason: StockAdjustmentReason, notes?: string) => {
         dispatchOperation('ADJUST_STOCK', withUser({ variantId, productName, quantityChange, reason, notes }));
-    };
+    }, [dispatchOperation, withUser]);
 
     // --- Customer Actions ---
-    const handleSaveCustomer = (customer: any) => {
+    const handleSaveCustomer = useCallback((customer: any) => {
         dispatchOperation('SAVE_CUSTOMER', withUser({ customer }));
         setModalState({ type: null, data: null });
         toast.showToast('Customer saved.', 'success');
-    };
-    const handleDeleteCustomer = (customerId: number) => dispatchOperation('DELETE_CUSTOMER', withUser({ customerId }));
-    const handleAddCustomerPayment = (customerId: number, amount: number) => dispatchOperation('ADD_CUSTOMER_PAYMENT', withUser({ customerId, amount }));
+    }, [dispatchOperation, withUser, setModalState, toast]);
+    const handleDeleteCustomer = useCallback((customerId: number) => dispatchOperation('DELETE_CUSTOMER', withUser({ customerId })), [dispatchOperation, withUser]);
+    const handleAddCustomerPayment = useCallback((customerId: number, amount: number, isLoan: boolean) => dispatchOperation('ADD_CUSTOMER_PAYMENT', withUser({ customerId, amount, isLoan })), [dispatchOperation, withUser]);
 
     // --- Staff & User Actions ---
-    const handleSaveUser = (user: any) => {
+    const handleSaveUser = useCallback((user: any) => {
         dispatchOperation('SAVE_USER', { user }); // No user needed, system action
         toast.showToast('Staff member saved.', 'success');
-    };
-    const handleDeleteUser = (userId: number) => dispatchOperation('DELETE_USER', { userId });
-    const handleUpdateCurrentUser = (updateData: any) => {
+    }, [dispatchOperation, toast]);
+    const handleDeleteUser = useCallback((userId: number) => dispatchOperation('DELETE_USER', { userId }), [dispatchOperation]);
+    const handleUpdateCurrentUser = useCallback((updateData: any) => {
         const payload = { userId: currentUser!.id, updateData };
-        // Check password validity locally before dispatching to avoid sending plain text old passwords
         if (updateData.oldPassword && updateData.newPassword) {
-            // In a real app with bcrypt on client, you'd check here.
-            // For this app, we let the reducer/backend handle it.
             dispatchOperation('UPDATE_CURRENT_USER', payload);
             return { success: true, message: "Profile update queued." };
         } else {
@@ -266,54 +281,55 @@ export const useAccountActions = ({ dispatchOperation, currentUser, setModalStat
              setCurrentUser(prev => prev ? {...prev, name: updateData.name, email: updateData.email } : null);
              return { success: true, message: "Profile updated." };
         }
-    }
+    }, [dispatchOperation, currentUser, setCurrentUser]);
 
     // --- Promotion Actions ---
-    const handleSavePromotion = (promotion: Partial<Promotion>) => dispatchOperation('SAVE_PROMOTION', withUser({ promotion }));
-    const handleDeletePromotion = (promotionId: string) => dispatchOperation('DELETE_PROMOTION', withUser({ promotionId }));
-    const handleTogglePromotionStatus = (promotionId: string) => dispatchOperation('TOGGLE_PROMOTION_STATUS', withUser({ promotionId }));
+    const handleSavePromotion = useCallback((promotion: Partial<Promotion>) => dispatchOperation('SAVE_PROMOTION', withUser({ promotion })), [dispatchOperation, withUser]);
+    const handleDeletePromotion = useCallback((promotionId: string) => dispatchOperation('DELETE_PROMOTION', withUser({ promotionId })), [dispatchOperation, withUser]);
+    const handleTogglePromotionStatus = useCallback((promotionId: string) => dispatchOperation('TOGGLE_PROMOTION_STATUS', withUser({ promotionId })), [dispatchOperation, withUser]);
 
     // --- Restaurant Actions ---
-    const handleSaveDish = (dish: Partial<Dish>) => { dispatchOperation('SAVE_DISH', withUser({ dish })); setModalState({ type: null, data: null }); toast.showToast('Dish saved.', 'success'); };
-    const handleDeleteDish = (dishId: number) => {
+    const handleSaveDish = useCallback((dish: Partial<Dish>) => { dispatchOperation('SAVE_DISH', withUser({ dish })); setModalState({ type: null, data: null }); toast.showToast('Dish saved.', 'success'); }, [dispatchOperation, withUser, setModalState, toast]);
+    const handleDeleteDish = useCallback((dishId: number) => {
         const canDelete = !accountState.kitchenOrders.some(o => o.status === 'Pending' && o.items.some(i => i.dish.id === dishId));
         if (canDelete) {
             dispatchOperation('DELETE_DISH', withUser({ dishId }));
             return { success: true, message: "Delete operation queued." };
         }
         return { success: false, message: "Cannot delete a dish that is part of a pending kitchen order." };
-    };
-    const handleSaveRawMaterial = (material: Partial<RawMaterial>) => { dispatchOperation('SAVE_RAW_MATERIAL', withUser({ material })); setModalState({ type: null, data: null }); toast.showToast('Material saved.', 'success'); };
-    const handleDeleteRawMaterial = (materialId: number) => {
+    }, [dispatchOperation, withUser, accountState.kitchenOrders]);
+    const handleSaveRawMaterial = useCallback((material: Partial<RawMaterial>) => { dispatchOperation('SAVE_RAW_MATERIAL', withUser({ material })); setModalState({ type: null, data: null }); toast.showToast('Material saved.', 'success'); }, [dispatchOperation, withUser, setModalState, toast]);
+    const handleDeleteRawMaterial = useCallback((materialId: number) => {
          const canDelete = !accountState.dishes.some(d => !d.isDeleted && d.ingredients.some(i => i.id === materialId));
          if (canDelete) {
             dispatchOperation('DELETE_RAW_MATERIAL', withUser({ materialId }));
             return { success: true, message: "Delete operation queued." };
          }
          return { success: false, message: "Cannot delete a raw material that is used in an active dish." };
-    };
-     const handleUpdateKitchenOrders = (orders: any) => dispatchOperation('UPDATE_KITCHEN_ORDERS', { orders });
+    }, [dispatchOperation, withUser, accountState.dishes]);
+    const handleUpdateKitchenOrders = useCallback((orders: any) => dispatchOperation('UPDATE_KITCHEN_ORDERS', { orders }), [dispatchOperation]);
 
     // --- Supplier Actions ---
-    const handleSaveSupplier = (supplier: Partial<Supplier>) => { dispatchOperation('SAVE_SUPPLIER', withUser({ supplier })); setModalState({ type: null, data: null }); toast.showToast('Supplier saved.', 'success'); };
-    const handleDeleteSupplier = (supplierId: number) => dispatchOperation('DELETE_SUPPLIER', withUser({ supplierId }));
-    const handleAddSupplierPayment = (supplierId: number, amount: number) => dispatchOperation('ADD_SUPPLIER_PAYMENT', withUser({ supplierId, amount }));
+    const handleSaveSupplier = useCallback((supplier: Partial<Supplier>) => { dispatchOperation('SAVE_SUPPLIER', withUser({ supplier })); setModalState({ type: null, data: null }); toast.showToast('Supplier saved.', 'success'); }, [dispatchOperation, withUser, setModalState, toast]);
+    const handleDeleteSupplier = useCallback((supplierId: number) => dispatchOperation('DELETE_SUPPLIER', withUser({ supplierId })), [dispatchOperation, withUser]);
+    const handleAddSupplierPayment = useCallback((supplierId: number, amount: number, isLoan: boolean) => dispatchOperation('ADD_SUPPLIER_PAYMENT', withUser({ supplierId, amount, isLoan })), [dispatchOperation, withUser]);
 
     // --- Expense Actions ---
-    const handleSaveExpense = (expense: Partial<Expense>) => { dispatchOperation('SAVE_EXPENSE', withUser({ expense })); setModalState({ type: null, data: null }); toast.showToast('Expense saved.', 'success'); };
-    const handleDeleteExpense = (expenseId: string) => {
+    const handleSaveExpense = useCallback((expense: Partial<Expense>) => { dispatchOperation('SAVE_EXPENSE', withUser({ expense })); setModalState({ type: null, data: null }); toast.showToast('Expense saved.', 'success'); }, [dispatchOperation, withUser, setModalState, toast]);
+    const handleDeleteExpense = useCallback((expenseId: string) => {
         dispatchOperation('DELETE_EXPENSE', withUser({ expenseId }));
         return { success: true, message: "Delete operation queued." };
-    };
+    }, [dispatchOperation, withUser]);
+    const handleGenerateRecurringExpenses = useCallback(() => dispatchOperation('GENERATE_RECURRING_EXPENSES', withUser({})), [dispatchOperation, withUser]);
 
     // --- App Settings & Misc Actions ---
-    const handleUpdateAppSettings = (updater: (prev: AppSettings) => AppSettings) => {
+    const handleUpdateAppSettings = useCallback((updater: (prev: AppSettings) => AppSettings) => {
         const newSettings = updater(accountState.appSettings);
         dispatchOperation('UPDATE_APP_SETTINGS', withUser({ settings: newSettings }));
-    };
-    const handleMarkNotificationsRead = () => dispatchOperation('MARK_NOTIFICATIONS_READ', {}, true); // Local only
-    const handleRestoreItem = (itemType: ItemType, itemId: string | number) => dispatchOperation('RESTORE_ITEM', withUser({ itemType, itemId }));
-    const handleAccountImport = async (data: string): Promise<boolean> => {
+    }, [dispatchOperation, withUser, accountState.appSettings]);
+    const handleMarkNotificationsRead = useCallback(() => dispatchOperation('MARK_NOTIFICATIONS_READ', {}, true), [dispatchOperation]);
+    const handleRestoreItem = useCallback((itemType: ItemType, itemId: string | number) => dispatchOperation('RESTORE_ITEM', withUser({ itemType, itemId })), [dispatchOperation, withUser]);
+    const handleAccountImport = useCallback(async (data: string): Promise<boolean> => {
         try {
             const newState = JSON.parse(data);
             if (newState.id && newState.products && newState.appSettings) {
@@ -325,16 +341,24 @@ export const useAccountActions = ({ dispatchOperation, currentUser, setModalStat
             console.error("Import error:", e);
         }
         return false;
-    };
+    }, [dispatchOperation, toast]);
 
 
-    return {
+    return useMemo(() => ({
         handleNewTransaction, handleSaveProduct, handleDeleteProduct, handleSaveCustomer, handleDeleteCustomer,
         handleAddCustomerPayment, handleNewPurchase, handleSaveUser, handleDeleteUser, handleSavePromotion,
         handleDeletePromotion, handleTogglePromotionStatus, handleSaveDish, handleDeleteDish, handleSaveRawMaterial,
         handleDeleteRawMaterial, handleSaveSupplier, handleDeleteSupplier, handleMarkNotificationsRead,
         handleRestoreItem, handleAdjustStock, handleSaveExpense, handleDeleteExpense, handleUpdateAppSettings,
         handleUpdateKitchenOrders, handleUpdateCurrentUser, handleAccountImport, handleCancelTransaction,
-        handleUpdateHeldCarts, handleAddSupplierPayment,
-    };
+        handleUpdateHeldCarts, handleAddSupplierPayment, handleDeletePurchase, handleGenerateRecurringExpenses,
+    }), [
+        handleNewTransaction, handleSaveProduct, handleDeleteProduct, handleSaveCustomer, handleDeleteCustomer,
+        handleAddCustomerPayment, handleNewPurchase, handleSaveUser, handleDeleteUser, handleSavePromotion,
+        handleDeletePromotion, handleTogglePromotionStatus, handleSaveDish, handleDeleteDish, handleSaveRawMaterial,
+        handleDeleteRawMaterial, handleSaveSupplier, handleDeleteSupplier, handleMarkNotificationsRead,
+        handleRestoreItem, handleAdjustStock, handleSaveExpense, handleDeleteExpense, handleUpdateAppSettings,
+        handleUpdateKitchenOrders, handleUpdateCurrentUser, handleAccountImport, handleCancelTransaction,
+        handleUpdateHeldCarts, handleAddSupplierPayment, handleDeletePurchase, handleGenerateRecurringExpenses,
+    ]);
 };

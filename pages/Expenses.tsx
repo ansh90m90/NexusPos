@@ -19,6 +19,8 @@ const ExpensePanel: React.FC<{
         description: expense?.description || '',
         category: expense?.category || 'Utilities',
         amount: expense?.amount || 0,
+        frequency: expense?.frequency || 'one-time',
+        isRecurring: expense?.isRecurring || false,
     });
     const [attachment, setAttachment] = useState<Expense['attachment'] | null>(expense?.attachment || null);
     const isEditing = !!expense?.id;
@@ -79,6 +81,28 @@ const ExpensePanel: React.FC<{
                     <label className="block text-sm font-semibold text-theme-main mb-1">Date</label>
                     <input name="date" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
                     <p className="text-xs text-theme-muted mt-2">The date the expense occurred.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-semibold text-theme-main mb-1">Frequency</label>
+                        <select name="frequency" value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value as any })} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all">
+                            <option value="one-time">One-time</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div className="flex items-center gap-2 pt-8">
+                        <input 
+                            type="checkbox" 
+                            id="isRecurring" 
+                            checked={formData.isRecurring} 
+                            onChange={e => setFormData({ ...formData, isRecurring: e.target.checked })}
+                            className="w-5 h-5 rounded border-theme-main text-primary-500 focus:ring-primary-500"
+                        />
+                        <label htmlFor="isRecurring" className="text-sm font-semibold text-theme-main">Recurring Expense</label>
+                    </div>
                 </div>
                 
                  <div>
@@ -195,8 +219,25 @@ const Expenses: React.FC<ExpensesProps> = ({ expenses, onSaveExpense, onDeleteEx
                             <tbody>
                                 {expenses.map(exp => (
                                     <tr key={exp.id} className="border-b border-theme-main transition-colors hover:bg-theme-main">
-                                        <td className="px-6 py-4 font-medium text-theme-main">{new Date(exp.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-bold text-theme-main">{exp.description}</td>
+                                        <td className="px-6 py-4 font-medium text-theme-main">
+                                            {new Date(exp.date).toLocaleDateString()}
+                                            {exp.isRecurring && (
+                                                <span className="ml-2 px-1.5 py-0.5 text-[10px] font-bold rounded bg-primary-100 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400 uppercase">
+                                                    {exp.frequency}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-theme-main">{exp.description}</span>
+                                                {exp.relatedType === 'purchase' && (
+                                                    <span className="text-[10px] text-theme-muted flex items-center gap-1">
+                                                        <Icon name="procurement" className="w-3 h-3" />
+                                                        Linked to Purchase
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className="px-3 py-1 text-xs font-bold rounded-lg bg-theme-main text-theme-main border border-theme-main">{exp.category}</span>
                                         </td>

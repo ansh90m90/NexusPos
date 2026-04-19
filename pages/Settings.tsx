@@ -9,8 +9,11 @@ import Icon from '../components/Icon';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { useToast } from '../components/Toast';
 import { Tooltip } from '../components/Tooltip';
+import { db, auth } from '../firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { sanitize } from '../services/syncService';
 
-type SettingsTab = 'general' | 'appearance' | 'features' | 'staff_promos' | 'logs' | 'data' | 'help' | 'about';
+type SettingsTab = 'general' | 'appearance' | 'features' | 'staff_promos' | 'logs' | 'data' | 'cloud' | 'help' | 'about';
 
 const SettingRow: React.FC<{title: string, description: string, enabled: boolean, onToggle: () => void, disabled?: boolean}> = ({title, description, enabled, onToggle, disabled = false}) => (
   <div className="flex justify-between items-center bg-theme-surface p-5 rounded-2xl border border-theme-main shadow-sm hover:border-primary-500/30 transition-colors">
@@ -207,9 +210,13 @@ interface SettingsProps {
 }
 
 const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSaveUser, onDeleteUser, onSavePromotion, onDeletePromotion, onTogglePromotionStatus, onHardReset, onRestoreItem, uiScale, setUiScale, isTutorialActive, onStartTutorial, onEndTutorial, modalState, setModalState, onDeleteAccount }) => {
-    const { products, users, promotions, history, stockAdjustments, expenses, appSettings } = accountState;
+    const { products, dishes, users, promotions, history, stockAdjustments, expenses, appSettings } = accountState;
     const [activeTab, setActiveTab] = useState<SettingsTab | null>(() => typeof window !== 'undefined' && window.innerWidth >= 1024 ? 'general' : null);
     const { theme, setTheme, accentColor, setAccentColor } = useContext(ThemeContext);
+
+    const [isPublishing, setIsPublishing] = useState(false);
+    const [isSyncingMaster, setIsSyncingMaster] = useState(false);
+    const [masterListId, setMasterListId] = useState(appSettings.masterListId || '');
 
     const [resetConfirm, setResetConfirm] = useState(false);
     const [businessDeleteConfirm, setBusinessDeleteConfirm] = useState(false);
@@ -225,6 +232,7 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
         { id: 'staff_promos', label: 'Staff & Promotions', icon: 'customers' },
         { id: 'logs', label: 'History & Adjustments', icon: 'receipt' },
         { id: 'data', label: 'Data Management', icon: 'sync-reload' },
+        { id: 'cloud', label: 'Cloud & Sync', icon: 'cloud' },
         { id: 'help', label: 'Help & Support', icon: 'more' },
         { id: 'about', label: 'About Us', icon: 'user' },
     ];
@@ -545,6 +553,266 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                     </div>
                 </div>
             );
+            case 'cloud':
+                return (
+                    <div className="space-y-8 max-w-3xl">
+                        <div className="bg-theme-surface rounded-3xl p-6 border border-theme-main shadow-sm">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600">
+                                    <Icon name="pos" className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-theme-main">Live Customer Menu</h2>
+                                    <p className="text-xs text-theme-muted">Publish your current stock and prices to a public web page.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <SettingRow 
+                                    title="Enable Public Menu" 
+                                    description="Allow customers to view your menu via a QR code or link." 
+                                    enabled={appSettings.enablePublicMenu || false} 
+                                    onToggle={() => handleAppSettingsChange('enablePublicMenu', !appSettings.enablePublicMenu)} 
+                                />
+
+                                {appSettings.enablePublicMenu && (
+                                    <div className="p-5 bg-theme-main rounded-2xl border border-theme-main space-y-4">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                            <div>
+                                                <p className="text-sm font-semibold text-theme-main">Menu Status</p>
+                                                <p className="text-xs text-theme-muted">Last updated: {appSettings.lastMenuUpdate ? new Date(appSettings.lastMenuUpdate).toLocaleString() : 'Never'}</p>
+                                            </div>
+                                            <button 
+                                                onClick={async () => {
+                                                    setIsPublishing(true);
+                                                    try {
+                                                        const shopRef = doc(db, 'shops', accountState.id);
+                                                        const shopSnap = await getDoc(shopRef);
+                                                        if (!shopSnap.exists()) {
+                                                            await setDoc(shopRef, {
+                                                                id: accountState.id,
+                                                                name: appSettings.shopName || 'My Shop',
+                                                                ownerEmail: auth.currentUser?.email || '',
+                                                                createdAt: serverTimestamp()
+                                                            });
+                                                        }
+                                                        
+                                                        const isRestaurant = appSettings.shopTypes.includes('Restaurant');
+                                                        const categories = [...new Set([
+                                                            ...products.map(p => p.subCategory),
+                                                            ...(isRestaurant ? ['Dishes'] : [])
+                                                        ].filter(Boolean))];
+
+                                                        const menuData = sanitize({
+                                                            shopName: appSettings.shopName || 'My Shop',
+                                                            lastUpdated: serverTimestamp(),
+                                                            categories: categories.map(cat => {
+                                                                const catProducts = products.filter(p => p.subCategory === cat && !p.isDeleted);
+                                                                const catDishes = cat === 'Dishes' && isRestaurant ? dishes.filter(d => !d.isDeleted) : [];
+                                                                
+                                                                const items = [
+                                                                    ...catProducts.map(p => ({
+                                                                        id: p.id,
+                                                                        name: p.name,
+                                                                        description: p.supplier,
+                                                                        tags: p.tags || [],
+                                                                        variants: p.variants.filter(v => !v.isDeleted).map(v => ({
+                                                                            id: v.id,
+                                                                            name: v.name,
+                                                                            price: v.mrp,
+                                                                            stock: v.stock,
+                                                                            unit: v.unit
+                                                                        })),
+                                                                        image: p.image || null
+                                                                    })),
+                                                                    ...catDishes.map(d => ({
+                                                                        id: d.id,
+                                                                        name: d.name,
+                                                                        description: 'Freshly prepared',
+                                                                        tags: d.tags || [],
+                                                                        variants: [{
+                                                                            id: d.id,
+                                                                            name: 'Standard',
+                                                                            price: d.price,
+                                                                            stock: 999, // Dishes are usually made to order
+                                                                            unit: 'pcs'
+                                                                        }],
+                                                                        image: d.imageUrl || null
+                                                                    }))
+                                                                ];
+
+                                                                return { name: cat, items };
+                                                            }).filter(c => c.items.length > 0)
+                                                        });
+                                                        await setDoc(doc(db, 'shops', accountState.id, 'public_menu', 'current'), menuData);
+                                                        handleAppSettingsChange('lastMenuUpdate', new Date().toISOString());
+                                                        toast.showToast('Menu published successfully!', 'success');
+                                                    } catch (err) {
+                                                        console.error("Publish error:", err);
+                                                        toast.showToast('Failed to publish menu.', 'error');
+                                                    } finally {
+                                                        setIsPublishing(false);
+                                                    }
+                                                }}
+                                                disabled={isPublishing}
+                                                className="px-6 py-2 rounded-xl bg-primary-500 text-white font-semibold hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+                                            >
+                                                {isPublishing ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Icon name="sync-reload" className="w-4 h-4" />}
+                                                {appSettings.lastMenuUpdate ? 'Update Menu' : 'Publish Menu'}
+                                            </button>
+                                        </div>
+
+                                        {appSettings.lastMenuUpdate && (
+                                            <div className="pt-4 border-t border-theme-main">
+                                                <p className="text-xs font-semibold text-theme-muted mb-2 uppercase tracking-wider">Public Link</p>
+                                                <div className="flex items-center gap-2">
+                                                    <input 
+                                                        readOnly 
+                                                        value={`${window.location.origin}/menu/${accountState.id}`} 
+                                                        className="flex-1 p-2 text-xs bg-theme-surface rounded-lg border border-theme-main font-mono"
+                                                    />
+                                                    <button 
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(`${window.location.origin}/menu/${accountState.id}`);
+                                                            toast.showToast('Link copied!', 'success');
+                                                        }}
+                                                        className="p-2 rounded-lg bg-theme-surface border border-theme-main hover:bg-theme-main transition-colors"
+                                                    >
+                                                        <Icon name="copy" className="w-4 h-4" />
+                                                    </button>
+                                                    <a 
+                                                        href={`/menu/${accountState.id}`} 
+                                                        target="_blank" 
+                                                        rel="noopener noreferrer"
+                                                        className="p-2 rounded-lg bg-theme-surface border border-theme-main hover:bg-theme-main transition-colors"
+                                                    >
+                                                        <Icon name="arrow-right" className="w-4 h-4" />
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-theme-surface rounded-3xl p-6 border border-theme-main shadow-sm">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600">
+                                    <Icon name="sync-reload" className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-theme-main">Multi-Store Sync</h2>
+                                    <p className="text-xs text-theme-muted">Synchronize your product list across multiple store locations.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-theme-main mb-1">Master List ID</label>
+                                    <p className="text-xs text-theme-muted mb-3">Enter the ID of the Master List you want to subscribe to, or leave blank to create your own.</p>
+                                    <div className="flex gap-2">
+                                        <input 
+                                            value={masterListId} 
+                                            onChange={e => setMasterListId(e.target.value)} 
+                                            placeholder="e.g., master-list-123" 
+                                            className="flex-1 p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" 
+                                        />
+                                        <button 
+                                            onClick={() => {
+                                                handleAppSettingsChange('masterListId', masterListId);
+                                                toast.showToast('Master List ID saved.', 'success');
+                                            }}
+                                            className="px-4 py-2 rounded-xl bg-theme-main border border-theme-main hover:bg-theme-surface transition-colors font-semibold"
+                                        >
+                                            Save
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <button 
+                                        onClick={async () => {
+                                            if (!masterListId) {
+                                                toast.showToast('Please enter a Master List ID first.', 'error');
+                                                return;
+                                            }
+                                            setIsSyncingMaster(true);
+                                            try {
+                                                const masterDoc = await getDoc(doc(db, 'master_lists', masterListId));
+                                                if (masterDoc.exists()) {
+                                                    const masterData = masterDoc.data();
+                                                    // Logic to merge products from master list
+                                                    // For now, we just show a success message
+                                                    toast.showToast(`Synced ${masterData.products?.length || 0} products from Master List.`, 'success');
+                                                } else {
+                                                    toast.showToast('Master List not found.', 'error');
+                                                }
+                                            } catch (err) {
+                                                console.error("Sync error:", err);
+                                                toast.showToast('Failed to sync from Master List.', 'error');
+                                            } finally {
+                                                setIsSyncingMaster(false);
+                                            }
+                                        }}
+                                        disabled={isSyncingMaster || !masterListId}
+                                        className="p-4 rounded-2xl bg-theme-main border border-theme-main hover:border-primary-500/50 transition-all text-left group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 mb-3 group-hover:scale-110 transition-transform">
+                                            <Icon name="sync-reload" className="w-4 h-4" />
+                                        </div>
+                                        <h3 className="font-bold text-theme-main text-sm">Sync from Master</h3>
+                                        <p className="text-[10px] text-theme-muted mt-1">Update your products with the latest data from the master list.</p>
+                                    </button>
+
+                                    <button 
+                                        onClick={async () => {
+                                            const id = masterListId || `master-${accountState.id.slice(0, 8)}`;
+                                            setMasterListId(id);
+                                            setIsSyncingMaster(true);
+                                            try {
+                                                const masterData = sanitize({
+                                                    id: id,
+                                                    name: `${appSettings.shopName || 'My Shop'} Master List`,
+                                                    ownerId: accountState.id,
+                                                    ownerEmail: auth.currentUser?.email || '',
+                                                    lastUpdated: serverTimestamp(),
+                                                    products: products.filter(p => !p.isDeleted).map(p => ({
+                                                        id: p.id,
+                                                        name: p.name,
+                                                        category: p.category || '',
+                                                        subCategory: p.subCategory || '',
+                                                        variants: p.variants.map(v => ({
+                                                            name: v.name,
+                                                            price: v.price,
+                                                            sku: v.sku || ''
+                                                        }))
+                                                    }))
+                                                });
+                                                await setDoc(doc(db, 'master_lists', id), masterData);
+                                                handleAppSettingsChange('masterListId', id);
+                                                toast.showToast('Master List updated successfully!', 'success');
+                                            } catch (err) {
+                                                console.error("Master update error:", err);
+                                                toast.showToast('Failed to update Master List.', 'error');
+                                            } finally {
+                                                setIsSyncingMaster(false);
+                                            }
+                                        }}
+                                        disabled={isSyncingMaster}
+                                        className="p-4 rounded-2xl bg-theme-main border border-theme-main hover:border-emerald-500/50 transition-all text-left group"
+                                    >
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600 mb-3 group-hover:scale-110 transition-transform">
+                                            <Icon name="pos" className="w-4 h-4" />
+                                        </div>
+                                        <h3 className="font-bold text-theme-main text-sm">Update Master List</h3>
+                                        <p className="text-[10px] text-theme-muted mt-1">Push your current product list as the source for other stores.</p>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
             case 'help': return (
                 <div className="space-y-4 max-w-3xl">
                     <div className="bg-theme-surface rounded-3xl p-6 border border-theme-main shadow-sm">

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import NotificationBell from './NotificationBell';
 import { Page, User, AppNotification, SyncStatus, ThemeContext, ThemeContextType, BusinessInfo } from '../types';
 import Icon from './Icon';
@@ -21,27 +22,31 @@ interface HeaderProps {
 
 const SyncControl: React.FC<{ status: SyncStatus, onSync: () => void }> = ({ status, onSync }) => {
     const statusInfo = {
-        synced: { text: 'Synced', color: 'text-green-500', iconName: 'sync-check', title: 'Data is up to date' },
-        syncing: { text: 'Syncing...', color: 'text-yellow-500', iconName: 'sync-spin', title: 'Syncing in progress...' },
-        error: { text: 'Sync Error', color: 'text-red-500', iconName: 'sync-error', title: 'Sync failed. Click to retry.' },
-        offline: { text: 'Offline', color: 'text-slate-500', iconName: 'sync-offline', title: 'Offline mode' }
+        synced: { text: 'Synced', color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', iconName: 'sync-check', title: 'Data is up to date' },
+        syncing: { text: 'Syncing...', color: 'text-amber-500', bgColor: 'bg-amber-500/10', iconName: 'sync-spin', title: 'Syncing in progress...' },
+        error: { text: 'Sync Error', color: 'text-rose-500', bgColor: 'bg-rose-500/10', iconName: 'sync-error', title: 'Sync failed. Click to retry.' },
+        offline: { text: 'Offline', color: 'text-slate-500', bgColor: 'bg-slate-500/10', iconName: 'sync-offline', title: 'Offline mode' }
     };
 
     const currentStatus = statusInfo[status] || statusInfo.offline;
-    const { text, color, iconName, title } = currentStatus;
+    const { text, color, bgColor, iconName, title } = currentStatus;
     const isSyncing = status === 'syncing';
 
     return (
-        <div className="flex items-center gap-1 bg-theme-main p-1 rounded-full">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
             <Tooltip content={title} position="bottom">
-                <div className={`flex items-center gap-1.5 text-xs font-semibold ${color} px-2 cursor-help`}>
-                    <Icon name={iconName} className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-                    <span className="hidden sm:inline">{text}</span>
+                <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${color} ${bgColor} px-3 py-1 rounded-xl cursor-help transition-all`}>
+                    <Icon name={iconName} size={14} className={isSyncing ? 'animate-spin' : ''} />
+                    <span className="hidden lg:inline">{text}</span>
                 </div>
             </Tooltip>
-            <Tooltip content="Force Sync Data" position="bottom">
-                <button onClick={onSync} disabled={isSyncing} className="p-1 rounded-full text-theme-muted hover:bg-theme-main disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
-                     <Icon name="sync-reload" className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            <Tooltip content="Force Sync" position="bottom">
+                <button 
+                    onClick={onSync} 
+                    disabled={isSyncing} 
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-primary-500 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-50 transition-all shadow-sm"
+                >
+                     <Icon name="sync-reload" size={14} className={isSyncing ? 'animate-spin' : ''} />
                 </button>
             </Tooltip>
         </div>
@@ -71,100 +76,145 @@ const Header: React.FC<HeaderProps> = ({ currentPage, currentUser, onLogout, not
     const currentBusiness = userBusinesses.find(b => b.id === currentBusinessId);
     
     return (
-        <header className="bg-theme-surface/90 backdrop-blur-md border-b border-theme-main p-2 md:px-4 flex items-center justify-between sticky top-0 z-30 h-16 transition-all duration-300">
-            <div className="flex items-center gap-4">
-                <h1 className="text-lg font-bold text-theme-main hidden sm:block">{currentPage}</h1>
+        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 h-20 transition-all duration-300">
+            <div className="flex items-center gap-6">
+                <div className="flex flex-col">
+                    <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{currentPage}</h1>
+                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em] hidden md:block">Nexus Management Suite</p>
+                </div>
                 
+                <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden lg:block"></div>
+
                 {userBusinesses.length > 0 && (
                     <div className="relative" ref={businessMenuRef}>
-                        <Tooltip content="Switch Business" position="bottom">
-                            <button 
-                                onClick={() => setIsBusinessMenuOpen(o => !o)}
-                                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-theme-main border border-theme-main hover:bg-theme-main/80 transition-colors"
-                            >
-                                <Icon name="business" className="w-4 h-4 text-theme-accent" />
-                                <span className="text-sm font-semibold text-theme-main max-w-[120px] truncate">
+                        <button 
+                            onClick={() => setIsBusinessMenuOpen(o => !o)}
+                            className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:border-primary-500/50 transition-all group"
+                        >
+                            <div className="w-8 h-8 rounded-xl bg-primary-500/10 flex items-center justify-center text-primary-600">
+                                <Icon name="business" size={18} />
+                            </div>
+                            <div className="flex flex-col items-start text-left">
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[140px]">
                                     {currentBusiness?.name || 'Select Business'}
                                 </span>
-                                <Icon name="chevron-down" className={`w-3 h-3 text-theme-muted transition-transform ${isBusinessMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
-                        </Tooltip>
+                                <span className="text-[10px] text-slate-400 font-medium">{currentBusiness?.role || 'Switch'}</span>
+                            </div>
+                            <Icon name="chevron-down" size={14} className={`text-slate-400 transition-transform duration-300 ${isBusinessMenuOpen ? 'rotate-180' : ''}`} />
+                        </button>
                         
-                        {isBusinessMenuOpen && (
-                            <div className="absolute top-full left-0 mt-2 w-56 bg-theme-surface rounded-md shadow-lg border border-theme-main z-20 overflow-hidden">
-                                <div className="px-4 py-2 border-b border-theme-main bg-theme-main/30">
-                                    <p className="text-xs font-bold text-theme-muted uppercase tracking-wider">Your Businesses</p>
-                                </div>
-                                <ul className="py-1 max-h-[300px] overflow-y-auto">
-                                    {userBusinesses.map(business => (
-                                        <li key={business.id}>
+                        <AnimatePresence>
+                            {isBusinessMenuOpen && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute top-full left-0 mt-3 w-64 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden p-2"
+                                >
+                                    <div className="px-4 py-3 mb-2">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Organizations</p>
+                                    </div>
+                                    <div className="space-y-1 max-h-[320px] overflow-y-auto pr-1">
+                                        {userBusinesses.map(business => (
                                             <button 
+                                                key={business.id}
                                                 onClick={() => {
                                                     onSwitchBusiness?.(business.id);
                                                     setIsBusinessMenuOpen(false);
                                                 }}
-                                                className={`w-full text-left px-4 py-2.5 flex items-center justify-between hover:bg-theme-main transition-colors ${business.id === currentBusinessId ? 'bg-theme-accent/10 text-theme-accent' : 'text-theme-main'}`}
+                                                className={`w-full text-left px-4 py-3 rounded-2xl flex items-center justify-between transition-all ${
+                                                    business.id === currentBusinessId 
+                                                    ? 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400' 
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                                }`}
                                             >
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-medium">{business.name}</span>
+                                                    <span className="text-sm font-bold">{business.name}</span>
                                                     <span className="text-[10px] opacity-60">{business.role}</span>
                                                 </div>
-                                                {business.id === currentBusinessId && <Icon name="check" className="w-4 h-4" />}
+                                                {business.id === currentBusinessId && (
+                                                    <div className="w-5 h-5 rounded-full bg-primary-500 flex items-center justify-center">
+                                                        <Icon name="check" size={12} className="text-white" />
+                                                    </div>
+                                                )}
                                             </button>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
                  {isTest && (
-                    <Tooltip content="You are currently in Test Mode. Data will not be synced to the main server." position="bottom">
-                        <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-theme-main text-yellow-500 border border-theme-main cursor-help">
-                            <Icon name="activity-low-stock" className="w-4 h-4" />
-                            <span className="text-xs font-bold">Test Mode</span>
-                        </div>
-                    </Tooltip>
+                    <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">
+                        <Icon name="activity-low-stock" size={16} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Sandbox Mode</span>
+                    </div>
                 )}
-                {!isTest && <SyncControl status={syncStatus} onSync={onForceSync} />}
                 
+                {!isTest && <SyncControl status={syncStatus} onForceSync={onForceSync} />}
+                
+                <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+
                 <div data-tutorial-id="notifications-button">
-                    <Tooltip content="Notifications" position="bottom">
-                        <div>
-                            <NotificationBell notifications={notifications} onOpen={onOpenNotifications} />
-                        </div>
-                    </Tooltip>
+                    <NotificationBell notifications={notifications} onOpen={onOpenNotifications} />
                 </div>
 
                 <div className="relative" ref={menuRef}>
-                    <Tooltip content="User Menu" position="bottom">
-                        <button onClick={() => setIsMenuOpen(o => !o)} className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-bold text-sm">
-                                {currentUser.name.slice(0, 1).toUpperCase()}
-                            </div>
-                            <div className="hidden md:block text-left">
-                                <p className="text-sm font-semibold text-theme-main">{currentUser.name}</p>
-                                <p className="text-xs text-theme-muted">{currentUser.role}</p>
-                            </div>
-                        </button>
-                    </Tooltip>
-                    {isMenuOpen && (
-                        <div className="absolute top-full right-0 mt-2 w-48 bg-theme-surface rounded-md shadow-lg border border-theme-main z-20 modal-content overflow-hidden">
-                            <ul className="py-1 text-sm text-theme-main">
-                                <li><a href="#" onClick={(e) => {e.preventDefault(); setCurrentPage('MyAccount'); setIsMenuOpen(false);}} className="block px-4 py-2 hover:bg-theme-main">My Account</a></li>
-                                <li>
-                                  <button onClick={toggleTheme} className="w-full text-left flex justify-between items-center px-4 py-2 hover:bg-theme-main">
-                                    <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-                                    <Icon name={theme === 'light' ? 'moon' : 'sun'} className="w-4 h-4" />
-                                  </button>
-                                </li>
-                                <li className="border-t border-theme-main"><a href="#" onClick={(e) => { e.preventDefault(); onLogout(); }} className="block px-4 py-2 text-red-500 hover:bg-theme-main">Logout</a></li>
-                            </ul>
+                    <button 
+                        onClick={() => setIsMenuOpen(o => !o)} 
+                        className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:border-primary-500/50 transition-all"
+                    >
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-500/20">
+                            <span className="text-sm font-bold">{currentUser.name.slice(0, 1).toUpperCase()}</span>
                         </div>
-                    )}
+                        <div className="hidden md:block text-left">
+                            <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{currentUser.name}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">{currentUser.role}</p>
+                        </div>
+                        <Icon name="chevron-down" size={12} className={`text-slate-400 transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    <AnimatePresence>
+                        {isMenuOpen && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                className="absolute top-full right-0 mt-3 w-56 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 z-50 overflow-hidden p-2"
+                            >
+                                <div className="space-y-1">
+                                    <button 
+                                        onClick={() => {setCurrentPage('MyAccount'); setIsMenuOpen(false);}} 
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all"
+                                    >
+                                        <Icon name="user" size={18} />
+                                        <span>My Account</span>
+                                    </button>
+                                    <button 
+                                        onClick={toggleTheme} 
+                                        className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Icon name={theme === 'light' ? 'moon' : 'sun'} size={18} />
+                                            <span>{theme === 'light' ? 'Dark Appearance' : 'Light Appearance'}</span>
+                                        </div>
+                                    </button>
+                                    <div className="h-px bg-slate-100 dark:bg-slate-800 my-1 mx-2"></div>
+                                    <button 
+                                        onClick={onLogout} 
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-2xl transition-all"
+                                    >
+                                        <Icon name="logout" size={18} />
+                                        <span>Sign Out</span>
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
         </header>

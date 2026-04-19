@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
+import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Supplier, PurchaseOrder, AppSettings } from '../types';
 import Avatar from '../components/Avatar';
@@ -12,52 +13,89 @@ import { Tooltip } from '../components/Tooltip';
 const AddSupplierPaymentModal: React.FC<{
     supplier: Supplier;
     onClose: () => void;
-    onAddPayment: (amount: number) => void;
+    onAddPayment: (amount: number, isLoan: boolean) => void;
 }> = ({ supplier, onClose, onAddPayment }) => {
     const [amount, setAmount] = useState('');
+    const [isLoan, setIsLoan] = useState((supplier as any)._isLoan || false);
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const paymentAmount = parseFloat(amount);
         if (!isNaN(paymentAmount) && paymentAmount > 0) {
-            onAddPayment(paymentAmount);
+            onAddPayment(paymentAmount, isLoan);
         }
     };
     
     const paymentAmount = parseFloat(amount) || 0;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-3xl shadow-xl p-8 max-w-md w-full border border-theme-main">
-                <h3 className="text-2xl font-bold mb-2 text-theme-main">Add Payment</h3>
-                <p className="text-theme-muted mb-6">To: <span className="font-semibold text-theme-main">{supplier.name}</span></p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[70] p-4">
+            <motion.form 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                onSubmit={handleSubmit} 
+                className="bg-theme-surface backdrop-blur-2xl rounded-[2.5rem] shadow-2xl p-8 max-w-md w-full space-y-8 border border-theme-main"
+            >
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h3 className="text-2xl font-black text-theme-main tracking-tighter">{isLoan ? 'Take Loan' : 'Add Payment'}</h3>
+                        <p className="text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] mt-1">{supplier.name}</p>
+                    </div>
+                    <div className="flex bg-theme-main p-1 rounded-2xl border border-theme-main">
+                        <button 
+                            type="button" 
+                            onClick={() => setIsLoan(false)}
+                            className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${!isLoan ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'text-theme-muted hover:text-theme-main'}`}
+                        >
+                            Payment
+                        </button>
+                        <button 
+                            type="button" 
+                            onClick={() => setIsLoan(true)}
+                            className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${isLoan ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25' : 'text-theme-muted hover:text-theme-main'}`}
+                        >
+                            Loan
+                        </button>
+                    </div>
+                </div>
                 
-                {supplier.upiId && paymentAmount > 0 && (
-                    <div className="flex flex-col items-center justify-center p-6 bg-theme-main rounded-2xl border border-theme-main mb-6">
-                        <p className="text-sm font-bold text-theme-muted mb-3">Scan to Pay Supplier via UPI</p>
-                        <div className="bg-white p-3 rounded-2xl shadow-sm">
+                {supplier.upiId && paymentAmount > 0 && !isLoan && (
+                    <div className="flex flex-col items-center justify-center p-8 bg-theme-main rounded-3xl border border-theme-main">
+                        <p className="text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] mb-4">Scan to Pay Supplier via UPI</p>
+                        <div className="bg-white p-4 rounded-3xl shadow-xl border border-slate-100">
                             <QRCodeSVG 
                                 value={`upi://pay?pa=${supplier.upiId}&pn=${encodeURIComponent(supplier.name)}&am=${paymentAmount.toFixed(2)}&cu=INR`} 
-                                size={150} 
+                                size={160} 
                                 level="H"
                             />
                         </div>
                     </div>
                 )}
 
-                <div className="space-y-5">
-                    <div>
-                        <label htmlFor="payment" className="block text-sm font-semibold mb-1 text-theme-main">Payment Amount</label>
-                        <input id="payment" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" step="0.01" autoFocus required placeholder="e.g., 500" />
-                        <p className="text-xs text-theme-muted mt-2">Enter the amount paid to the supplier.</p>
-                        <p className="text-xs text-theme-muted mt-1">Current Due: <span className="font-semibold">₹{supplier.creditBalance.toFixed(2)}</span></p>
+                <div className="space-y-6">
+                    <div className="space-y-2">
+                        <label htmlFor="payment" className="text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">
+                            {isLoan ? 'Loan Amount' : 'Payment Amount'}
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-3xl font-black text-theme-muted">₹</span>
+                            <input id="payment" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full pl-12 pr-8 py-6 rounded-[2rem] bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-black text-3xl tracking-tighter" step="0.01" autoFocus required placeholder="0.00" />
+                        </div>
+                        <div className="flex justify-between items-center px-4">
+                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-widest">
+                                {isLoan ? 'Amount taken from supplier' : 'Amount paid to supplier'}
+                            </p>
+                            <p className="text-[10px] font-bold text-theme-muted uppercase tracking-widest">Due: <span className="text-rose-500">₹{supplier.creditBalance.toLocaleString()}</span></p>
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex justify-end gap-4 mt-8 border-t border-theme-main pt-4">
-                    <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
-                    <button type="submit" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Add Payment</button>
+                <div className="flex gap-4 pt-4">
+                    <button type="button" onClick={onClose} className="flex-1 px-6 py-5 rounded-2xl bg-theme-main text-theme-muted hover:bg-theme-main/80 transition-all font-black uppercase tracking-widest text-xs">Cancel</button>
+                    <button type="submit" className={`flex-2 px-8 py-5 rounded-2xl text-white transition-all shadow-lg font-black uppercase tracking-widest text-xs ${isLoan ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/25' : 'bg-primary-500 hover:bg-primary-600 shadow-primary-500/25'}`}>
+                        {isLoan ? 'Take Loan' : 'Add Payment'}
+                    </button>
                 </div>
-            </form>
+            </motion.form>
         </div>
     );
 };
@@ -89,11 +127,8 @@ const SupplierPanel: React.FC<{
 
         setIsFetchingGst(true);
         try {
-            // Simulated GST Lookup Service
-            // In a real app, this would call a government or 3rd party API
             await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // Mock data based on common GSTIN patterns
             const mockDetails: Record<string, any> = {
                 '07AAAAA0000A1Z5': { name: 'Acme Retail Solutions', address: '123 Business Hub, Okhla Phase III, New Delhi, 110020', contact: 'John Doe' },
                 '27BBBBB1111B1Z2': { name: 'Global Traders Pvt Ltd', address: '456 Industrial Estate, Andheri East, Mumbai, Maharashtra 400069', contact: 'Sarah Smith' },
@@ -137,29 +172,29 @@ const SupplierPanel: React.FC<{
             title={isEditing ? 'Edit Supplier' : 'Add New Supplier'}
             onClose={onClose}
             footer={
-                 <div className="flex justify-between items-center w-full">
-                    <div>
+                 <div className="flex justify-between items-center w-full gap-4">
+                    <div className="flex-1">
                         {isEditing && onDelete && (
                             <button
                                 type="button"
                                 onClick={() => setIsDeleteModalOpen(true)}
-                                className="px-4 py-2 rounded-lg bg-theme-main text-red-500 hover:bg-theme-surface border border-theme-main transition text-sm font-semibold"
+                                className="px-6 py-4 rounded-2xl bg-rose-50 dark:bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
                             >
                                 Delete
                             </button>
                         )}
                     </div>
-                    <div className="flex gap-4">
-                        <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
-                        <button type="submit" form="supplier-form" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save</button>
+                    <div className="flex gap-4 flex-2">
+                        <button type="button" onClick={onClose} className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-xs">Cancel</button>
+                        <button type="submit" form="supplier-form" className="flex-2 px-8 py-4 rounded-2xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 font-black uppercase tracking-widest text-xs">Save Supplier</button>
                     </div>
                 </div>
             }
         >
-            <form id="supplier-form" onSubmit={handleSubmit} className="space-y-5">
-                <div className="p-4 bg-primary-50 dark:bg-primary-900/20 rounded-2xl border border-primary-100 dark:border-primary-900/30">
-                    <label className="block text-xs font-bold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-2">Auto-fill from GSTIN</label>
-                    <div className="flex gap-2">
+            <form id="supplier-form" onSubmit={handleSubmit} className="space-y-8">
+                <div className="p-6 bg-primary-500/5 dark:bg-primary-500/10 rounded-[2rem] border border-primary-500/10 dark:border-primary-500/20">
+                    <label className="block text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] mb-4 ml-1">Auto-fill from GSTIN</label>
+                    <div className="flex gap-3">
                         <input 
                             name="gstin" 
                             value={formData.gstin} 
@@ -168,69 +203,51 @@ const SupplierPanel: React.FC<{
                                 setFormData(prev => ({ ...prev, gstin: val }));
                             }} 
                             placeholder="15-digit GSTIN" 
-                            className="flex-grow p-3 rounded-xl bg-theme-surface text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all font-mono text-sm" 
+                            className="flex-grow p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-mono text-sm" 
                             maxLength={15}
                         />
                         <button 
                             type="button" 
                             onClick={handleGstLookup}
                             disabled={isFetchingGst || !formData.gstin}
-                            className="px-4 py-3 bg-primary-500 text-white rounded-xl hover:bg-primary-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm"
+                            className="px-6 py-4 bg-primary-500 text-white rounded-2xl hover:bg-primary-600 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-primary-500/25"
                         >
-                            {isFetchingGst ? <Icon name="spinner" className="w-4 h-4 animate-spin" /> : <Icon name="sync-reload" className="w-4 h-4" />}
-                            <span className="text-xs font-bold uppercase">Fetch</span>
+                            {isFetchingGst ? <Icon name="spinner" size={16} className="animate-spin" /> : <Icon name="sync-reload" size={16} />}
+                            <span className="text-[10px] font-black uppercase tracking-widest">Fetch</span>
                         </button>
                     </div>
-                    <p className="text-[10px] text-theme-muted mt-2 italic">Enter GSTIN to automatically pull business name, address, and contact details.</p>
+                    <p className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mt-4 ml-1 italic">Enter GSTIN to pull business details automatically.</p>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Company / Business Name</label>
-                    <input name="name" value={formData.name} onChange={e => {
-                        const val = e.target.value;
-                        setFormData(prev => ({ ...prev, name: val }));
-                    }} placeholder="e.g., Acme Corp" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
-                    <p className="text-xs text-theme-muted mt-2">The official name of the supplier.</p>
+                <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Company Name</label>
+                    <input name="name" value={formData.name} onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g., Acme Corp" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" required />
                 </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Contact Person</label>
-                    <input name="contactPerson" value={formData.contactPerson} onChange={e => {
-                        const val = e.target.value;
-                        setFormData(prev => ({ ...prev, contactPerson: val }));
-                    }} placeholder="e.g., Jane Smith" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
-                    <p className="text-xs text-theme-muted mt-2">Name of your primary contact at the company.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Contact Person</label>
+                        <input name="contactPerson" value={formData.contactPerson} onChange={e => setFormData(prev => ({ ...prev, contactPerson: e.target.value }))} placeholder="e.g., Jane Smith" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                        <input name="phone" value={formData.phone} onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="e.g., +91 98765 43210" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" />
+                    </div>
                 </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Phone Number</label>
-                    <input name="phone" value={formData.phone} onChange={e => {
-                        const val = e.target.value;
-                        setFormData(prev => ({ ...prev, phone: val }));
-                    }} placeholder="e.g., +91 98765 43210" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
-                    <p className="text-xs text-theme-muted mt-2">Primary contact number for the supplier.</p>
+
+                <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Email Address</label>
+                    <input name="email" type="email" value={formData.email} onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="e.g., supplier@example.com" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" />
                 </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Email Address</label>
-                    <input name="email" type="email" value={formData.email} onChange={e => {
-                        const val = e.target.value;
-                        setFormData(prev => ({ ...prev, email: val }));
-                    }} placeholder="e.g., supplier@example.com" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
-                    <p className="text-xs text-theme-muted mt-2">Email for sending purchase orders or inquiries.</p>
+
+                <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Full Address</label>
+                    <input name="address" value={formData.address} onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="e.g., 456 Market St, City" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" />
                 </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Full Address</label>
-                    <input name="address" value={formData.address} onChange={e => {
-                        const val = e.target.value;
-                        setFormData(prev => ({ ...prev, address: val }));
-                    }} placeholder="e.g., 456 Market St, City" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
-                    <p className="text-xs text-theme-muted mt-2">Physical address of the supplier.</p>
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">UPI ID</label>
-                    <input name="upiId" value={formData.upiId} onChange={e => {
-                        const val = e.target.value;
-                        setFormData(prev => ({ ...prev, upiId: val }));
-                    }} placeholder="e.g., name@bank" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" />
-                    <p className="text-xs text-theme-muted mt-2">Used for making payments via UPI.</p>
+
+                <div className="space-y-2">
+                    <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">UPI ID</label>
+                    <input name="upiId" value={formData.upiId} onChange={e => setFormData(prev => ({ ...prev, upiId: e.target.value }))} placeholder="e.g., name@bank" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" />
                 </div>
             </form>
         </SlideOverPanel>
@@ -263,45 +280,59 @@ const SupplierListPage: React.FC<{
     }, [suppliers, searchTerm]);
 
     return (
-        <div className="h-full flex flex-col">
-             <div className="p-3 border-b border-theme-main space-y-3">
+        <div className="h-full flex flex-col bg-theme-surface backdrop-blur-xl">
+             <div className="p-6 border-b border-theme-main space-y-6">
                  <div className="flex justify-between items-center">
-                    <h2 className="text-base font-bold text-theme-main">Suppliers ({sortedSuppliers.length})</h2>
+                    <div>
+                        <h2 className="text-2xl font-black text-theme-main tracking-tight">Suppliers</h2>
+                        <p className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mt-0.5">{sortedSuppliers.length} Partners</p>
+                    </div>
                      <Tooltip content="Add New Supplier" position="bottom">
-                         <button onClick={() => setModalState({ type: 'add_supplier', data: null })} className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-theme-main text-primary-500 border border-theme-main hover:bg-theme-surface transition flex items-center gap-1">
-                            <Icon name="plus" className="w-4 h-4"/> New
+                         <button 
+                            onClick={() => setModalState({ type: 'add_supplier', data: null })} 
+                            className="p-3 rounded-2xl bg-primary-500 text-white shadow-lg shadow-primary-500/25 hover:bg-primary-600 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                            <Icon name="plus" size={20}/>
                         </button>
                     </Tooltip>
                  </div>
-                <div className="relative">
-                    <Icon name="search" className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" />
+                <div className="relative group">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-theme-muted group-focus-within:text-primary-500 transition-colors">
+                        <Icon name="search" size={18} />
+                    </div>
                     <input 
                         type="text"
-                        placeholder="Search Suppliers"
+                        placeholder="Search Suppliers..."
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full p-1.5 pl-9 bg-theme-main border-theme-main rounded-lg focus:ring-1 focus:ring-primary-500 text-sm text-theme-main"
+                        className="w-full pl-12 pr-6 py-4 bg-theme-main border border-theme-main rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all text-sm font-bold text-theme-main shadow-sm"
                     />
                 </div>
             </div>
-            <div className="flex-grow overflow-y-auto p-2">
-                <ul className="space-y-1">
-                    {sortedSuppliers.map(supplier => {
+            <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
+                <ul className="space-y-2">
+                    {sortedSuppliers.map((supplier, index) => {
                         const isDue = supplier.creditBalance > 0;
-                        const balanceColor = isDue ? 'text-red-500' : 'text-theme-muted';
+                        const balanceColor = isDue ? 'text-rose-500' : 'text-theme-muted';
                         return (
                          <Tooltip key={`supp-list-${supplier.id}`} content={`View details for ${supplier.name}`} position="right">
-                             <li onClick={() => onSelectSupplier(supplier.id)} className="p-2 rounded-lg cursor-pointer flex items-center gap-3 transition hover:bg-theme-main">
-                                <Avatar name={supplier.name} />
+                             <motion.li 
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                onClick={() => onSelectSupplier(supplier.id)} 
+                                className="group p-4 rounded-3xl cursor-pointer flex items-center gap-4 transition-all bg-theme-main/50 hover:bg-theme-main border border-transparent hover:border-theme-main hover:shadow-xl hover:shadow-theme-main/10"
+                            >
+                                <Avatar name={supplier.name} size="md" />
                                 <div className="flex-grow min-w-0">
-                                    <p className="font-semibold text-sm text-theme-main truncate">{supplier.name}</p>
-                                    <p className="text-xs text-theme-muted">{supplier.contactPerson}</p>
+                                    <p className="font-black text-sm text-theme-main truncate group-hover:text-primary-600 transition-colors">{supplier.name}</p>
+                                    <p className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mt-0.5">{supplier.contactPerson}</p>
                                 </div>
                                 <div className="text-right flex-shrink-0">
-                                    <p className={`font-bold text-sm ${balanceColor}`}>₹{Math.abs(supplier.creditBalance).toFixed(2)}</p>
-                                    <p className={`text-xs ${balanceColor}`}>{isDue ? 'Due' : 'Clear'}</p>
+                                    <p className={`font-black text-sm ${balanceColor}`}>₹{Math.abs(supplier.creditBalance).toLocaleString()}</p>
+                                    <p className={`text-[10px] font-black uppercase tracking-tighter ${balanceColor}`}>{isDue ? 'Due' : 'Clear'}</p>
                                 </div>
-                            </li>
+                            </motion.li>
                         </Tooltip>
                     )})}
                 </ul>
@@ -319,7 +350,7 @@ interface SuppliersProps {
   purchaseOrders: PurchaseOrder[];
   modalState: { type: string | null; data: any };
   setModalState: (state: { type: string | null; data: any }) => void;
-  onAddPayment: (supplierId: number, amount: number) => void;
+  onAddPayment: (supplierId: number, amount: number, isLoan: boolean) => void;
   appSettings: AppSettings;
 }
 
@@ -342,17 +373,17 @@ const Suppliers: React.FC<SuppliersProps> = (props) => {
     setSelectedSupplierId(null);
   }
   
-  const handleAddPaymentAndClose = (amount: number) => {
+  const handleAddPaymentAndClose = (amount: number, isLoan: boolean) => {
     if (selectedSupplier) {
-        onAddPayment(selectedSupplier.id, amount);
-        toast.showToast('Payment added successfully!', 'success');
+        onAddPayment(selectedSupplier.id, amount, isLoan);
+        toast.showToast(isLoan ? 'Loan recorded successfully!' : 'Payment added successfully!', 'success');
         handleCloseModal();
     }
   };
 
   return (
     <>
-      <div className="flex h-full bg-theme-surface rounded-xl border border-theme-main shadow-sm overflow-hidden">
+      <div className="flex h-[calc(100vh-8rem)] bg-theme-surface backdrop-blur-xl rounded-[2.5rem] border border-theme-main shadow-2xl shadow-theme-main/10 overflow-hidden">
         <div className={`w-full lg:w-2/5 xl:w-1/3 h-full lg:border-r border-theme-main ${selectedSupplier ? 'hidden lg:flex flex-col' : 'flex flex-col'}`}>
           <SupplierListPage suppliers={suppliers} onSelectSupplier={setSelectedSupplierId} setModalState={setModalState} />
         </div>
@@ -365,11 +396,13 @@ const Suppliers: React.FC<SuppliersProps> = (props) => {
               setModalState={setModalState}
             />
           ) : (
-            <div className="flex items-center justify-center h-full text-center text-theme-muted p-4">
-              <div>
-                <Icon name="suppliers" className="mx-auto h-12 w-12 text-theme-muted" />
-                <h3 className="mt-2 text-sm font-medium text-theme-main">Select a supplier</h3>
-                <p className="mt-1 text-sm text-theme-muted">Choose a supplier to view their details.</p>
+            <div className="flex items-center justify-center h-full text-center p-8">
+              <div className="max-w-xs">
+                <div className="w-24 h-24 rounded-[2.5rem] bg-theme-main flex items-center justify-center mx-auto mb-6 border border-theme-main shadow-sm">
+                    <Icon name="suppliers" size={48} className="text-theme-muted opacity-50" />
+                </div>
+                <h3 className="text-lg font-black text-theme-main uppercase tracking-widest">Select a supplier</h3>
+                <p className="mt-2 text-xs font-bold text-theme-muted uppercase tracking-tighter">Choose a supplier from the list to view their full transaction history and manage credit.</p>
               </div>
             </div>
           )}

@@ -441,35 +441,59 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
         }
 
         case 'ADD_CUSTOMER_PAYMENT': {
-            const { customerId, amount } = payload;
+            const { customerId, amount, isLoan } = payload;
             const customer = newState.customers.find(c => c.id === customerId);
             if (customer) {
-                customer.creditBalance = parseFloat((customer.creditBalance - amount).toFixed(2));
-                customer.lastActivity = now;
-                customer.creditLedger.push({
-                    id: getNextId(customer.creditLedger),
-                    date: now,
-                    details: 'Payment Received',
-                    amount: amount,
-                    type: 'credit',
-                });
+                if (isLoan) {
+                    customer.creditBalance = parseFloat((customer.creditBalance + amount).toFixed(2));
+                    customer.lastActivity = now;
+                    customer.creditLedger.push({
+                        id: getNextId(customer.creditLedger),
+                        date: now,
+                        details: 'Loan Given',
+                        amount: amount,
+                        type: 'debit',
+                    });
+                } else {
+                    customer.creditBalance = parseFloat((customer.creditBalance - amount).toFixed(2));
+                    customer.lastActivity = now;
+                    customer.creditLedger.push({
+                        id: getNextId(customer.creditLedger),
+                        date: now,
+                        details: 'Payment Received',
+                        amount: amount,
+                        type: 'credit',
+                    });
+                }
             }
             return newState;
         }
         
         case 'ADD_SUPPLIER_PAYMENT': {
-            const { supplierId, amount } = payload;
+            const { supplierId, amount, isLoan } = payload;
             const supplier = newState.suppliers.find(s => s.id === supplierId);
             if (supplier) {
-                supplier.creditBalance = parseFloat((supplier.creditBalance - amount).toFixed(2));
-                supplier.creditLedger = supplier.creditLedger || [];
-                supplier.creditLedger.push({
-                    id: getNextId(supplier.creditLedger),
-                    date: now,
-                    details: 'Payment Paid',
-                    amount: amount,
-                    type: 'credit',
-                });
+                if (isLoan) {
+                    supplier.creditBalance = parseFloat((supplier.creditBalance + amount).toFixed(2));
+                    supplier.creditLedger = supplier.creditLedger || [];
+                    supplier.creditLedger.push({
+                        id: getNextId(supplier.creditLedger),
+                        date: now,
+                        details: 'Loan Taken',
+                        amount: amount,
+                        type: 'debit',
+                    });
+                } else {
+                    supplier.creditBalance = parseFloat((supplier.creditBalance - amount).toFixed(2));
+                    supplier.creditLedger = supplier.creditLedger || [];
+                    supplier.creditLedger.push({
+                        id: getNextId(supplier.creditLedger),
+                        date: now,
+                        details: 'Payment Paid',
+                        amount: amount,
+                        type: 'credit',
+                    });
+                }
                 supplier.updatedAt = now;
             }
             return newState;
@@ -532,6 +556,22 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
 
             addHistory('create', 'Purchase', order.id, `PO from ${supplier?.name || 'Unknown'}`, `Total: ₹${order.totalCost.toFixed(2)}`);
             
+            // Create an expense for this purchase
+            const purchaseExpense = {
+                id: `exp-pur-${order.id}`,
+                date: now,
+                description: `Purchase from ${supplier?.name || 'Unknown'} (PO #${order.id.slice(-6)})`,
+                category: 'Inventory',
+                amount: order.totalCost,
+                frequency: 'one-time',
+                isRecurring: false,
+                relatedId: order.id,
+                relatedType: 'purchase',
+                createdAt: now,
+                updatedAt: now
+            };
+            newState.expenses.push(purchaseExpense as any);
+
             batches.forEach(batch => {
                 let variant: ProductVariant | undefined;
                 
@@ -759,6 +799,48 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
             return newState;
         }
 
+        case 'DELETE_PURCHASE': {
+            const { purchaseId } = payload;
+            const orderIndex = newState.purchaseOrders.findIndex(po => po.id === purchaseId);
+            if (orderIndex === -1) return newState;
+            
+            const order = newState.purchaseOrders[orderIndex];
+            if (order.isDeleted) return newState;
+
+            order.isDeleted = true;
+            order.updatedAt = now;
+            addHistory('delete', 'Purchase', purchaseId, `PO #${purchaseId.slice(-6)}`);
+
+            // 1. Find and delete linked expense
+            const linkedExpense = newState.expenses.find(e => e.relatedId === purchaseId && e.relatedType === 'purchase');
+            if (linkedExpense) {
+                linkedExpense.isDeleted = true;
+                linkedExpense.updatedAt = now;
+            }
+
+            // 2. Adjust supplier credit
+            const supplier = newState.suppliers.find(s => s.id === order.supplierId);
+            if (supplier) {
+                supplier.creditBalance = parseFloat((supplier.creditBalance - order.totalCost).toFixed(2));
+                const ledgerIndex = supplier.creditLedger.findIndex(l => l.transactionId === purchaseId && l.type === 'debit');
+                if (ledgerIndex > -1) supplier.creditLedger.splice(ledgerIndex, 1);
+            }
+
+            // 3. Deduct stock and remove batches
+            order.items.forEach(item => {
+                const variant = newState.products.flatMap(p => p.variants).find(v => v.id === item.variantId);
+                if (variant) {
+                    variant.stock -= item.quantity;
+                    variant.updatedAt = now;
+                    
+                    // Remove batches associated with this PO
+                    newState.batches = newState.batches.filter(b => b.variantId === item.variantId && b.receivedDate !== order.date);
+                }
+            });
+
+            return newState;
+        }
+
         case 'TOGGLE_PROMOTION_STATUS': {
             const promo = newState.promotions.find(p => p.id === payload.promotionId);
             if (promo) {
@@ -937,6 +1019,63 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                 addHistory('delete', 'Expense', expense.id, expense.description);
             }
             return newState;
+        }
+
+        case 'GENERATE_RECURRING_EXPENSES': {
+            const recurringExpenses = newState.expenses.filter(e => e.isRecurring && !e.isDeleted);
+            const today = new Date();
+            let generatedCount = 0;
+
+            recurringExpenses.forEach(recurring => {
+                let lastDate = new Date(recurring.lastGeneratedDate || recurring.date);
+                let nextDate = new Date(lastDate);
+                
+                const advanceDate = (date: Date) => {
+                    const d = new Date(date);
+                    if (recurring.frequency === 'weekly') d.setDate(d.getDate() + 7);
+                    else if (recurring.frequency === 'monthly') d.setMonth(d.getMonth() + 1);
+                    else if (recurring.frequency === 'yearly') d.setFullYear(d.getFullYear() + 1);
+                    return d;
+                };
+
+                nextDate = advanceDate(lastDate);
+
+                while (nextDate <= today) {
+                    // Create the actual expense instance
+                    const instanceId = `exp-rec-${recurring.id}-${nextDate.toISOString().split('T')[0]}`;
+                    
+                    // Check if this instance already exists (to avoid duplicates if sync is slow)
+                    if (!newState.expenses.some(e => e.id === instanceId)) {
+                        const newExpense = {
+                            ...recurring,
+                            id: instanceId,
+                            date: nextDate.toISOString(),
+                            isRecurring: false,
+                            frequency: 'one-time',
+                            relatedId: recurring.id,
+                            relatedType: 'recurring_instance',
+                            createdAt: now,
+                            updatedAt: now,
+                            lastGeneratedDate: undefined
+                        };
+                        newState.expenses.push(newExpense as any);
+                        recurring.lastGeneratedDate = nextDate.toISOString();
+                        recurring.updatedAt = now;
+                        generatedCount++;
+                    }
+                    
+                    // Move to next potential instance
+                    lastDate = new Date(nextDate);
+                    nextDate = advanceDate(lastDate);
+                }
+            });
+
+            if (generatedCount > 0) {
+                addHistory('create', 'Expense', 'system', 'Recurring Expenses', `Generated ${generatedCount} new expense instances.`);
+                return newState;
+            }
+
+            return state;
         }
 
         case 'UPDATE_HELD_CARTS': {

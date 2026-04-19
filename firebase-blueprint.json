@@ -1,54 +1,102 @@
 {
   "entities": {
-    "User": {
-      "title": "User",
-      "description": "User profile and account associations",
+    "Shop": {
+      "title": "Shop",
+      "description": "Main shop configuration and metadata",
       "type": "object",
       "properties": {
-        "id": { "type": "string", "description": "Firebase Auth UID" },
+        "id": { "type": "string" },
         "name": { "type": "string" },
-        "email": { "type": "string" },
-        "accountId": { "type": "string", "description": "The ID of the account this user belongs to" }
+        "ownerEmail": { "type": "string" },
+        "masterListId": { "type": "string", "description": "ID of the master inventory list this shop is linked to" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["id", "name", "email", "accountId"]
+      "required": ["id", "name", "ownerEmail"]
+    },
+    "Snapshot": {
+      "title": "Cloud Snapshot",
+      "description": "A customizable backup of shop data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "categories": { "type": "array", "items": { "type": "string" } },
+        "data": { "type": "object", "description": "The actual JSON data of the snapshot" }
+      },
+      "required": ["id", "name", "timestamp", "data"]
+    },
+    "MasterList": {
+      "title": "Master Inventory List",
+      "description": "A shared list of products for multi-store synchronization",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "ownerEmail": { "type": "string" },
+        "products": { "type": "array", "items": { "type": "object" } }
+      },
+      "required": ["id", "name", "ownerEmail"]
+    },
+    "PublicMenu": {
+      "title": "Public Live Menu",
+      "description": "Read-only data for customers to view current stock and prices",
+      "type": "object",
+      "properties": {
+        "shopName": { "type": "string" },
+        "lastUpdated": { "type": "string", "format": "date-time" },
+        "categories": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "items": { "type": "array", "items": { "type": "object" } }
+            }
+          } 
+        }
+      }
+    },
+    "User": {
+      "title": "User Profile",
+      "description": "User account information and linked businesses",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "accounts": { "type": "array", "items": { "type": "object" } }
+      }
     },
     "Account": {
       "title": "Account",
-      "description": "A top-level account that can own multiple businesses",
+      "description": "A container for multiple businesses",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "name": { "type": "string" },
-        "ownerId": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "name", "ownerId"]
+        "ownerId": { "type": "string" }
+      }
     },
     "Business": {
-      "title": "Business",
-      "description": "A specific business or shop under an account",
+      "title": "Business State",
+      "description": "The full state of a business",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "accountId": { "type": "string" },
-        "data": { "type": "object", "description": "The AccountState object" },
-        "lastSyncId": { "type": "number" }
-      },
-      "required": ["id", "name", "accountId", "data"]
+        "data": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
     },
     "Operation": {
-      "title": "Operation",
-      "description": "A single state mutation operation",
+      "title": "Sync Operation",
+      "description": "A single change to the business state",
       "type": "object",
       "properties": {
         "id": { "type": "number" },
-        "clientId": { "type": "string" },
         "type": { "type": "string" },
         "payload": { "type": "object" },
         "timestamp": { "type": "number" }
-      },
-      "required": ["id", "clientId", "type", "payload", "timestamp"]
+      }
     }
   },
   "firestore": {
@@ -58,15 +106,31 @@
     },
     "/accounts/{accountId}": {
       "schema": "Account",
-      "description": "Top-level accounts"
+      "description": "Account containers"
     },
     "/accounts/{accountId}/businesses/{businessId}": {
       "schema": "Business",
-      "description": "Businesses under an account"
+      "description": "Business state snapshots"
     },
-    "/accounts/{accountId}/businesses/{businessId}/operations/{operationId}": {
+    "/accounts/{accountId}/businesses/{businessId}/operations/{opId}": {
       "schema": "Operation",
-      "description": "Operation log for synchronization"
+      "description": "Incremental sync operations"
+    },
+    "/shops/{shopId}": {
+      "schema": "Shop",
+      "description": "Shop metadata"
+    },
+    "/shops/{shopId}/snapshots/{snapshotId}": {
+      "schema": "Snapshot",
+      "description": "Customizable cloud backups"
+    },
+    "/shops/{shopId}/public_menu/current": {
+      "schema": "PublicMenu",
+      "description": "Live menu data for customers"
+    },
+    "/master_lists/{listId}": {
+      "schema": "MasterList",
+      "description": "Shared inventory for multi-store sync"
     }
   }
 }

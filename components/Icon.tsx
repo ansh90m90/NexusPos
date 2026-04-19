@@ -76,7 +76,7 @@ interface IconProps {
   strokeWidth?: number;
 }
 
-const CustomNLogo = (props: any) => (
+const CustomLogo = (props: any) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"
@@ -88,12 +88,29 @@ const CustomNLogo = (props: any) => (
     className={props.className}
     {...props}
   >
-    <path d="M5 20V4l14 16V4" />
+    {/* Stylish geometric N */}
+    <path 
+      d="M6 19V5" 
+      className="text-primary-500"
+      strokeWidth={4.5}
+    />
+    <path 
+      d="M6 5L18 19" 
+      className="text-primary-600"
+      strokeWidth={4.5}
+    />
+    <path 
+      d="M18 19V5" 
+      className="text-primary-500"
+      strokeWidth={4.5}
+    />
+    <rect x="4" y="4" width="2" height="2" className="text-primary-300" fill="currentColor" rx="0.5" />
+    <rect x="18" y="18" width="2" height="2" className="text-primary-300" fill="currentColor" rx="0.5" />
   </svg>
 );
 
 const iconMap: Record<IconName, React.ElementType> = {
-  logo: CustomNLogo,
+  logo: CustomLogo,
   dashboard: LayoutDashboard,
   pos: MonitorDot,
   products: Package,

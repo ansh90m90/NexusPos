@@ -78,6 +78,9 @@ export interface AppSettings {
   loyaltyPointsPerRupee: number;
   tutorialCompleted?: boolean;
   pinnedCustomerIds?: number[];
+  enablePublicMenu?: boolean;
+  lastMenuUpdate?: string;
+  masterListId?: string;
 }
 
 export interface AppNotification {
@@ -122,6 +125,7 @@ export interface ProductVariant {
   unit?: 'kg' | 'g' | 'l' | 'ml' | 'pcs';
   rate?: number; // Price before tax (for reference)
   gstRate?: number; // GST percentage (for reference)
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;
@@ -137,6 +141,7 @@ export interface Product {
   variants: ProductVariant[];
   minStock?: number;
   pricingType?: 'fixed' | 'per_unit';
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;
@@ -159,13 +164,22 @@ export interface Ingredient {
   quantity: number;
 }
 
+export interface DishVariant {
+  id: number;
+  dishId: number;
+  name: string;
+  price: number;
+  ingredients: Ingredient[];
+  costOverhead?: number;
+  isDeleted?: boolean;
+}
+
 export interface Dish {
   id: number;
   name: string;
-  price: number;
   imageUrl: string;
-  ingredients: Ingredient[];
-  costOverhead?: number; // For non-ingredient costs like gas, electricity
+  variants: DishVariant[];
+  tags?: string[];
   createdAt: string;
   updatedAt: string;
   isDeleted?: boolean;
@@ -227,7 +241,7 @@ export interface Supplier {
 }
 
 export interface CartItem {
-  item: ProductVariant | Dish;
+  item: ProductVariant | DishVariant;
   quantity: number;
   appliedPrice: number;
 }
@@ -268,7 +282,7 @@ export interface Transaction {
 export interface KitchenOrder {
     id: string;
     orderNumber: string;
-    items: { dish: Dish, quantity: number }[];
+    items: { dish: DishVariant, quantity: number }[];
     status: 'Pending' | 'Completed';
     timestamp: string;
 }
@@ -298,12 +312,19 @@ export interface PurchaseOrder {
     status: 'Pending' | 'Ordered' | 'Completed' | 'Draft';
 }
 
+export type ExpenseFrequency = 'one-time' | 'weekly' | 'monthly' | 'yearly';
+
 export interface Expense {
     id: string;
     date: string;
     description: string;
     category: string;
     amount: number;
+    frequency: ExpenseFrequency;
+    isRecurring: boolean;
+    lastGeneratedDate?: string; // ISO String
+    relatedId?: string; // e.g., purchaseOrderId
+    relatedType?: 'purchase' | 'other';
     attachment?: {
         data: string; // Base64 encoded string
         mimeType: string;

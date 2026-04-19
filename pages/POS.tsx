@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
-import { fuzzySearch } from '../lib/searchUtils';
+import { motion, AnimatePresence } from 'motion/react';
+import { fuzzySearch, multiTermSearch } from '../lib/searchUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import type { Product, Dish, Customer, CartItem, PaymentMethod, Transaction, ProductVariant, HeldCart, AppSettings, Payment, RawMaterial, Promotion } from '../types';
+import type { Product, Dish, DishVariant, Customer, CartItem, PaymentMethod, Transaction, ProductVariant, HeldCart, AppSettings, Payment, RawMaterial, Promotion } from '../types';
 import Avatar from '../components/Avatar';
 import SlideOverPanel from '../components/SlideOverPanel';
 import Icon from '../components/Icon';
@@ -44,83 +44,386 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
     if (!variant) return null;
     return (
         <Tooltip content={`Add ${product.name} to cart. Stock: ${variant.stock}`} position="top">
-            <div 
+            <motion.div 
                 ref={tileRef}
+                whileHover={!isOutOfStock ? { y: -4, scale: 1.02 } : {}}
+                whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
                 onClick={() => !isOutOfStock && tileRef.current && onAdd(variant, tileRef.current)}
-                className={`bg-theme-surface rounded-lg border border-theme-main shadow-sm transition-all duration-200 flex flex-col p-2 relative group ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-500 hover:ring-1 hover:ring-primary-500 cursor-pointer hover:-translate-y-1 hover:shadow-lg'}`}
+                className={`group relative flex flex-col p-4 rounded-3xl border transition-all duration-300 overflow-hidden ${
+                    isOutOfStock 
+                        ? 'bg-theme-main/50 border-theme-main opacity-60 cursor-not-allowed' 
+                        : 'bg-theme-surface/80 backdrop-blur-md border-theme-main shadow-sm hover:shadow-xl hover:shadow-primary-500/10 hover:border-primary-500/50 cursor-pointer'
+                }`}
             >
-                {isOutOfStock && <span className="absolute top-1 right-1 text-xs font-bold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded-full">Sold Out</span>}
+                {isOutOfStock && (
+                    <div className="absolute top-3 right-3 z-10">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-1 rounded-lg border border-rose-500/20">
+                            Sold Out
+                        </span>
+                    </div>
+                )}
+                
                 <div className="flex-grow">
-                    {product.subCategory && <span className="text-[10px] bg-theme-main rounded-full px-2 py-0.5 text-theme-muted font-semibold">{product.subCategory}</span>}
-                    <h3 className="font-bold text-theme-main mt-2 text-sm leading-tight break-words">
+                    {product.subCategory && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary-500 bg-primary-500/10 px-2 py-1 rounded-lg mb-3 inline-block">
+                            {product.subCategory}
+                        </span>
+                    )}
+                    <h3 className="font-bold text-theme-main text-sm leading-snug group-hover:text-primary-500 transition-colors line-clamp-2">
                         {product.name}
                     </h3>
                 </div>
-                <div className="mt-2 flex justify-between items-end">
-                    <p className="text-lg font-extrabold text-theme-accent">
-                        ₹{variant.mrp}
-                    </p>
-                    <p className="text-xs text-theme-muted">
-                        Stock: {variant.stock}
-                    </p>
+
+                <div className="mt-4 flex justify-between items-end">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-0.5">Price</span>
+                        <p className="text-xl font-black text-theme-main tracking-tight">
+                            ₹{variant.mrp}
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <span className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-0.5 block">Stock</span>
+                        <p className={`text-xs font-bold ${variant.stock < 10 ? 'text-amber-500' : 'text-theme-muted'}`}>
+                            {variant.stock}
+                        </p>
+                    </div>
                 </div>
-            </div>
+
+                {/* Hover decoration */}
+                <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-primary-500/5 blur-2xl group-hover:bg-primary-500/10 transition-colors" />
+            </motion.div>
         </Tooltip>
     );
 };
 
-const MasterProductTile: React.FC<{ product: Product; onAddVariant: (variant: ProductVariant, element: HTMLDivElement) => void; cart: CartItem[] }> = ({ product, onAddVariant, cart }) => {
+const MasterProductTile: React.FC<{ 
+    product: Product; 
+    onOpenVariants: (item: Product | Dish) => void;
+    cart: CartItem[] 
+}> = ({ product, onOpenVariants }) => {
     const tileRef = React.useRef<HTMLDivElement>(null);
+    const variantsCount = product.variants.filter(v => !v.isDeleted).length;
+    
     return (
-        <Tooltip content={`Select a variant for ${product.name}`} position="top">
-            <div ref={tileRef} className="bg-theme-surface rounded-lg border border-theme-main shadow-sm transition-all duration-200 flex flex-col p-2 hover:border-theme-accent hover:ring-1 hover:ring-theme-accent hover:shadow-lg">
-                <div className="flex-grow">
-                    {product.subCategory && <span className="text-[10px] bg-theme-main rounded-full px-2 py-0.5 text-theme-muted font-semibold">{product.subCategory}</span>}
-                    <h3 className="font-bold text-theme-main mt-2 text-sm leading-tight break-words">
+        <Tooltip content={`Select from ${variantsCount} variants of ${product.name}`} position="top">
+            <motion.div 
+                ref={tileRef} 
+                whileHover={{ y: -4, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onOpenVariants(product)}
+                className="group relative flex flex-col p-4 rounded-3xl border border-theme-main bg-theme-surface/80 backdrop-blur-md shadow-sm hover:shadow-2xl hover:border-primary-500/50 cursor-pointer overflow-hidden aspect-[4/5] min-h-[180px]"
+            >
+                <div className="flex-grow flex flex-col">
+                    {product.subCategory && (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary-500 bg-primary-500/10 px-2 py-1 rounded-lg mb-3 self-start">
+                            {product.subCategory}
+                        </span>
+                    )}
+                    <h3 className="font-black text-theme-main text-base leading-tight group-hover:text-primary-500 transition-colors line-clamp-3">
                         {product.name}
                     </h3>
                 </div>
-                <div className="flex flex-col gap-1.5 mt-2 max-h-24 overflow-y-auto pr-1">
-                    {product.variants.filter(v => !v.isDeleted).map(variant => {
-                        const quantityInCart = cart.find(ci => 'productId' in ci.item && ci.item.id === variant.id)?.quantity || 0;
-                        const isOutOfStock = variant.stock <= quantityInCart;
-                        return (
-                            <button
-                                key={variant.id}
-                                onClick={() => !isOutOfStock && tileRef.current && onAddVariant(variant, tileRef.current)}
-                                disabled={isOutOfStock}
-                                className="w-full flex justify-between items-center px-2 py-1 rounded-md text-xs font-semibold bg-theme-main border border-theme-main hover:bg-theme-accent hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={`Stock: ${variant.stock}`}
-                            >
-                                <span>{variant.name}</span>
-                                <span className="font-bold">₹{variant.mrp}</span>
-                            </button>
-                        )
-                    })}
+
+                <div className="mt-4 flex justify-between items-end">
+                    <div className="flex flex-col">
+                         <span className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-1">From</span>
+                         <p className="text-xl font-black text-theme-main tracking-tighter">
+                            ₹{Math.min(...product.variants.filter(v => !v.isDeleted).map(v => v.mrp))}
+                         </p>
+                    </div>
+                    <div className="bg-primary-500 text-white p-2 rounded-xl shadow-lg shadow-primary-500/30 group-hover:scale-110 transition-transform">
+                        <Icon name="plus" size={16} />
+                    </div>
                 </div>
-            </div>
+                
+                <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-primary-400 bg-theme-surface px-1.5 py-0.5 rounded shadow-sm border border-primary-500/20">
+                        {variantsCount} Variants
+                    </span>
+                </div>
+
+                <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-700" />
+            </motion.div>
         </Tooltip>
     );
 };
 
-const DishTile: React.FC<{ dish: Dish; onAdd: (dish: Dish, element: HTMLDivElement) => void; isOutOfStock: boolean; }> = ({ dish, onAdd, isOutOfStock }) => {
+const DishTile: React.FC<{ 
+    dish: Dish; 
+    onAdd: (dish: DishVariant, element: HTMLDivElement) => void; 
+    onOpenVariants: (item: Product | Dish) => void;
+    isOutOfStock: boolean; 
+}> = ({ dish, onAdd, onOpenVariants, isOutOfStock }) => {
     const tileRef = React.useRef<HTMLDivElement>(null);
+    const hasMultipleVariants = dish.variants.length > 1;
+    const variant = dish.variants[0];
+
     return (
-        <Tooltip content={`Add ${dish.name} to cart. Price: ₹${dish.price}`} position="top">
-            <div
+        <Tooltip content={hasMultipleVariants ? `Select variant for ${dish.name}` : `Add ${dish.name} to cart`} position="top">
+            <motion.div
                 ref={tileRef}
-                onClick={() => !isOutOfStock && tileRef.current && onAdd(dish, tileRef.current)}
-                className={`rounded-lg border border-theme-main shadow-sm transition-all duration-200 relative group overflow-hidden ${isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg hover:-translate-y-1'}`}
+                whileHover={!isOutOfStock ? { y: -4, scale: 1.02 } : {}}
+                whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
+                onClick={() => {
+                    if (isOutOfStock) return;
+                    if (hasMultipleVariants) {
+                        onOpenVariants(dish);
+                    } else if (tileRef.current) {
+                        onAdd(variant, tileRef.current);
+                    }
+                }}
+                className={`group relative rounded-[2.5rem] border transition-all duration-500 overflow-hidden aspect-[4/5] ${
+                    isOutOfStock 
+                        ? 'border-theme-main opacity-60 cursor-not-allowed grayscale' 
+                        : 'border-theme-main shadow-xl shadow-theme-main/10 hover:shadow-2xl cursor-pointer'
+                }`}
             >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"></div>
-                <img src={dish.imageUrl} alt={dish.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                <div className="absolute bottom-0 left-0 p-2 z-20 text-white">
-                    <h3 className="font-bold text-sm leading-tight break-words">{dish.name}</h3>
-                    <p className="text-lg font-extrabold">₹{dish.price}</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10 opacity-90 group-hover:opacity-95 transition-all duration-500"></div>
+                <img 
+                    src={dish.imageUrl || 'https://picsum.photos/seed/dish/400/500'} 
+                    alt={dish.name} 
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110" 
+                />
+                
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform group-hover:translate-y-[-4px] transition-transform duration-500">
+                    <h3 className="font-black text-white text-lg leading-tight mb-2 group-hover:text-primary-300 transition-colors line-clamp-2 uppercase tracking-tight">
+                        {dish.name}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xs font-bold text-white/60">₹</span>
+                            <p className="text-3xl font-black text-white tracking-tighter">
+                                {hasMultipleVariants ? Math.min(...dish.variants.map(v => v.price)) : variant.price}
+                                {hasMultipleVariants && <span className="text-xs ml-1 text-white/50">+</span>}
+                            </p>
+                        </div>
+                        {hasMultipleVariants && (
+                            <div className="bg-primary-500 text-white p-2 rounded-xl shadow-lg shadow-primary-500/30 group-hover:rotate-12 transition-all">
+                                <Icon name="plus" size={16} />
+                            </div>
+                        )}
+                    </div>
                 </div>
-                {isOutOfStock && <span className="absolute top-1 right-1 text-xs font-bold text-red-100 bg-red-600/80 px-1.5 py-0.5 rounded-full z-20">Sold Out</span>}
-            </div>
+
+                {isOutOfStock && (
+                    <div className="absolute top-5 right-5 z-20">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-white bg-rose-500 px-3 py-1.5 rounded-xl shadow-xl shadow-rose-500/40 border border-rose-400/30">
+                            Out of Stock
+                        </span>
+                    </div>
+                )}
+                
+                {!isOutOfStock && hasMultipleVariants && (
+                    <div className="absolute top-5 left-5 z-20">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-primary-300 bg-slate-900/60 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-primary-500/30">
+                            {dish.variants.length} Variants
+                        </span>
+                    </div>
+                )}
+            </motion.div>
         </Tooltip>
+    );
+};
+
+const CustomItemTile: React.FC<{ onAdd: (name: string, price: number) => void }> = ({ onAdd }) => {
+    const [showForm, setShowForm] = useState(false);
+    const [name, setName] = useState('');
+    const [price, setPrice] = useState('');
+
+    return (
+        <div className="relative aspect-[4/5]">
+            <AnimatePresence mode="wait">
+                {!showForm ? (
+                    <motion.div
+                        key="tile"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        onClick={() => setShowForm(true)}
+                        className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-[2.5rem] bg-slate-50/50 dark:bg-slate-800/10 hover:border-primary-500 hover:bg-primary-500/5 transition-all cursor-pointer group"
+                    >
+                        <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-lg group-hover:shadow-primary-500/30">
+                            <Icon name="plus" size={32} />
+                        </div>
+                        <p className="mt-4 font-black text-slate-400 group-hover:text-primary-600 uppercase tracking-widest text-xs">Custom Item</p>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="form"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="w-full h-full p-6 flex flex-col border-2 border-primary-500 rounded-[2.5rem] bg-white dark:bg-slate-950 shadow-2xl shadow-primary-500/20 z-30"
+                    >
+                        <h4 className="text-xs font-black text-primary-500 uppercase tracking-widest mb-4">Add Custom Item</h4>
+                        <div className="space-y-4 flex-grow">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Name</label>
+                                <input 
+                                    autoFocus
+                                    value={name} 
+                                    onChange={e => setName(e.target.value)} 
+                                    placeholder="e.g. Special Order" 
+                                    className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary-500 outline-none text-sm font-bold" 
+                                />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Price (₹)</label>
+                                <input 
+                                    type="number" 
+                                    value={price} 
+                                    onChange={e => setPrice(e.target.value)} 
+                                    placeholder="0.00" 
+                                    className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary-500 outline-none text-xl font-black" 
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-2 pt-4">
+                            <button onClick={() => setShowForm(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400 hover:text-rose-500 transition-colors">Cancel</button>
+                            <button 
+                                onClick={() => {
+                                    if (name && price) {
+                                        onAdd(name, parseFloat(price));
+                                        setName('');
+                                        setPrice('');
+                                        setShowForm(false);
+                                    }
+                                }}
+                                className="flex-[2] py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary-500/30 transition-all"
+                            >
+                                Add
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+const VariantGridModal: React.FC<{ 
+    item: Product | Dish | null; 
+    onClose: () => void; 
+    onAddVariant: (variant: ProductVariant | DishVariant, element: HTMLDivElement) => void;
+    cart: CartItem[];
+}> = ({ item, onClose, onAddVariant, cart }) => {
+    if (!item) return null;
+
+    const variants = 'variants' in item ? item.variants.filter(v => !v.isDeleted) : [];
+    const isDish = !('subCategory' in item);
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }} 
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                className="absolute inset-0 bg-slate-950/60 backdrop-blur-xl" 
+            />
+            
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="relative bg-theme-surface rounded-[3rem] shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-theme-main"
+            >
+                {/* Header */}
+                <div className="p-8 border-b border-theme-main flex justify-between items-center bg-theme-main/30">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 rounded-2xl bg-primary-500/10 flex items-center justify-center text-primary-500 shadow-xl shadow-primary-500/10">
+                            <Icon name={isDish ? 'restaurant' : 'inventory'} size={28} />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-theme-main tracking-tight uppercase">{item.name}</h3>
+                            <p className="text-xs font-bold text-theme-muted uppercase tracking-[0.3em] mt-1">Select from {variants.length} variations</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-theme-main text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 transition-all border border-theme-main">
+                        <Icon name="close" size={24} />
+                    </button>
+                </div>
+
+                {/* Grid */}
+                <div className="flex-grow overflow-y-auto p-10 custom-scrollbar">
+                    <div className={`grid gap-6 ${
+                        variants.length <= 4 
+                            ? 'grid-cols-2' 
+                            : variants.length <= 8 
+                                ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' 
+                                : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+                    }`}>
+                        {variants.map((v, i) => {
+                            const quantityInCart = cart.find(ci => ci.item.id === v.id)?.quantity || 0;
+                            const isProduct = 'stock' in v;
+                            const isOutOfStock = isProduct && (v as ProductVariant).stock <= quantityInCart;
+                            const price = isProduct ? (v as ProductVariant).mrp : (v as DishVariant).price;
+
+                            return (
+                                <motion.div
+                                    key={v.id}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05 } }}
+                                    whileHover={!isOutOfStock ? { y: -8, scale: 1.05 } : {}}
+                                    whileTap={!isOutOfStock ? { scale: 0.95 } : {}}
+                                    onClick={(e) => {
+                                        if (isOutOfStock) return;
+                                        onAddVariant(v, e.currentTarget as HTMLDivElement);
+                                    }}
+                                    className={`relative p-5 rounded-[2rem] border transition-all duration-300 flex flex-col items-center text-center cursor-pointer min-h-[140px] group ${
+                                        isOutOfStock 
+                                            ? 'bg-theme-main/50 border-theme-main opacity-40 grayscale cursor-not-allowed' 
+                                            : 'bg-theme-surface border-theme-main shadow-lg hover:shadow-2xl hover:border-primary-500/50'
+                                    }`}
+                                >
+                                    <div className={`w-10 h-10 rounded-xl mb-3 flex items-center justify-center transition-all duration-500 ${isOutOfStock ? 'bg-theme-main text-theme-muted' : 'bg-primary-500/10 text-primary-500 group-hover:bg-primary-500 group-hover:text-white group-hover:rotate-12'}`}>
+                                        <Icon name={isProduct ? 'inventory' : 'restaurant'} size={18} />
+                                    </div>
+                                    <h4 className="font-black text-theme-main text-xs line-clamp-2 mb-2 uppercase tracking-tight leading-tight">{v.name}</h4>
+                                    <div className="mt-auto">
+                                        <p className="text-lg font-black text-primary-500 tracking-tighter self-end">₹{price}</p>
+                                        {isProduct && (
+                                            <p className="text-[8px] font-bold text-theme-muted uppercase tracking-widest mt-0.5">Stock: {(v as ProductVariant).stock}</p>
+                                        )}
+                                    </div>
+
+                                    {quantityInCart > 0 && (
+                                        <div className="absolute top-[-8px] right-[-8px] w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black shadow-lg shadow-emerald-500/40 border-2 border-theme-surface">
+                                            {quantityInCart}
+                                        </div>
+                                    )}
+
+                                    {isOutOfStock && (
+                                        <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">Sold Out</span>
+                                    )}
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-8 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center backdrop-blur-md">
+                    <div className="flex items-center gap-4">
+                        <div className="flex -space-x-3">
+                            {variants.slice(0, 5).map((v, i) => (
+                                <div key={i} className="w-10 h-10 rounded-full bg-indigo-500 text-white border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-black shadow-md" style={{ zIndex: 10 - i }}>
+                                    {v.name.charAt(0)}
+                                </div>
+                            ))}
+                            {variants.length > 5 && (
+                                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-black shadow-md">
+                                    +{variants.length - 5}
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] ml-2">Displaying {variants.length} options for checkout</p>
+                    </div>
+                    <button onClick={onClose} className="px-10 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[2rem] font-black uppercase text-xs tracking-widest hover:scale-105 transition-all shadow-xl dark:shadow-none">Finish Selecting</button>
+                </div>
+            </motion.div>
+        </div>
     );
 };
 
@@ -138,27 +441,56 @@ const CartItemComponent: React.FC<{ cartItem: CartItem, onUpdate: (quantity: num
     }
 
     return (
-        <li className="flex items-center gap-3 py-2">
-            <div className="flex-grow">
-                <p className="text-sm font-semibold text-theme-main">{name}</p>
-                <p className="text-xs text-theme-muted">₹{cartItem.appliedPrice.toFixed(2)}</p>
+        <motion.li 
+            layout
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 10 }}
+            className="flex items-center gap-4 py-3 group"
+        >
+            <div className="flex-grow min-w-0">
+                <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{name}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">₹{cartItem.appliedPrice.toFixed(2)}</p>
             </div>
-            <div className="flex items-center gap-2">
-                <button onClick={() => onUpdate(quantity - 1)} disabled={isWeightBased} className="p-1 rounded-full bg-theme-main disabled:opacity-50 hover:bg-theme-surface transition-colors"><Icon name="remove" className="w-4 h-4" /></button>
-                <span className="font-bold w-6 text-center text-theme-main">{quantity}</span>
-                <button onClick={() => onUpdate(quantity + 1)} disabled={isWeightBased} className="p-1 rounded-full bg-theme-main disabled:opacity-50 hover:bg-theme-surface transition-colors"><Icon name="plus" className="w-4 h-4" /></button>
+            
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800/50 rounded-xl p-1 border border-slate-200/50 dark:border-slate-800/50">
+                <button 
+                    onClick={() => onUpdate(quantity - 1)} 
+                    disabled={isWeightBased} 
+                    className="p-1.5 rounded-lg text-slate-500 hover:bg-white dark:hover:bg-slate-700 hover:text-primary-500 disabled:opacity-30 transition-all"
+                >
+                    <Icon name="remove" size={14} />
+                </button>
+                <span className="font-black text-sm w-8 text-center text-slate-900 dark:text-white">{quantity}</span>
+                <button 
+                    onClick={() => onUpdate(quantity + 1)} 
+                    disabled={isWeightBased} 
+                    className="p-1.5 rounded-lg text-slate-500 hover:bg-white dark:hover:bg-slate-700 hover:text-primary-500 disabled:opacity-30 transition-all"
+                >
+                    <Icon name="plus" size={14} />
+                </button>
             </div>
-            <p className="font-bold w-16 text-right text-theme-main">₹{(quantity * cartItem.appliedPrice).toFixed(2)}</p>
-            <Tooltip content="Remove Item" position="left">
-                <button onClick={onRemove} className="p-1 text-red-500 rounded-full hover:bg-red-500/10"><Icon name="delete" className="w-4 h-4" /></button>
-            </Tooltip>
-        </li>
+
+            <div className="text-right min-w-[70px]">
+                <p className="text-sm font-black text-slate-900 dark:text-white">
+                    ₹{(quantity * cartItem.appliedPrice).toFixed(2)}
+                </p>
+            </div>
+
+            <button 
+                onClick={onRemove} 
+                className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+            >
+                <Icon name="delete" size={16} />
+            </button>
+        </motion.li>
     );
 };
 
 const CartView: React.FC<{
     cart: CartItem[],
     customer: Customer | null,
+    orderId: string,
     onUpdateItem: (itemId: number | string, quantity: number, isProduct: boolean) => void,
     onRemoveItem: (itemId: number | string, isProduct: boolean) => void,
     onClearCart: () => void,
@@ -174,7 +506,7 @@ const CartView: React.FC<{
     onAddExtraCharge: (charge: { description: string, amount: number }) => void;
     onRemoveExtraCharge: (index: number) => void;
     onOpenCustomCharge: () => void;
-}> = ({ cart, customer, onUpdateItem, onRemoveItem, onHoldCart, onOpenHeldOrders, onSelectCustomer, onPay, promotions, products, topCustomers, onSetCustomer, extraCharges, onRemoveExtraCharge, onOpenCustomCharge }) => {
+}> = ({ cart, customer, orderId, onUpdateItem, onRemoveItem, onHoldCart, onOpenHeldOrders, onSelectCustomer, onPay, promotions, products, topCustomers, onSetCustomer, extraCharges, onRemoveExtraCharge, onOpenCustomCharge }) => {
     const { subtotal, total, discountInfo } = useMemo(() => {
         const sub = cart.reduce((acc, item) => acc + item.appliedPrice * item.quantity, 0);
         const extra = extraCharges.reduce((acc, c) => acc + c.amount, 0);
@@ -196,7 +528,6 @@ const CartView: React.FC<{
                     }
                 });
             } else if (promo.conditions.appliesTo === 'SPECIFIC_CATEGORIES') {
-                 // FIX: Add type guard to correctly narrow `ci.item` to `ProductVariant` before accessing `productId`.
                  cart.forEach(ci => {
                     const item = ci.item;
                     if ('productId' in item) {
@@ -227,113 +558,154 @@ const CartView: React.FC<{
     }, [cart, promotions, products, extraCharges]);
 
     return (
-        <div className="bg-theme-surface rounded-lg border border-theme-main shadow-sm h-full flex flex-col">
-            <div className="p-3 border-b border-theme-main">
-                <div className="flex justify-between items-center mb-3">
-                    <h2 className="font-bold text-lg text-theme-main">Current Order</h2>
-                    <div className="flex items-center gap-1">
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/50 dark:shadow-none h-full flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800/50">
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">Current Order</h2>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Order #{orderId}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
                         <Tooltip content="Held Orders" position="bottom">
-                            <button onClick={onOpenHeldOrders} className="p-2 rounded-full hover:bg-theme-main transition-colors relative">
-                                <Icon name="categories" className="w-5 h-5 text-theme-main"/>
+                            <button onClick={onOpenHeldOrders} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-500 transition-all border border-slate-100 dark:border-slate-800">
+                                <Icon name="categories" size={20} />
                             </button>
                         </Tooltip>
                         <Tooltip content="Hold Order" position="bottom">
-                            <button onClick={onHoldCart} className="p-2 rounded-full hover:bg-theme-main transition-colors"><Icon name="hold-order" className="w-5 h-5 text-theme-main"/></button>
+                            <button onClick={onHoldCart} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 hover:bg-amber-50 dark:hover:bg-amber-500/10 hover:text-amber-500 transition-all border border-slate-100 dark:border-slate-800">
+                                <Icon name="hold-order" size={20} />
+                            </button>
                         </Tooltip>
                     </div>
                 </div>
                 
                 <div className="flex flex-wrap items-center gap-2">
                     {customer ? (
-                        <div className="flex items-center gap-2 bg-theme-accent/10 p-1.5 pr-3 rounded-full border border-theme-accent/30">
-                            <Avatar name={customer.name} className="w-8 h-8 text-xs" />
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-center gap-3 bg-primary-500/10 p-1.5 pr-4 rounded-2xl border border-primary-500/20"
+                        >
+                            <Avatar name={customer.name} className="w-10 h-10 text-xs shadow-lg shadow-primary-500/20" />
                             <div className="flex-grow">
-                                <p className="text-xs font-bold text-theme-accent">{customer.name}</p>
-                                <p className="text-[10px] text-theme-accent/70">₹{customer.creditBalance.toFixed(2)}</p>
+                                <p className="text-xs font-black text-primary-600 dark:text-primary-400">{customer.name}</p>
+                                <p className="text-[10px] font-bold text-primary-500/70 uppercase tracking-widest">Balance: ₹{customer.creditBalance.toFixed(2)}</p>
                             </div>
-                            <button onClick={() => onSetCustomer(null)} className="p-1 hover:bg-theme-accent/20 rounded-full transition-colors">
-                                <Icon name="close" className="w-3 h-3 text-theme-accent" />
+                            <button onClick={() => onSetCustomer(null)} className="p-1.5 hover:bg-primary-500/20 rounded-xl transition-all">
+                                <Icon name="close" size={12} className="text-primary-500" />
                             </button>
-                        </div>
+                        </motion.div>
                     ) : (
-                        <>
+                        <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar no-scrollbar">
                             {topCustomers.map((c, i) => (
                                 <Tooltip key={`top-cust-${c.id}-${i}`} content={`Select ${c.name}`} position="bottom">
-                                    <button onClick={() => onSetCustomer(c)} className="w-9 h-9 rounded-full border border-theme-main hover:border-theme-accent transition-all overflow-hidden flex items-center justify-center">
+                                    <button onClick={() => onSetCustomer(c)} className="flex-shrink-0 w-10 h-10 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary-500 transition-all overflow-hidden shadow-sm hover:shadow-lg hover:shadow-primary-500/10">
                                         <Avatar name={c.name} className="w-full h-full text-[10px]" />
                                     </button>
                                 </Tooltip>
                             ))}
-                            {/* Two custom customer icons */}
+                            <div className="w-px h-6 bg-slate-200 dark:bg-slate-800 mx-1"></div>
                             <Tooltip content="Walk-in Customer" position="bottom">
-                                <button onClick={() => onSetCustomer(null)} className="w-9 h-9 rounded-full border border-theme-main hover:border-theme-accent transition-all flex items-center justify-center bg-theme-main">
-                                    <Icon name="user" className="w-4 h-4 text-theme-muted" />
-                                </button>
-                            </Tooltip>
-                            <Tooltip content="Guest Customer" position="bottom">
-                                <button onClick={() => onSetCustomer({ id: -1, name: 'Guest', phone: '', email: '', address: '', creditBalance: 0, transactions: [], createdAt: new Date().toISOString(), isDeleted: false })} className="w-9 h-9 rounded-full border border-theme-main hover:border-theme-accent transition-all flex items-center justify-center bg-theme-main">
-                                    <Icon name="user-plus" className="w-4 h-4 text-theme-muted" />
+                                <button onClick={() => onSetCustomer(null)} className="flex-shrink-0 w-10 h-10 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-primary-500 transition-all flex items-center justify-center bg-slate-50 dark:bg-slate-800/50 text-slate-400 hover:text-primary-500">
+                                    <Icon name="user" size={18} />
                                 </button>
                             </Tooltip>
                             <Tooltip content="Select More Customers" position="bottom">
-                                <button onClick={onSelectCustomer} className="w-9 h-9 rounded-full border-2 border-dashed border-theme-accent/30 hover:border-theme-accent hover:border-solid transition-all flex items-center justify-center text-theme-accent hover:bg-theme-accent/10">
-                                    <Icon name="user-plus" className="w-5 h-5" />
+                                <button onClick={onSelectCustomer} className="flex-shrink-0 w-10 h-10 rounded-2xl border-2 border-dashed border-primary-500/30 hover:border-primary-500 hover:border-solid transition-all flex items-center justify-center text-primary-500 hover:bg-primary-500/10">
+                                    <Icon name="user-plus" size={18} />
                                 </button>
                             </Tooltip>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
 
-            <ul className="flex-grow p-3 overflow-y-auto divide-y divide-theme-main">
-                {cart.length === 0 ? (
-                    <p className="text-center text-theme-muted py-10">Cart is empty</p>
-                ) : cart.map(ci => {
-                    const isProduct = 'productId' in ci.item;
-                    const itemKey = `${isProduct ? 'p' : 'd'}-${ci.item.id}`;
-                    return (
-                        <CartItemComponent 
-                            key={itemKey} 
-                            cartItem={ci} 
-                            onUpdate={(qty) => onUpdateItem(ci.item.id, qty, isProduct)} 
-                            onRemove={() => onRemoveItem(ci.item.id, isProduct)} 
-                            products={products} 
-                        />
-                    );
-                })}
-            </ul>
+            <div className="flex-grow p-6 overflow-y-auto custom-scrollbar">
+                <AnimatePresence mode="popLayout">
+                    {cart.length === 0 ? (
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex flex-col items-center justify-center h-full text-slate-400 py-12"
+                        >
+                            <div className="w-20 h-20 rounded-full bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center mb-4">
+                                <Icon name="cart" size={32} className="opacity-20" />
+                            </div>
+                            <p className="text-sm font-bold uppercase tracking-widest">Cart is empty</p>
+                            <p className="text-xs mt-1">Add items to start an order</p>
+                        </motion.div>
+                    ) : (
+                        <ul className="space-y-1 divide-y divide-slate-50 dark:divide-slate-800/50">
+                            {cart.map(ci => {
+                                const isProduct = 'productId' in ci.item;
+                                const itemKey = `${isProduct ? 'p' : 'd'}-${ci.item.id}`;
+                                return (
+                                    <CartItemComponent 
+                                        key={itemKey} 
+                                        cartItem={ci} 
+                                        onUpdate={(qty) => onUpdateItem(ci.item.id, qty, isProduct)} 
+                                        onRemove={() => onRemoveItem(ci.item.id, isProduct)} 
+                                        products={products} 
+                                    />
+                                );
+                            })}
+                        </ul>
+                    )}
+                </AnimatePresence>
+            </div>
 
-            <div className="p-3 border-t border-theme-main space-y-2 bg-theme-main rounded-b-lg">
-                <div className="flex justify-between text-sm text-theme-main"><span>Subtotal</span><span className="font-semibold">₹{subtotal.toFixed(2)}</span></div>
-                {extraCharges.map((c, i) => (
-                    <div key={`extra-${i}`} className="flex justify-between text-sm text-theme-muted">
-                        <div className="flex items-center gap-1">
-                            <span>{c.description}</span>
-                            <button onClick={() => onRemoveExtraCharge(i)} className="text-red-500 hover:text-red-700"><Icon name="close" className="w-3 h-3" /></button>
-                        </div>
-                        <span className="font-semibold">₹{c.amount.toFixed(2)}</span>
+            <div className="p-6 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800/50 space-y-4">
+                <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        <span>Subtotal</span>
+                        <span className="text-slate-900 dark:text-white">₹{subtotal.toFixed(2)}</span>
                     </div>
-                ))}
-                {discountInfo && <div className="flex justify-between text-sm text-green-500"><span>Discount ({discountInfo.promotionName})</span><span className="font-semibold">-₹{discountInfo.amount.toFixed(2)}</span></div>}
-                <div className="flex justify-between text-2xl font-bold border-t border-theme-main pt-2 mt-2 text-theme-main">
-                    <div className="flex items-center gap-2">
-                        <span>Total</span>
-                        <Tooltip content="Add Service Charge" position="top">
+                    
+                    {extraCharges.map((c, i) => (
+                        <div key={`extra-${i}`} className="flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest">
+                            <div className="flex items-center gap-2">
+                                <span>{c.description}</span>
+                                <button onClick={() => onRemoveExtraCharge(i)} className="text-rose-500 hover:bg-rose-500/10 p-0.5 rounded-md transition-all">
+                                    <Icon name="close" size={10} />
+                                </button>
+                            </div>
+                            <span className="text-slate-900 dark:text-white">₹{c.amount.toFixed(2)}</span>
+                        </div>
+                    ))}
+                    
+                    {discountInfo && (
+                        <div className="flex justify-between text-xs font-bold text-emerald-500 uppercase tracking-widest">
+                            <span>Discount ({discountInfo.promotionName})</span>
+                            <span>-₹{discountInfo.amount.toFixed(2)}</span>
+                        </div>
+                    )}
+                </div>
+
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Total Amount</span>
                             <button 
                                 onClick={onOpenCustomCharge}
-                                className="p-1 bg-theme-surface rounded-full hover:bg-theme-main transition-colors border border-theme-main"
+                                className="p-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-400 hover:text-primary-500 hover:shadow-md transition-all border border-slate-100 dark:border-slate-700"
                             >
-                                <Icon name="plus" className="w-3 h-3 text-theme-main" />
+                                <Icon name="plus" size={12} />
                             </button>
-                        </Tooltip>
+                        </div>
+                        <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">₹{total.toFixed(2)}</span>
                     </div>
-                    <span>₹{total.toFixed(2)}</span>
-                </div>
-                <Tooltip content="Proceed to Payment" position="top">
-                    <button onClick={() => onPay(total, subtotal, discountInfo)} disabled={cart.length === 0 && extraCharges.length === 0} className="w-full mt-2 p-3 text-lg font-bold text-white bg-theme-accent rounded-lg hover:bg-theme-accent/90 disabled:opacity-50">
-                        Charge
+                    
+                    <button 
+                        onClick={() => onPay(total, subtotal, discountInfo)} 
+                        disabled={cart.length === 0 && extraCharges.length === 0} 
+                        className="w-full group relative flex items-center justify-center gap-3 p-5 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white rounded-2xl font-black text-xl shadow-xl shadow-primary-500/20 transition-all transform active:scale-[0.98] overflow-hidden"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                        <Icon name="credit-card" size={24} />
+                        <span>Checkout</span>
+                        <Icon name="arrow-right" size={20} className="group-hover:translate-x-1 transition-transform" />
                     </button>
-                </Tooltip>
+                </div>
             </div>
         </div>
     );
@@ -348,20 +720,31 @@ const CustomChargeModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd:
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-theme-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-theme-main">
-                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-main">
-                    <h3 className="font-bold text-lg text-theme-main">Add Custom Charge</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-theme-surface rounded-full transition-colors"><Icon name="close" className="w-5 h-5 text-theme-main" /></button>
-                </div>
-                <div className="p-6 space-y-4">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 10 }} 
+                animate={{ opacity: 1, scale: 1, y: 0 }} 
+                className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-slate-200 dark:border-slate-800"
+            >
+                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/30">
                     <div>
-                        <label className="block text-sm font-medium text-theme-main mb-1">Description</label>
-                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none text-theme-main" placeholder="e.g. Service Charge, Delivery Fee" />
+                        <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">Extra Charge</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Add delivery, service, or other fees</p>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-theme-main mb-1">Amount (₹)</label>
-                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none text-theme-main" placeholder="0.00" />
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"><Icon name="close" size={20} /></button>
+                </div>
+                <div className="p-10 space-y-6">
+                    <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fee Description</label>
+                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary-500/10 outline-none text-slate-900 dark:text-white font-bold" placeholder="e.g. Service Charge, Delivery Fee" />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Amount (₹)</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-lg">₹</span>
+                            <input type="number" autoFocus value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-4 pl-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary-500/10 outline-none text-slate-900 dark:text-white text-3xl font-black tracking-tighter" placeholder="0.00" />
+                        </div>
                     </div>
                     <button 
                         onClick={() => {
@@ -373,9 +756,9 @@ const CustomChargeModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd:
                                 setDescription('Service Charge');
                             }
                         }}
-                        className="w-full py-3 bg-theme-accent text-white font-bold rounded-lg hover:bg-theme-accent/90 transition-colors"
+                        className="w-full py-5 bg-primary-500 text-white font-black rounded-2xl hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20 text-sm uppercase tracking-[0.2em]"
                     >
-                        Add Charge
+                        Apply Charge
                     </button>
                 </div>
             </motion.div>
@@ -663,11 +1046,11 @@ const CustomerSelectModal: React.FC<{
 };
 
 const PaymentModal: React.FC<{
-    total: number,
-    onComplete: (payment: Payment) => void,
-    onClose: () => void,
-    customer: Customer | null,
-    appSettings: AppSettings
+    total: number;
+    onComplete: (payment: Payment) => void;
+    onClose: () => void;
+    customer: Customer | null;
+    appSettings: AppSettings;
 }> = ({ total, onComplete, onClose, customer, appSettings }) => {
     const [method, setMethod] = useState<PaymentMethod>('Cash');
     const [received, setReceived] = useState(total.toString());
@@ -687,16 +1070,22 @@ const PaymentModal: React.FC<{
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-            <div className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main animate-page-fade-in">
-                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-surface">
-                    <h3 className="text-lg font-bold text-theme-main">Complete Payment</h3>
-                    <button onClick={onClose} className="p-2 hover:bg-theme-main rounded-full transition-colors"><Icon name="close" className="w-5 h-5 text-theme-muted"/></button>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 dark:border-slate-800/50"
+            >
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Complete Payment</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <Icon name="close" className="w-5 h-5 text-slate-400"/>
+                    </button>
                 </div>
-                <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <div className="p-8 space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
                     <div className="text-center">
-                        <p className="text-xs text-theme-muted uppercase tracking-widest font-bold">Total Amount</p>
-                        <p className="text-5xl font-black text-theme-accent mt-1">₹{total.toFixed(2)}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Amount</p>
+                        <p className="text-6xl font-black text-primary-500 mt-1 tracking-tighter">₹{total.toFixed(2)}</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
@@ -705,45 +1094,45 @@ const PaymentModal: React.FC<{
                                 key={m} 
                                 onClick={() => setMethod(m)}
                                 disabled={m === 'Credit' && !customer}
-                                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${method === m ? 'border-theme-accent bg-theme-accent/10 text-theme-accent' : 'border-theme-main hover:border-theme-accent/50 text-theme-muted'} ${m === 'Credit' && !customer ? 'opacity-30 cursor-not-allowed' : ''}`}
+                                className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${method === m ? 'border-primary-500 bg-primary-500/10 text-primary-500 shadow-lg shadow-primary-500/10' : 'border-slate-100 dark:border-slate-800 hover:border-primary-500/50 text-slate-400'} ${m === 'Credit' && !customer ? 'opacity-30 cursor-not-allowed' : ''}`}
                             >
                                 <Icon name={m.toLowerCase() as any} className="w-6 h-6" />
-                                <span className="text-xs font-bold uppercase tracking-tighter">{m}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">{m}</span>
                             </button>
                         ))}
                     </div>
 
                     {method === 'Online' && appSettings.upiId && (
                         <div className="space-y-4">
-                            <div className="flex flex-col items-center justify-center p-6 bg-theme-surface rounded-2xl border border-theme-main shadow-inner">
-                                <p className="text-xs font-bold text-theme-muted uppercase tracking-widest mb-4">Scan to Pay via UPI</p>
-                                <div className="bg-white p-2 rounded-xl shadow-sm">
+                            <div className="flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-slate-800">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Scan to Pay via UPI</p>
+                                <div className="bg-white p-4 rounded-3xl shadow-xl border border-slate-100">
                                     <QRCodeSVG 
                                         value={`upi://pay?pa=${appSettings.upiId}&pn=${encodeURIComponent(appSettings.shopName)}&am=${total.toFixed(2)}&cu=INR`} 
                                         size={180} 
                                         level="H"
                                     />
                                 </div>
-                                <p className="text-xs text-theme-muted mt-4 text-center font-mono">{appSettings.upiId}</p>
+                                <p className="text-[10px] text-slate-400 mt-4 text-center font-mono tracking-widest">{appSettings.upiId}</p>
                             </div>
 
                             <div className="space-y-3">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Transaction ID / UTR (Optional)</label>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Transaction ID / UTR (Optional)</label>
                                     <input 
                                         type="text" 
                                         placeholder="Enter 12-digit UTR number"
                                         value={transactionId}
                                         onChange={e => setTransactionId(e.target.value)}
-                                        className="w-full p-3 bg-theme-main border border-theme-main rounded-xl text-theme-main focus:ring-2 focus:ring-theme-accent outline-none transition-all font-mono"
+                                        className="w-full p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all font-mono font-bold"
                                     />
                                 </div>
                                 <button 
                                     onClick={() => setIsVerified(!isVerified)}
-                                    className={`w-full p-3 rounded-xl border-2 flex items-center justify-center gap-2 transition-all ${isVerified ? 'bg-green-500/10 border-green-500 text-green-600' : 'border-theme-main text-theme-muted hover:border-green-500/50'}`}
+                                    className={`w-full p-4 rounded-2xl border-2 flex items-center justify-center gap-3 transition-all font-black uppercase tracking-widest text-xs ${isVerified ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-500/10' : 'border-slate-100 dark:border-slate-800 text-slate-400 hover:border-emerald-500/50'}`}
                                 >
                                     <Icon name={isVerified ? 'sync-check' : 'sync-reload'} className="w-5 h-5" />
-                                    <span className="font-bold">{isVerified ? 'Payment Verified' : 'Mark as Verified'}</span>
+                                    <span>{isVerified ? 'Payment Verified' : 'Mark as Verified'}</span>
                                 </button>
                             </div>
                         </div>
@@ -751,44 +1140,44 @@ const PaymentModal: React.FC<{
 
                     {method !== 'Credit' && (
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-theme-muted uppercase tracking-wider">Amount Received</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Amount Received</label>
                             <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-theme-muted text-xl">₹</span>
+                                <span className="absolute left-6 top-1/2 -translate-y-1/2 font-black text-slate-300 text-3xl">₹</span>
                                 <input 
                                     type="number" 
                                     value={received} 
                                     onChange={e => setReceived(e.target.value)} 
-                                    className="w-full pl-10 p-4 text-3xl font-black border border-theme-main rounded-2xl bg-theme-main text-theme-main focus:ring-2 focus:ring-theme-accent outline-none transition-all"
+                                    className="w-full pl-12 p-6 text-4xl font-black border border-slate-200 dark:border-slate-700 rounded-[2rem] bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all tracking-tighter"
                                     autoFocus
                                 />
                             </div>
                             {change > 0 && (
-                                <div className="flex justify-between items-center p-4 bg-green-500/10 rounded-xl border border-green-500/20">
-                                    <span className="text-sm font-bold text-green-600">Change to return</span>
-                                    <span className="text-2xl font-black text-green-600">₹{change.toFixed(2)}</span>
+                                <div className="flex justify-between items-center p-5 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Change to return</span>
+                                    <span className="text-3xl font-black text-emerald-600 tracking-tighter">₹{change.toFixed(2)}</span>
                                 </div>
                             )}
                         </div>
                     )}
 
                     {method === 'Credit' && customer && (
-                        <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
-                            <p className="text-sm font-bold text-amber-600">
-                                Adding to <strong>{customer.name}'s</strong> balance.
+                        <div className="p-5 bg-amber-500/10 rounded-2xl border border-amber-500/20 shadow-lg shadow-amber-500/5">
+                            <p className="text-xs font-black text-amber-600 uppercase tracking-widest">
+                                Adding to <span className="text-amber-700 dark:text-amber-400">{customer.name}'s</span> balance
                             </p>
-                            <p className="text-xs mt-1 text-amber-500/80">New Balance: ₹{(customer.creditBalance + total).toFixed(2)}</p>
+                            <p className="text-xl font-black text-amber-600 mt-1 tracking-tighter">New Balance: ₹{(customer.creditBalance + total).toFixed(2)}</p>
                         </div>
                     )}
 
                     <button 
                         onClick={handleComplete}
                         disabled={method !== 'Credit' && (parseFloat(received) < total || isNaN(parseFloat(received)))}
-                        className="w-full py-4 bg-theme-accent hover:bg-theme-accent/90 text-white rounded-2xl font-black text-xl shadow-xl shadow-theme-accent/30 transition-all disabled:opacity-50 disabled:shadow-none transform active:scale-95"
+                        className="w-full py-6 bg-primary-500 hover:bg-primary-600 text-white rounded-[2rem] font-black text-xl shadow-2xl shadow-primary-500/30 transition-all disabled:opacity-50 disabled:shadow-none transform active:scale-95 uppercase tracking-widest"
                     >
                         Complete Sale
                     </button>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };
@@ -800,56 +1189,65 @@ const HeldOrdersModal: React.FC<{
     onDelete: (id: string) => void;
 }> = ({ heldCarts, onClose, onRestore, onDelete }) => {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-theme-surface rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl border border-theme-main overflow-hidden">
-                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-main/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl border border-white/20 dark:border-slate-800/50 overflow-hidden"
+            >
+                <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                     <div>
-                        <h2 className="text-xl font-bold text-theme-main">Held Orders (Queue)</h2>
-                        <p className="text-xs text-theme-muted">Manage orders for long-term customers</p>
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Held Orders</h2>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Manage orders in queue</p>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-theme-main rounded-full transition-colors">
-                        <Icon name="close" className="w-6 h-6 text-theme-main" />
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <Icon name="close" className="w-6 h-6 text-slate-400" />
                     </button>
                 </div>
                 
-                <div className="flex-grow overflow-y-auto p-4">
+                <div className="flex-grow overflow-y-auto p-8 custom-scrollbar">
                     {heldCarts.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-theme-muted">
-                            <Icon name="categories" className="w-16 h-16 mb-4 opacity-20" />
-                            <p className="text-lg font-medium">No held orders found</p>
-                            <p className="text-sm">Orders you put on hold will appear here.</p>
+                        <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                            <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] flex items-center justify-center mb-6">
+                                <Icon name="categories" className="w-12 h-12 opacity-20" />
+                            </div>
+                            <p className="text-lg font-black tracking-tight text-slate-600 dark:text-slate-300">No held orders found</p>
+                            <p className="text-xs font-bold uppercase tracking-widest mt-2">Orders you put on hold will appear here</p>
                         </div>
                     ) : (
-                        <div className="grid gap-3">
+                        <div className="grid gap-4">
                             {heldCarts.map(hc => (
-                                <div key={hc.id} className="bg-theme-main/30 border border-theme-main rounded-xl p-4 flex justify-between items-center hover:border-theme-accent transition-colors group">
+                                <div key={hc.id} className="bg-white dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 flex justify-between items-center hover:border-primary-500/50 transition-all group shadow-sm hover:shadow-xl hover:shadow-primary-500/5">
                                     <div className="flex-grow">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="font-bold text-theme-main">{hc.name}</span>
-                                            <span className="text-[10px] bg-theme-accent/10 text-theme-accent px-2 py-0.5 rounded-full font-bold">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="text-lg font-black text-slate-900 dark:text-white tracking-tight">{hc.name}</span>
+                                            <span className="text-[10px] bg-primary-500/10 text-primary-500 px-3 py-1 rounded-full font-black uppercase tracking-widest">
                                                 {hc.cart.length} items
                                             </span>
                                         </div>
-                                        <div className="flex items-center gap-3 text-xs text-theme-muted">
-                                            <span className="flex items-center gap-1">
-                                                <Icon name="receipt" className="w-3 h-3" />
+                                        <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                            <span className="flex items-center gap-1.5 text-primary-500">
+                                                <Icon name="receipt" className="w-3.5 h-3.5" />
                                                 ₹{hc.cart.reduce((t, i) => t + i.appliedPrice * i.quantity, 0).toFixed(2)}
                                             </span>
-                                            <span>•</span>
-                                            <span>{new Date(hc.date).toLocaleString()}</span>
+                                            <span className="opacity-30">•</span>
+                                            <span className="flex items-center gap-1.5">
+                                                <Icon name="clock" className="w-3.5 h-3.5" />
+                                                {new Date(hc.date).toLocaleString()}
+                                            </span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
                                         <button 
                                             onClick={() => onDelete(hc.id)}
-                                            className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                                            className="p-3 text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all"
                                             title="Delete Order"
                                         >
-                                            <Icon name="delete" className="w-5 h-5" />
+                                            <Icon name="delete" className="w-6 h-6" />
                                         </button>
                                         <button 
                                             onClick={() => onRestore(hc)}
-                                            className="bg-theme-accent text-white px-4 py-2 rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2"
+                                            className="bg-primary-500 text-white px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 flex items-center gap-2"
                                         >
                                             <Icon name="sync-reload" className="w-4 h-4" />
                                             Restore
@@ -861,15 +1259,15 @@ const HeldOrdersModal: React.FC<{
                     )}
                 </div>
                 
-                <div className="p-4 border-t border-theme-main bg-theme-main/20 flex justify-end">
+                <div className="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20 flex justify-end">
                     <button 
                         onClick={onClose}
-                        className="px-6 py-2 bg-theme-main text-theme-main rounded-lg font-bold hover:bg-theme-surface transition-colors border border-theme-main"
+                        className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition-all border border-slate-200 dark:border-slate-700"
                     >
                         Close
                     </button>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 };
@@ -877,6 +1275,8 @@ const HeldOrdersModal: React.FC<{
 const POS: React.FC<POSProps> = (props) => {
     const { products, dishes, rawMaterials, customers, onTransaction, appSettings, promotions, allocatedRawMaterials, heldCarts, setHeldCarts, transactions, onUpdateAppSettings, onSaveCustomer } = props;
     
+    const [orderId] = useState(() => Date.now().toString().slice(-6));
+
     const [cart, setCart] = useState<CartItem[]>([]);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [activeTab, setActiveTab] = useState<'products' | 'dishes'>(appSettings.shopTypes.includes('Retail') ? 'products' : 'dishes');
@@ -893,6 +1293,9 @@ const POS: React.FC<POSProps> = (props) => {
     const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
     const [holdName, setHoldName] = useState('');
     const [extraCharges, setExtraCharges] = useState<{ description: string, amount: number }[]>([]);
+    
+    // New state for variants
+    const [selectedItemForVariants, setSelectedItemForVariants] = useState<Product | Dish | null>(null);
 
     const handleAddExtraCharge = useCallback((charge: { description: string, amount: number }) => {
         setExtraCharges(prev => [...prev, charge]);
@@ -902,15 +1305,35 @@ const POS: React.FC<POSProps> = (props) => {
         setExtraCharges(prev => prev.filter((_, i) => i !== index));
     }, []);
 
-    const handleAddItem = useCallback((item: ProductVariant | Dish) => {
+    const handleAddItem = useCallback((item: ProductVariant | DishVariant | { name: string, price: number }) => {
         setCart(prevCart => {
-            const isItemProduct = 'productId' in item;
-            const existing = prevCart.find(ci => ci.item.id === item.id && (('productId' in ci.item) === isItemProduct));
+            const isProduct = 'productId' in item;
+            const isDish = !isProduct && 'id' in item;
+            const isCustom = !('id' in item);
+
+            // Search for existing by ID and type
+            const existing = prevCart.find(ci => {
+                if (isCustom) return !('id' in ci.item) && ci.item.name === item.name;
+                const ciIsProduct = 'productId' in ci.item;
+                const ciIsDish = !ciIsProduct && 'id' in ci.item;
+                if (isProduct && ciIsProduct) return ci.item.id === item.id;
+                if (isDish && ciIsDish) return ci.item.id === item.id;
+                return false;
+            });
+
             if (existing) {
-                return prevCart.map(ci => (ci.item.id === item.id && (('productId' in ci.item) === isItemProduct)) ? { ...ci, quantity: ci.quantity + 1 } : ci);
+                return prevCart.map(ci => {
+                    if (isCustom) return (!('id' in ci.item) && ci.item.name === item.name) ? { ...ci, quantity: ci.quantity + 1 } : ci;
+                    const ciIsProduct = 'productId' in ci.item;
+                    const ciIsDish = !ciIsProduct && 'id' in ci.item;
+                    if (isProduct && ciIsProduct && ci.item.id === item.id) return { ...ci, quantity: ci.quantity + 1 };
+                    if (isDish && ciIsDish && ci.item.id === item.id) return { ...ci, quantity: ci.quantity + 1 };
+                    return ci;
+                });
             }
-            const price = 'mrp' in item ? item.mrp : item.price;
-            return [...prevCart, { item, quantity: 1, appliedPrice: price }];
+
+            const price = isCustom ? (item as any).price : ('mrp' in item ? item.mrp : item.price);
+            return [...prevCart, { item: item as any, quantity: 1, appliedPrice: price }];
         });
     }, []);
 
@@ -1031,16 +1454,29 @@ const POS: React.FC<POSProps> = (props) => {
     };
 
     const filteredProducts = useMemo(() => {
-        return products.filter(p => !p.isDeleted && fuzzySearch(searchTerm, p.name));
+        return products.filter(p => !p.isDeleted && multiTermSearch(searchTerm, [
+            p.name,
+            p.subCategory,
+            p.tags,
+            ...p.variants.map(v => v.name),
+            ...p.variants.flatMap(v => v.tags || [])
+        ]));
     }, [products, searchTerm]);
 
     const filteredDishes = useMemo(() => {
         const cartRequirements = getCartIngredients(cart);
-        return dishes.filter(d => !d.isDeleted && fuzzySearch(searchTerm, d.name)).map(dish => {
-            const isOutOfStock = dish.ingredients.some(ing => {
-                const material = rawMaterials.find(rm => rm.id === ing.id);
-                const available = (material?.stock || 0) - (allocatedRawMaterials[ing.id] || 0) - (cartRequirements[ing.id] || 0);
-                return available < ing.quantity;
+        return dishes.filter(d => !d.isDeleted && multiTermSearch(searchTerm, [
+            d.name,
+            d.tags
+        ])).map(dish => {
+            // Check if ANY variant is in stock
+            const isOutOfStock = dish.variants.every(v => {
+                const ingredients = v.ingredients || [];
+                return ingredients.some(ing => {
+                    const material = rawMaterials.find(rm => rm.id === ing.id);
+                    const available = (material?.stock || 0) - (allocatedRawMaterials[ing.id] || 0) - (cartRequirements[ing.id] || 0);
+                    return available < ing.quantity;
+                });
             });
             return { ...dish, isOutOfStock };
         });
@@ -1139,73 +1575,112 @@ const POS: React.FC<POSProps> = (props) => {
     }, [appSettings.pinnedCustomerIds, onUpdateAppSettings]);
 
     return (
-        <div className="md:grid md:grid-cols-3 md:gap-4">
+        <div className="md:grid md:grid-cols-3 md:gap-6">
             {/* Main content: Search, Filters, Product Grid */}
-            <div className="md:col-span-2">
-                <div className="relative mb-3 flex gap-2">
-                    <div className="relative flex-grow">
-                        <Icon name="search" className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-theme-muted" />
-                        <input type="text" placeholder="Search products or dishes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-3 pl-10 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none transition-all text-theme-main" />
+            <div className="md:col-span-2 space-y-8">
+                <div className="relative flex gap-4">
+                    <div className="relative flex-grow group">
+                        <Icon name="search" className="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
+                        <input 
+                            type="text" 
+                            placeholder="Search products or dishes..." 
+                            value={searchTerm} 
+                            onChange={e => setSearchTerm(e.target.value)} 
+                            className="w-full p-5 pl-14 bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-800/60 rounded-[2rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all text-slate-900 dark:text-white shadow-xl shadow-slate-200/20 dark:shadow-none font-bold text-lg" 
+                        />
                     </div>
                     {props.appSettings.enableBarcodeScanner && (
                         <Tooltip content="Scan Barcode" position="bottom">
                             <button 
                                 onClick={() => setQRScannerOpen(true)}
-                                className="p-3 bg-theme-main border border-theme-main rounded-lg hover:bg-theme-surface transition-colors text-theme-main"
+                                className="p-5 bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-800/60 rounded-2xl hover:bg-primary-50 dark:hover:bg-primary-500/10 hover:text-primary-500 transition-all text-slate-600 dark:text-slate-400 shadow-xl shadow-slate-200/20 dark:shadow-none"
                             >
-                                <Icon name="barcode" className="w-6 h-6" />
-                            </button>
-                        </Tooltip>
-                    )}
-                    {props.appSettings.enableQrScanner && (
-                        <Tooltip content="Scan QR Code" position="bottom">
-                            <button 
-                                onClick={() => setQRScannerOpen(true)}
-                                className="p-3 bg-theme-main border border-theme-main rounded-lg hover:bg-theme-surface transition-colors text-theme-main"
-                            >
-                                <Icon name="camera" className="w-6 h-6" />
+                                <Icon name="barcode" size={28} />
                             </button>
                         </Tooltip>
                     )}
                 </div>
                 
                 {props.appSettings.shopTypes.includes('Restaurant') && props.appSettings.shopTypes.includes('Retail') && (
-                    <div className="flex items-center bg-theme-main rounded-xl p-1 mb-4 self-start w-fit border border-theme-main">
+                    <div className="flex items-center bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md rounded-[1.5rem] p-2 self-start w-fit border border-slate-200/50 dark:border-slate-800/50">
                         <button 
                             onClick={() => setActiveTab('products')} 
-                            className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${activeTab === 'products' ? 'bg-theme-surface text-theme-accent shadow-sm' : 'text-theme-muted hover:text-theme-main'}`}
+                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-500 ${activeTab === 'products' ? 'bg-white dark:bg-slate-700 text-primary-500 shadow-xl shadow-primary-500/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                         >
                             Products
                         </button>
                         <button 
                             onClick={() => setActiveTab('dishes')} 
-                            className={`px-6 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${activeTab === 'dishes' ? 'bg-theme-surface text-theme-accent shadow-sm' : 'text-theme-muted hover:text-theme-main'}`}
+                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-500 ${activeTab === 'dishes' ? 'bg-white dark:bg-slate-700 text-primary-500 shadow-xl shadow-primary-500/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                         >
                             Dishes
                         </button>
                     </div>
                 )}
 
-                <div data-tutorial-id="pos-product-grid" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pb-28 md:pb-4">
-                    {activeTab === 'products' && filteredProducts.map(p => (
-                        p.variants.length === 1 && p.pricingType === 'fixed' ? (
-                            <SingleVariantProductTile key={p.id} product={p} onAdd={(v) => handleAddItem(v)} isOutOfStock={p.variants[0].stock <= 0} />
+                <div data-tutorial-id="pos-product-grid" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6 pb-32 md:pb-6">
+                    <AnimatePresence mode="popLayout">
+                        {activeTab === 'products' ? (
+                            <>
+                                {filteredProducts.map((p, idx) => (
+                                    <motion.div
+                                        key={p.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                    >
+                                        {p.variants.filter(v => !v.isDeleted).length > 1 ? (
+                                            <MasterProductTile 
+                                                product={p} 
+                                                onOpenVariants={setSelectedItemForVariants} 
+                                                cart={cart}
+                                            />
+                                        ) : (
+                                            <SingleVariantProductTile 
+                                                product={p} 
+                                                onAdd={(v) => handleAddItem(v)} 
+                                                isOutOfStock={p.variants[0].stock <= (cart.find(ci => ci.item.id === p.variants[0].id)?.quantity || 0)} 
+                                            />
+                                        )}
+                                    </motion.div>
+                                ))}
+                                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                                    <CustomItemTile onAdd={(name, price) => handleAddItem({ name, price })} />
+                                </motion.div>
+                            </>
                         ) : (
-                            <MasterProductTile key={p.id} product={p} onAddVariant={(v) => handleAddItem(v)} cart={cart} />
-                        )
-                    ))}
-                    {activeTab === 'dishes' && filteredDishes.map(d => (
-                        <DishTile key={d.id} dish={d} onAdd={(dish) => handleAddItem(dish)} isOutOfStock={d.isOutOfStock} />
-                    ))}
+                            <>
+                                {filteredDishes.map((d, idx) => (
+                                    <motion.div
+                                        key={d.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                    >
+                                        <DishTile 
+                                            dish={d} 
+                                            onAdd={(variant) => handleAddItem(variant)} 
+                                            onOpenVariants={setSelectedItemForVariants}
+                                            isOutOfStock={d.isOutOfStock} 
+                                        />
+                                    </motion.div>
+                                ))}
+                                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                                    <CustomItemTile onAdd={(name, price) => handleAddItem({ name, price })} />
+                                </motion.div>
+                            </>
+                        )}
+                    </AnimatePresence>
                 </div>
             </div>
 
             {/* Desktop Cart */}
             <div className="hidden md:block">
-                <div className="sticky top-4 h-[calc(100vh-6rem)]">
+                <div className="sticky top-6 h-[calc(100vh-8rem)]">
                    <CartView 
                         cart={cart} 
                         customer={customer} 
+                        orderId={orderId}
                         onUpdateItem={handleUpdateItem} 
                         onRemoveItem={handleRemoveItem} 
                         onClearCart={handleClearCart} 
@@ -1256,6 +1731,7 @@ const POS: React.FC<POSProps> = (props) => {
                        <CartView 
                             cart={cart} 
                             customer={customer} 
+                            orderId={orderId}
                             onUpdateItem={handleUpdateItem} 
                             onRemoveItem={handleRemoveItem} 
                             onClearCart={handleClearCart} 
@@ -1314,6 +1790,13 @@ const POS: React.FC<POSProps> = (props) => {
                 onAdd={handleAddExtraCharge}
             />
 
+            <VariantGridModal 
+                item={selectedItemForVariants}
+                onClose={() => setSelectedItemForVariants(null)}
+                onAddVariant={(v) => handleAddItem(v)}
+                cart={cart}
+            />
+
             {isQRScannerOpen && (
                 <QRScannerModal 
                     onClose={() => setQRScannerOpen(false)} 
@@ -1331,44 +1814,48 @@ const POS: React.FC<POSProps> = (props) => {
             )}
 
             {isHoldModalOpen && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
-                    <div className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main">
-                        <div className="p-4 border-b border-theme-main bg-theme-main flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-theme-main">Hold Current Order</h3>
-                            <button onClick={() => setIsHoldModalOpen(false)} className="p-2 hover:bg-theme-surface rounded-full transition-colors">
-                                <Icon name="close" className="w-5 h-5 text-theme-main" />
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[110] p-4">
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 dark:border-slate-800/50"
+                    >
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Hold Current Order</h3>
+                            <button onClick={() => setIsHoldModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                                <Icon name="close" className="w-5 h-5 text-slate-400" />
                             </button>
                         </div>
-                        <div className="p-6 space-y-4">
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-theme-muted uppercase">Order Name / Table Number</label>
+                        <div className="p-8 space-y-8">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Order Name / Table Number</label>
                                 <input 
                                     type="text" 
                                     value={holdName} 
                                     onChange={e => setHoldName(e.target.value)}
-                                    className="w-full p-3 bg-theme-main border border-theme-main rounded-xl focus:ring-2 focus:ring-theme-accent outline-none text-theme-main"
+                                    className="w-full p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none text-slate-900 dark:text-white font-bold text-lg transition-all"
                                     placeholder={customer ? customer.name : "e.g. Table 5, John Doe..."}
                                     autoFocus
                                     onKeyDown={e => e.key === 'Enter' && handleHoldCart()}
                                 />
-                                <p className="text-[10px] text-theme-muted italic">This helps you identify the order later.</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-2">This helps you identify the order later</p>
                             </div>
-                            <div className="flex gap-3 pt-2">
+                            <div className="flex gap-4 pt-2">
                                 <button 
                                     onClick={() => setIsHoldModalOpen(false)}
-                                    className="flex-1 px-4 py-3 border border-theme-main rounded-xl font-bold text-theme-main hover:bg-theme-main transition-all"
+                                    className="flex-1 px-6 py-4 border border-slate-200 dark:border-slate-700 rounded-2xl font-black uppercase tracking-widest text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={handleHoldCart}
-                                    className="flex-1 px-4 py-3 bg-theme-accent hover:bg-theme-accent/90 text-white rounded-xl font-bold transition-all shadow-lg shadow-theme-accent/20"
+                                    className="flex-1 px-6 py-4 bg-primary-500 hover:bg-primary-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-primary-500/25"
                                 >
                                     Hold Order
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             )}
         </div>

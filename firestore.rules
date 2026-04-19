@@ -1,114 +1,96 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: shops
+// Document ID: shopId (string)
+// Fields:
+//   - id: string (required)
+//   - name: string (required)
+//   - ownerEmail: string (required)
+//   - masterListId: string (optional)
+//   - createdAt: timestamp (required)
+//
+// Collection: shops/{shopId}/snapshots
+// Document ID: snapshotId (string)
+// Fields:
+//   - id: string (required)
+//   - name: string (required)
+//   - timestamp: timestamp (required)
+//   - categories: list (required)
+//   - data: map (required)
+//
+// Collection: shops/{shopId}/public_menu
+// Document ID: current (string)
+// Fields:
+//   - shopName: string (required)
+//   - lastUpdated: timestamp (required)
+//   - categories: list (required)
+//
+// Collection: master_lists
+// Document ID: listId (string)
+// Fields:
+//   - id: string (required)
+//   - name: string (required)
+//   - ownerEmail: string (required)
+//   - products: list (required)
+//
+// ===============================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: users
-    // Document ID: Firebase Auth UID
-    // Fields:
-    //   - id: string (required) - UID
-    //   - name: string (required)
-    //   - email: string (required)
-    //   - accountId: string (required) - The ID of the account this user belongs to
-    //
-    // Collection: accounts
-    // Document ID: accountId
-    // Fields:
-    //   - id: string (required)
-    //   - name: string (required)
-    //   - ownerId: string (required) - UID of the creator
-    //
-    // Collection: accounts/{accountId}/businesses
-    // Document ID: businessId
-    // Fields:
-    //   - id: string (required)
-    //   - name: string (required)
-    //   - accountId: string (required)
-    //   - data: object (required) - AccountState
-    //   - lastSyncId: number (required)
-    //
-    // Collection: accounts/{accountId}/businesses/{businessId}/operations
-    // Document ID: operationId
-    // Fields:
-    //   - clientId: string
-    //   - type: string
-    //   - payload: object
-    //   - timestamp: number
-    //
-    // ===============================================================
 
     // ===============================================================
     // Helper Functions
     // ===============================================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function isOwner(email) {
+      return isAuthenticated() && request.auth.token.email == email;
     }
 
     function isAdmin() {
       return isAuthenticated() && (
+        (request.auth.token.email == "pushpasingh1985a@gmail.com" && request.auth.token.email_verified == true) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin') ||
-        (request.auth.token.email == "pushpasingh1985a@gmail.com" && request.auth.token.email_verified == true)
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
 
-    function isAccountMember(accountId) {
-      return isAuthenticated() && (
-        accountId == request.auth.uid || // Legacy support
-        (exists(/databases/$(database)/documents/accounts/$(accountId)) && 
-         get(/databases/$(database)/documents/accounts/$(accountId)).data.ownerId == request.auth.uid) ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountId == accountId) ||
-        isAdmin()
-      );
+    function isValidShop(data) {
+      return data.keys().hasAll(['id', 'name', 'ownerEmail', 'createdAt']) &&
+             data.id is string && data.name is string && data.name.size() > 0 &&
+             data.ownerEmail is string && data.createdAt is timestamp;
+    }
+
+    function isValidSnapshot(data) {
+      return data.keys().hasAll(['id', 'name', 'timestamp', 'data']) &&
+             data.id is string && data.name is string && data.name.size() > 0 &&
+             data.timestamp is timestamp && data.data is map &&
+             (!('categories' in data) || data.categories is list);
+    }
+
+    function isValidPublicMenu(data) {
+      return data.keys().hasAll(['shopName', 'lastUpdated', 'categories']) &&
+             data.shopName is string && data.lastUpdated is timestamp && data.categories is list;
+    }
+
+    function isValidMasterList(data) {
+      return data.keys().hasAll(['id', 'name', 'ownerEmail', 'products', 'ownerId', 'lastUpdated']) &&
+             data.id is string && data.name is string && data.ownerEmail is string && 
+             data.products is list && data.ownerId is string && data.lastUpdated is timestamp;
     }
 
     function isAccountOwner(accountId) {
       return isAuthenticated() && (
-        accountId == request.auth.uid || // Legacy support
-        (exists(/databases/$(database)/documents/accounts/$(accountId)) && 
-         get(/databases/$(database)/documents/accounts/$(accountId)).data.ownerId == request.auth.uid) || 
-        isAdmin()
+        request.auth.uid == accountId || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountId == accountId)
       );
-    }
-
-    function isValidUser(data) {
-      return data.keys().hasAll(['id', 'name', 'email', 'accountId']) &&
-             data.id is string &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") &&
-             data.accountId is string;
-    }
-
-    function isValidAccount(data) {
-      return data.keys().hasAll(['id', 'name', 'ownerId']) &&
-             data.id is string &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.ownerId is string;
-    }
-
-    function isValidBusiness(data) {
-      return data.keys().hasAll(['id', 'name', 'accountId', 'data', 'lastSyncId']) &&
-             data.id is string &&
-             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-             data.accountId is string &&
-             data.data is map &&
-             data.lastSyncId is number;
-    }
-
-    function isValidOperation(data) {
-        return data.keys().hasAll(['id', 'clientId', 'type', 'payload', 'timestamp']) &&
-               data.id is number &&
-               data.clientId is string &&
-               data.type is string &&
-               data.payload is map &&
-               data.timestamp is number;
     }
 
     // ===============================================================
@@ -116,30 +98,56 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data);
+      allow get, list: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /accounts/{accountId} {
-      allow read: if isAccountMember(accountId);
-      allow create: if isAuthenticated() && isValidAccount(request.resource.data) && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isAccountOwner(accountId) && isValidAccount(request.resource.data);
-      allow delete: if isAccountOwner(accountId);
-
+      allow get, list: if isAuthenticated() && (isAccountOwner(accountId) || isAdmin());
+      allow create, update: if isAuthenticated() && (isAccountOwner(accountId) || isAdmin());
+      allow delete: if isAdmin();
+      
       match /businesses/{businessId} {
-        allow read: if isAccountMember(accountId);
-        allow create: if isAccountMember(accountId) && isValidBusiness(request.resource.data);
-        allow update: if isAccountMember(accountId) && isValidBusiness(request.resource.data);
-        allow delete: if isAccountOwner(accountId);
-
-        match /operations/{operationId} {
-          allow read: if isAccountMember(accountId);
-          allow create: if isAccountMember(accountId) && isValidOperation(request.resource.data);
-          allow delete: if isAccountOwner(accountId);
+        allow get, list: if isAuthenticated() && (isAccountOwner(accountId) || isAdmin());
+        allow create, update: if isAuthenticated() && (isAccountOwner(accountId) || isAdmin());
+        allow delete: if isAdmin();
+        
+        match /operations/{opId} {
+          allow get, list: if isAuthenticated() && (isAccountOwner(accountId) || isAdmin());
+          allow create, update: if isAuthenticated() && (isAccountOwner(accountId) || isAdmin());
+          allow delete: if isAdmin();
         }
       }
+    }
+
+    match /shops/{shopId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.ownerEmail) || isAdmin());
+      allow create: if isAuthenticated() && isValidShop(request.resource.data) && (isOwner(request.resource.data.ownerEmail) || isAdmin());
+      allow update: if isAuthenticated() && isValidShop(request.resource.data) && (isOwner(resource.data.ownerEmail) || isAdmin());
+      allow delete: if isAuthenticated() && (isOwner(resource.data.ownerEmail) || isAdmin());
+
+      match /snapshots/{snapshotId} {
+        allow read, write: if isAuthenticated() && (isOwner(get(/databases/$(database)/documents/shops/$(shopId)).data.ownerEmail) || isAdmin());
+      }
+
+      match /public_menu/current {
+        // Explicit request for unauthenticated read access for customers
+        allow read: if true; 
+        allow write: if isAuthenticated() && (isOwner(get(/databases/$(database)/documents/shops/$(shopId)).data.ownerEmail) || isAdmin());
+      }
+    }
+
+    match /master_lists/{listId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidMasterList(request.resource.data);
+      allow update: if isAuthenticated() && isValidMasterList(request.resource.data);
+      allow delete: if isAuthenticated() && (isOwner(resource.data.ownerEmail) || isAdmin());
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

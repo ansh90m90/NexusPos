@@ -33,6 +33,9 @@ import { deleteBusiness as serverDeleteBusiness, deleteUserAccount as serverDele
 
 import PrivacyPolicy from '../pages/PrivacyPolicy';
 import TermsOfService from '../pages/TermsOfService';
+import LiveMenu from '../LiveMenu';
+
+import ErrorBoundary from '../components/ErrorBoundary';
 
 const tutorialSteps: TutorialStep[] = [
     { elementSelector: null, title: 'Welcome to the Hub!', content: "Let's take a quick tour of the main features to get you started.", page: 'Dashboard' },
@@ -119,13 +122,18 @@ const AccountApp: React.FC<{
 
   const {
     handleNewTransaction, handleSaveProduct, handleDeleteProduct, handleSaveCustomer, handleDeleteCustomer,
-    handleAddCustomerPayment, handleNewPurchase, handleSaveUser, handleDeleteUser, handleSavePromotion,
+    handleAddCustomerPayment, handleNewPurchase, handleDeletePurchase, handleSaveUser, handleDeleteUser, handleSavePromotion,
     handleDeletePromotion, handleTogglePromotionStatus, handleSaveDish, handleDeleteDish, handleSaveRawMaterial,
     handleDeleteRawMaterial, handleSaveSupplier, handleDeleteSupplier, handleMarkNotificationsRead,
     handleRestoreItem, handleAdjustStock, handleSaveExpense, handleDeleteExpense, handleUpdateAppSettings,
     handleUpdateKitchenOrders, handleUpdateCurrentUser, handleAccountImport, handleCancelTransaction,
-    handleUpdateHeldCarts, handleAddSupplierPayment,
+    handleUpdateHeldCarts, handleAddSupplierPayment, handleGenerateRecurringExpenses,
   } = useAccountActions({ dispatchOperation, currentUser, setModalState, toast, accountState, setCurrentUser });
+
+  useEffect(() => {
+    // Check for recurring expenses on load
+    handleGenerateRecurringExpenses();
+  }, [handleGenerateRecurringExpenses]); // Run once on mount
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme !== 'light');
@@ -196,9 +204,9 @@ const AccountApp: React.FC<{
         case 'Dashboard': return <Dashboard transactions={transactions} products={visibleProducts} customers={visibleCustomers} expenses={visibleExpenses} batches={batches} appSettings={appSettings} employeeRole={currentUser.role} purchaseOrders={purchaseOrders} setCurrentPage={setCurrentPage} setModalState={setModalState} onActivityClick={setActiveActivity} />;
         case 'POS': return <POS products={visibleProducts} dishes={visibleDishes} rawMaterials={visibleRawMaterials} customers={visibleCustomers} onTransaction={handleNewTransaction} appSettings={appSettings} promotions={visiblePromotions} allocatedRawMaterials={allocatedRawMaterials} heldCarts={heldCartsState} setHeldCarts={handleUpdateHeldCarts} transactions={transactions} onUpdateAppSettings={handleUpdateAppSettings} onSaveCustomer={handleSaveCustomer} />;
         case 'Products': return <Products products={visibleProducts} suppliers={visibleSuppliers} setProducts={handleSaveProduct} onDeleteProduct={handleDeleteProduct} appSettings={appSettings} batches={batches} activeTab={productsPageTab} setActiveTab={setProductsPageTab} modalState={modalState} setModalState={setModalState} onAdjustStock={handleAdjustStock} />;
-        case 'Restaurant': return <Restaurant dishes={visibleDishes} onSaveDish={handleSaveDish} onDeleteDish={handleDeleteDish} rawMaterials={visibleRawMaterials} onSaveRawMaterial={handleSaveRawMaterial} onDeleteRawMaterial={handleDeleteRawMaterial} activeTab={restaurantPageTab} setActiveTab={setRestaurantPageTab} modalState={modalState} setModalState={setModalState} orders={kitchenOrders} setOrders={handleUpdateKitchenOrders} />;
+        case 'Restaurant': return <Restaurant dishes={visibleDishes} onSaveDish={handleSaveDish} onDeleteDish={handleDeleteDish} rawMaterials={visibleRawMaterials} onSaveRawMaterial={handleSaveRawMaterial} onDeleteRawMaterial={handleDeleteRawMaterial} activeTab={restaurantPageTab} setActiveTab={setRestaurantPageTab} modalState={modalState} setModalState={setModalState} orders={kitchenOrders} setOrders={handleUpdateKitchenOrders} setCurrentPage={setCurrentPage} />;
         case 'Customers': return <Customers customers={visibleCustomers} transactions={transactions} onSaveCustomer={handleSaveCustomer} onDeleteCustomer={handleDeleteCustomer} onAddPayment={handleAddCustomerPayment} onCancelTransaction={handleCancelTransaction} modalState={modalState} setModalState={setModalState} products={visibleProducts} appSettings={appSettings} onExecuteAiAction={async () => ''} />;
-        case 'Purchases': return <Purchases accountId={accountId} products={visibleProducts} suppliers={visibleSuppliers} purchaseOrders={purchaseOrders} onNewPurchase={handleNewPurchase} transactions={transactions} modalState={modalState} setModalState={setModalState} />;
+        case 'Purchases': return <Purchases accountId={accountId} products={visibleProducts} suppliers={visibleSuppliers} purchaseOrders={purchaseOrders} onNewPurchase={handleNewPurchase} onDeletePurchase={handleDeletePurchase} transactions={transactions} modalState={modalState} setModalState={setModalState} />;
         case 'Suppliers': return <Suppliers suppliers={visibleSuppliers} onSaveSupplier={handleSaveSupplier} onDeleteSupplier={handleDeleteSupplier} purchaseOrders={purchaseOrders} modalState={modalState} setModalState={setModalState} onAddPayment={handleAddSupplierPayment} appSettings={appSettings} />;
         case 'Expenses': return <Expenses expenses={visibleExpenses} onSaveExpense={handleSaveExpense} onDeleteExpense={handleDeleteExpense} modalState={modalState} setModalState={setModalState} />;
         case 'Reports': return <Reports accountState={accountState} />;
@@ -257,7 +265,11 @@ const AccountApp: React.FC<{
 };
 
 const App: React.FC = () => {
+    console.log('App component is rendering...');
     const path = window.location.pathname;
+    if (path.startsWith('/menu/')) {
+        return <LiveMenu />;
+    }
     if (path === '/privacy-policy') {
         return <PrivacyPolicy />;
     }
@@ -266,14 +278,17 @@ const App: React.FC = () => {
     }
 
     return (
-        <ToastProvider>
-            <AppContent />
-        </ToastProvider>
+        <ErrorBoundary>
+            <ToastProvider>
+                <AppContent />
+            </ToastProvider>
+        </ErrorBoundary>
     )
 };
 
 
 const AppContent: React.FC = () => {
+    console.log('AppContent component is rendering...');
     const [userBusinesses, setUserBusinesses] = useLocalStorage<BusinessInfo[]>('user_businesses', []);
     const [currentAccountId, setCurrentAccountId] = useLocalStorage<string | null>('current_account_id', null);
     const [currentBusinessId, setCurrentBusinessId] = useLocalStorage<string | null>('current_business_id', null);
@@ -302,14 +317,21 @@ const AppContent: React.FC = () => {
                 profileUnsubscribe = onSnapshot(doc(db, 'users', firebaseUser.uid), (userDoc) => {
                     if (userDoc.exists()) {
                         const userData = userDoc.data();
-                        setCurrentUser({
-                            id: firebaseUser.uid,
-                            name: userData.name,
-                            email: userData.email,
-                            role: 'Admin',
-                            accountId: userData.accountId,
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
+                        setCurrentUser(prev => {
+                            const newUser = {
+                                id: firebaseUser.uid,
+                                name: userData.name,
+                                email: userData.email,
+                                role: 'Admin',
+                                accountId: userData.accountId,
+                                createdAt: userData.createdAt || new Date().toISOString(),
+                                updatedAt: userData.updatedAt || new Date().toISOString()
+                            };
+                            // Only update if data actually changed
+                            if (prev && JSON.stringify(prev) === JSON.stringify(newUser)) {
+                                return prev;
+                            }
+                            return newUser;
                         });
                         setCurrentAccountId(userData.accountId);
                     }
@@ -451,7 +473,11 @@ const AppContent: React.FC = () => {
     }
 
     if (!accountState || !currentUser || !currentAccountId || !currentBusinessId) {
-        return <Login onLogin={handleLogin} onDeleteBusiness={handleDeleteBusiness} />;
+        return (
+            <ErrorBoundary>
+                <Login onLogin={handleLogin} onDeleteBusiness={handleDeleteBusiness} />
+            </ErrorBoundary>
+        );
     }
     
     return (

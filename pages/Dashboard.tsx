@@ -6,21 +6,23 @@ import Icon from '../components/Icon';
 import { Tooltip } from '../components/Tooltip';
 
 
-const StatCard: React.FC<{ title: string; value: string; iconName: string; tooltip: string; index: number }> = ({ title, value, iconName, tooltip, index }) => (
+const StatCard: React.FC<{ title: string; value: string; iconName: string; tooltip: string; index: number; color?: string }> = ({ title, value, iconName, tooltip, index, color = 'indigo' }) => (
   <Tooltip content={tooltip} position="bottom">
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
-      className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:-translate-y-0.5 h-full"
+      className="group relative bg-theme-surface backdrop-blur-xl p-6 rounded-[2rem] border border-theme-main shadow-xl shadow-theme-main/10 flex flex-col gap-4 transition-all hover:shadow-2xl hover:-translate-y-1 overflow-hidden"
     >
-      <div className="bg-theme-accent/10 text-theme-accent p-3 rounded-full">
-        <Icon name={iconName} className="w-6 h-6" />
+      <div className={`w-14 h-14 rounded-2xl bg-${color}-500/10 text-${color}-500 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-${color}-500/10`}>
+        <Icon name={iconName} size={28} />
       </div>
       <div>
-        <p className="text-sm text-theme-muted font-medium">{title}</p>
-        <p className="text-2xl font-bold text-theme-main">{value}</p>
+        <p className="text-xs font-black text-theme-muted uppercase tracking-[0.2em] mb-1">{title}</p>
+        <p className="text-3xl font-black text-theme-main tracking-tighter">{value}</p>
       </div>
+      {/* Decorative background element */}
+      <div className={`absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-${color}-500/5 blur-3xl group-hover:bg-${color}-500/10 transition-colors duration-700`} />
     </motion.div>
   </Tooltip>
 );
@@ -47,39 +49,74 @@ const ProfitSummary: React.FC<{ transactions: Transaction[], expenses: Expense[]
     const netProfitPercentage = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
     return (
-        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm flex flex-col justify-between h-full">
-            <div>
-                <h2 className="text-base font-semibold text-theme-main">30-Day Profit Summary</h2>
-                <div className="mt-4 space-y-3">
-                    <div className="flex justify-between items-baseline">
-                        <span className="text-sm font-medium text-theme-muted">Gross Profit</span>
-                        <span className="text-2xl font-bold text-theme-main">{formatCurrency(grossProfit)}</span>
+        <div className="bg-theme-surface text-theme-main p-8 rounded-[2rem] shadow-2xl shadow-theme-main/10 flex flex-col justify-between h-full relative overflow-hidden group border border-theme-main">
+            {/* Background pattern */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/10 blur-[100px] rounded-full -mr-32 -mt-32 group-hover:bg-primary-500/20 transition-colors duration-700" />
+            
+            <div className="relative z-10">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-lg font-bold text-theme-main/90 tracking-tight">30-Day Performance</h2>
+                    <div className="px-3 py-1 rounded-full bg-theme-main/10 backdrop-blur-md border border-theme-main text-[10px] font-bold uppercase tracking-widest text-theme-muted">
+                        Live Stats
                     </div>
-                     <div className="flex justify-between items-baseline">
-                        <span className="text-sm font-medium text-theme-muted">Expenses</span>
-                        <span className="text-lg font-semibold text-red-500">-{formatCurrency(totalExpenses)}</span>
+                </div>
+                
+                <div className="space-y-6">
+                    <div className="flex justify-between items-end">
+                        <div className="space-y-1">
+                            <span className="text-xs font-bold text-theme-muted uppercase tracking-wider">Gross Profit</span>
+                            <p className="text-3xl font-black text-theme-main tracking-tighter">{formatCurrency(grossProfit)}</p>
+                        </div>
+                        <div className="text-right space-y-1">
+                            <span className="text-xs font-bold text-theme-muted uppercase tracking-wider">Expenses</span>
+                            <p className="text-xl font-bold text-rose-500">-{formatCurrency(totalExpenses)}</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-theme-main">
-                <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-bold text-theme-main opacity-90">Net Profit</span>
-                    <span className={`text-3xl font-extrabold ${netProfit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{formatCurrency(netProfit)}</span>
+            <div className="mt-12 pt-8 border-t border-theme-main relative z-10">
+                <div className="flex justify-between items-end mb-6">
+                    <div className="space-y-1">
+                        <span className="text-xs font-bold text-primary-500 uppercase tracking-wider">Net Profit</span>
+                        <p className={`text-4xl font-black tracking-tighter ${netProfit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {formatCurrency(netProfit)}
+                        </p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-lg text-xs font-black ${netProfit >= 0 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'}`}>
+                        {netProfitPercentage.toFixed(1)}%
+                    </div>
                 </div>
-                <div className="mt-3 space-y-2">
-                    <Tooltip content={`Gross Profit: ${grossProfitPercentage.toFixed(1)}% of Revenue`} position="bottom">
-                        <div>
-                            <div className="flex justify-between text-xs text-theme-muted mb-1"><span>Gross Margin</span><span>{grossProfitPercentage.toFixed(1)}%</span></div>
-                            <div className="w-full bg-theme-main rounded-full h-2 overflow-hidden"><div className="bg-theme-accent h-2 rounded-full" style={{ width: `${Math.min(100, grossProfitPercentage)}%` }}></div></div>
+                
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-black text-theme-muted uppercase tracking-widest">
+                            <span>Gross Margin</span>
+                            <span>{grossProfitPercentage.toFixed(1)}%</span>
                         </div>
-                    </Tooltip>
-                    <Tooltip content={`Net Profit: ${netProfitPercentage.toFixed(1)}% of Revenue`} position="bottom">
-                        <div>
-                             <div className="flex justify-between text-xs text-theme-muted mb-1"><span>Net Margin</span><span>{netProfitPercentage.toFixed(1)}%</span></div>
-                            <div className="w-full bg-theme-main rounded-full h-2 overflow-hidden"><div className={`h-2 rounded-full ${netProfitPercentage >= 0 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${Math.min(100, Math.abs(netProfitPercentage))}%` }}></div></div>
+                        <div className="w-full bg-theme-main/10 rounded-full h-1.5 overflow-hidden">
+                            <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, grossProfitPercentage)}%` }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="bg-primary-500 h-full rounded-full shadow-[0_0_10px_rgba(var(--primary-500-rgb),0.5)]" 
+                            />
                         </div>
-                    </Tooltip>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-[10px] font-black text-theme-muted uppercase tracking-widest">
+                            <span>Net Margin</span>
+                            <span>{netProfitPercentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-theme-main/10 rounded-full h-1.5 overflow-hidden">
+                            <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(100, Math.abs(netProfitPercentage))}%` }}
+                                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+                                className={`h-full rounded-full shadow-lg ${netProfitPercentage >= 0 ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-rose-500 shadow-rose-500/30'}`} 
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,20 +125,25 @@ const ProfitSummary: React.FC<{ transactions: Transaction[], expenses: Expense[]
 
 const QuickActions: React.FC<{ onNavigate: (page: Page) => void, onOpenModal: (type: string) => void }> = ({ onNavigate, onOpenModal }) => {
     const actions = [
-        { label: 'New Sale', iconName: 'cart', action: () => onNavigate('POS') },
-        { label: 'Add Product', iconName: 'plus', action: () => { onNavigate('Products'); onOpenModal('add_product'); } },
-        { label: 'Receive Stock', iconName: 'receive-stock', action: () => { onNavigate('Purchases'); onOpenModal('add_purchase'); } },
-        { label: 'Add Customer', iconName: 'customers', action: () => { onNavigate('Customers'); onOpenModal('add_customer'); } },
+        { label: 'New Sale', iconName: 'cart', action: () => onNavigate('POS'), color: 'primary' },
+        { label: 'Add Product', iconName: 'plus', action: () => { onNavigate('Products'); onOpenModal('add_product'); }, color: 'indigo' },
+        { label: 'Receive Stock', iconName: 'receive-stock', action: () => { onNavigate('Purchases'); onOpenModal('add_purchase'); }, color: 'emerald' },
+        { label: 'Add Customer', iconName: 'customers', action: () => { onNavigate('Customers'); onOpenModal('add_customer'); }, color: 'amber' },
     ];
     return (
-      <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
-        <h2 className="text-base font-semibold mb-3 text-theme-main">Quick Actions</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="bg-theme-surface backdrop-blur-xl p-8 rounded-[2rem] border border-theme-main shadow-xl shadow-theme-main/10">
+        <h2 className="text-lg font-black mb-6 text-theme-main tracking-tight">Quick Actions</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {actions.map(action => (
                 <Tooltip key={action.label} content={`Go to ${action.label}`} position="bottom">
-                    <button onClick={action.action} className="w-full flex flex-col items-center justify-center p-2 rounded-lg bg-theme-main hover:bg-primary-100 dark:hover:bg-primary-900/50 text-theme-main hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-                        <div className="mb-1"><Icon name={action.iconName} className="w-5 h-5" /></div>
-                        <span className="text-xs font-semibold">{action.label}</span>
+                    <button 
+                        onClick={action.action} 
+                        className="group w-full flex flex-col items-center justify-center p-6 rounded-3xl bg-theme-main/50 hover:bg-theme-surface border border-theme-main hover:border-primary-500/50 hover:shadow-xl hover:shadow-primary-500/10 transition-all duration-300"
+                    >
+                        <div className={`mb-3 p-3 rounded-2xl bg-theme-surface shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 text-theme-muted group-hover:text-primary-500`}>
+                            <Icon name={action.iconName} size={24} />
+                        </div>
+                        <span className="text-xs font-black uppercase tracking-widest text-theme-muted group-hover:text-theme-main transition-colors">{action.label}</span>
                     </button>
                 </Tooltip>
             ))}
@@ -133,21 +175,27 @@ const TopProducts: React.FC<{ transactions: Transaction[], products: Product[] }
     }, [transactions, products]);
 
     return (
-        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-theme-main">Top Selling Products</h2>
+        <div className="bg-theme-surface backdrop-blur-xl p-8 rounded-[2rem] border border-theme-main shadow-xl shadow-theme-main/10">
+            <h2 className="text-lg font-black mb-6 text-theme-main tracking-tight">Top Selling Products</h2>
             {topProducts.length > 0 ? (
-                <ul className="space-y-3">
-                    {topProducts.map(p => (
+                <ul className="space-y-4">
+                    {topProducts.map((p, idx) => (
                         <Tooltip key={p.name} content={`Sold ${p.quantity} units`} position="left">
-                            <li className="flex justify-between items-center text-sm cursor-default">
-                                <span className="font-medium text-theme-main opacity-90 truncate pr-4">{p.name}</span>
-                                <span className="font-semibold text-theme-main">₹{p.revenue.toFixed(2)}</span>
+                            <li className="flex justify-between items-center group cursor-default">
+                                <div className="flex items-center gap-4">
+                                    <span className="text-xs font-black text-theme-muted opacity-50 w-4">0{idx + 1}</span>
+                                    <span className="text-sm font-bold text-theme-muted group-hover:text-primary-500 transition-colors truncate max-w-[180px]">{p.name}</span>
+                                </div>
+                                <span className="text-sm font-black text-theme-main">₹{p.revenue.toLocaleString()}</span>
                             </li>
                         </Tooltip>
                     ))}
                 </ul>
             ) : (
-                <p className="text-sm text-theme-muted text-center py-8">No sales data available.</p>
+                <div className="flex flex-col items-center justify-center py-12 text-theme-muted">
+                    <Icon name="cart" size={32} className="opacity-20 mb-2" />
+                    <p className="text-xs font-bold uppercase tracking-widest">No sales data</p>
+                </div>
             )}
         </div>
     );
@@ -172,18 +220,22 @@ const TopCustomersChart: React.FC<{ transactions: Transaction[], customers: Cust
             });
     }, [transactions, customers]);
     
-    const COLORS = ['#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1'];
+    const COLORS = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'];
 
     return (
-        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-theme-main">Top Customers by Revenue</h2>
+        <div className="bg-theme-surface backdrop-blur-xl p-8 rounded-[2rem] border border-theme-main shadow-xl shadow-theme-main/10">
+            <h2 className="text-lg font-black mb-6 text-theme-main tracking-tight">Top Customers</h2>
             {topCustomers.length > 0 ? (
-                 <ResponsiveContainer width="100%" height={150}>
+                 <ResponsiveContainer width="100%" height={200}>
                     <BarChart data={topCustomers} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }}>
                         <XAxis type="number" hide />
-                        <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: 'currentColor' }} width={80} />
-                        <RechartsTooltip formatter={(value: number) => `₹${value.toFixed(2)}`} cursor={{fill: 'rgba(var(--primary-500-rgb), 0.1)'}}/>
-                        <Bar dataKey="revenue" fill="var(--primary-500)" barSize={20} radius={[0, 4, 4, 0]}>
+                        <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: 'var(--text-muted)', fontWeight: 700 }} width={80} />
+                        <RechartsTooltip 
+                            formatter={(value: number) => `₹${value.toLocaleString()}`} 
+                            contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-main)', borderRadius: '1rem', color: 'var(--text-main)' }}
+                            cursor={{fill: 'var(--bg-main)'}}
+                        />
+                        <Bar dataKey="revenue" fill="var(--primary-500)" barSize={12} radius={[0, 4, 4, 0]}>
                             {topCustomers.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
@@ -191,7 +243,10 @@ const TopCustomersChart: React.FC<{ transactions: Transaction[], customers: Cust
                     </BarChart>
                 </ResponsiveContainer>
             ) : (
-                <p className="text-sm text-theme-muted text-center py-8">No customer sales data available.</p>
+                <div className="flex flex-col items-center justify-center py-12 text-theme-muted">
+                    <Icon name="customers" size={32} className="opacity-20 mb-2" />
+                    <p className="text-xs font-bold uppercase tracking-widest">No customer data</p>
+                </div>
             )}
         </div>
     );
@@ -220,32 +275,49 @@ const ActivityFeed: React.FC<{ activities: ActivityItem[], onActivityClick: (act
         low_stock: 'activity-low-stock',
         purchase_received: 'activity-purchase',
     };
-    const colors: Record<ActivityItem['type'], { bg: string, text: string }> = {
-        sale: { bg: 'bg-green-100 dark:bg-green-900/50', text: 'text-green-600 dark:text-green-400' },
-        new_customer: { bg: 'bg-blue-100 dark:bg-blue-900/50', text: 'text-blue-600 dark:text-blue-400' },
-        low_stock: { bg: 'bg-yellow-100 dark:bg-yellow-900/50', text: 'text-yellow-600 dark:text-yellow-400' },
-        purchase_received: { bg: 'bg-indigo-100 dark:bg-indigo-900/50', text: 'text-indigo-600 dark:text-indigo-400' },
+    const colors: Record<ActivityItem['type'], string> = {
+        sale: 'emerald',
+        new_customer: 'blue',
+        low_stock: 'amber',
+        purchase_received: 'indigo',
     };
 
     return (
-        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-theme-main">Recent Activity</h2>
-            <ul className="space-y-1 max-h-96 overflow-y-auto">
+        <div className="bg-theme-surface backdrop-blur-xl p-8 rounded-[2rem] border border-theme-main shadow-xl shadow-theme-main/10 h-full">
+            <h2 className="text-lg font-black mb-6 text-theme-main tracking-tight">Recent Activity</h2>
+            <ul className="space-y-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                 {activities.map(activity => (
                     <Tooltip key={activity.id} content={`View details for ${activity.type.replace('_', ' ')}`} position="left">
-                        <li onClick={() => onActivityClick(activity)} className="flex items-start gap-3 p-2 rounded-lg hover:bg-theme-main cursor-pointer">
-                            <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${colors[activity.type].bg} ${colors[activity.type].text}`}>
-                                <Icon name={icons[activity.type]} className="w-4 h-4" />
+                        <li 
+                            onClick={() => onActivityClick(activity)} 
+                            className="group flex items-start gap-4 p-3 rounded-2xl hover:bg-theme-main/50 cursor-pointer transition-all border border-transparent hover:border-theme-main"
+                        >
+                            <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-${colors[activity.type]}-500/10 text-${colors[activity.type]}-500 group-hover:scale-110 transition-transform duration-500`}>
+                                <Icon name={icons[activity.type]} size={18} />
                             </div>
-                            <div className="flex-grow">
-                                <p className="text-sm text-theme-main opacity-90">{activity.description}</p>
-                                <p className="text-xs text-theme-muted">{formatRelativeTime(activity.timestamp)}</p>
+                            <div className="flex-grow min-w-0">
+                                <p className="text-sm font-bold text-theme-main/80 group-hover:text-theme-main transition-colors line-clamp-1">{activity.description}</p>
+                                <p className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mt-0.5">{formatRelativeTime(activity.timestamp)}</p>
                             </div>
-                            {activity.value && <span className="text-sm font-semibold text-theme-main">{activity.type === 'low_stock' ? `${activity.value} left` : `₹${activity.value.toFixed(2)}`}</span>}
+                            {activity.value && (
+                                <div className="text-right flex-shrink-0">
+                                    <p className="text-sm font-black text-theme-main">
+                                        {activity.type === 'low_stock' ? activity.value : `₹${activity.value.toLocaleString()}`}
+                                    </p>
+                                    <p className="text-[10px] font-bold text-theme-muted uppercase tracking-tighter">
+                                        {activity.type === 'low_stock' ? 'Left' : 'Value'}
+                                    </p>
+                                </div>
+                            )}
                         </li>
                     </Tooltip>
                 ))}
-                {activities.length === 0 && <p className="text-theme-muted text-sm text-center py-8">No recent activity.</p>}
+                {activities.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-theme-muted">
+                        <Icon name="activity-sale" size={40} className="opacity-10 mb-4" />
+                        <p className="text-xs font-bold uppercase tracking-[0.2em]">No recent activity</p>
+                    </div>
+                )}
             </ul>
         </div>
     )
@@ -272,16 +344,18 @@ const SalesTrendChart: React.FC<{ transactions: Transaction[] }> = ({ transactio
     }, [transactions]);
 
     return (
-        <div className="bg-theme-surface p-4 rounded-xl border border-theme-main shadow-sm">
-            <h2 className="text-base font-semibold mb-3 text-theme-main">Sales Trend (Last 7 Days)</h2>
-            <ResponsiveContainer width="100%" height={250}>
+        <div className="bg-theme-surface backdrop-blur-xl p-8 rounded-[2rem] border border-theme-main shadow-xl shadow-theme-main/10 h-full">
+            <h2 className="text-lg font-black mb-8 text-theme-main tracking-tight">Sales Trend</h2>
+            <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={salesData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} stroke="var(--text-muted)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                    <YAxis tick={{ fontSize: 12, fill: 'var(--text-muted)' }} />
-                    <RechartsTooltip formatter={(value: number) => `₹${value.toFixed(2)}`} contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-main)', color: 'var(--text-main)' }} />
-                    <Legend />
-                    <Line type="monotone" dataKey="sales" stroke="var(--accent-main)" strokeWidth={2} name="Sales (₹)" />
+                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.05} stroke="var(--text-muted)" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)', fontWeight: 700 }} axisLine={false} tickLine={false} />
+                    <RechartsTooltip 
+                        formatter={(value: number) => `₹${value.toLocaleString()}`} 
+                        contentStyle={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-main)', borderRadius: '1rem', color: 'var(--text-main)' }}
+                    />
+                    <Line type="monotone" dataKey="sales" stroke="var(--primary-500)" strokeWidth={4} dot={{ r: 4, fill: 'var(--primary-500)', strokeWidth: 2, stroke: 'var(--bg-surface)' }} activeDot={{ r: 6, strokeWidth: 0 }} name="Sales" />
                 </LineChart>
             </ResponsiveContainer>
         </div>
@@ -371,22 +445,25 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ transactions, products
   }, [transactions, customers, products, purchaseOrders, now]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-        <h1 className="text-2xl md:text-3xl font-bold text-theme-main">Dashboard</h1>
+    <div className="space-y-8 p-4 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-6">
+        <div>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">Dashboard</h1>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">Business Overview & Insights</p>
+        </div>
       </div>
       
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-1">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
                 <ProfitSummary transactions={transactions} expenses={expenses} />
             </div>
-            <div className="md:col-span-2 grid grid-cols-2 gap-4 auto-rows-fr">
-                <StatCard title="Total Sales (All Time)" value={`₹${totalSales.toLocaleString('en-IN', {maximumFractionDigits: 0})}`} iconName="sales-chart" tooltip="Total revenue from all sales." index={0} />
-                <StatCard title="Transactions (All Time)" value={transactions.length.toString()} iconName="receipt" tooltip="Total number of sales transactions." index={1} />
+            <div className="lg:col-span-2 grid grid-cols-2 gap-6 auto-rows-fr">
+                <StatCard title="Total Sales" value={`₹${totalSales.toLocaleString('en-IN', {maximumFractionDigits: 0})}`} iconName="sales-chart" tooltip="Total revenue from all sales." index={0} color="emerald" />
+                <StatCard title="Transactions" value={transactions.length.toString()} iconName="receipt" tooltip="Total number of sales transactions." index={1} color="indigo" />
                 {employeeRole === 'Admin' && (
                 <>
-                    <StatCard title="Credit Due" value={`₹${totalCreditDue.toLocaleString('en-IN', {maximumFractionDigits: 0})}`} iconName="credit-card" tooltip="Total outstanding credit balance across all customers." index={2} />
-                    <StatCard title="Customers" value={customers.length.toString()} iconName="customers" tooltip="Total number of customers in the system." index={3} />
+                    <StatCard title="Credit Due" value={`₹${totalCreditDue.toLocaleString('en-IN', {maximumFractionDigits: 0})}`} iconName="credit-card" tooltip="Total outstanding credit balance." index={2} color="rose" />
+                    <StatCard title="Customers" value={customers.length.toString()} iconName="customers" tooltip="Total number of customers." index={3} color="amber" />
                 </>
                 )}
             </div>
@@ -394,16 +471,16 @@ const Dashboard: React.FC<DashboardProps> = React.memo(({ transactions, products
       
       <QuickActions onNavigate={setCurrentPage} onOpenModal={(type) => setModalState({ type, data: null })} />
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="md:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-3">
             <SalesTrendChart transactions={transactions} />
         </div>
-        <div className="md:col-span-2">
+        <div className="lg:col-span-2">
             <ActivityFeed activities={activityFeedItems} onActivityClick={onActivityClick} />
         </div>
       </div>
       
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TopProducts transactions={transactions} products={products} />
             <TopCustomersChart transactions={transactions} customers={customers} />
       </div>

@@ -68,11 +68,19 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 /**
  * Sanitizes an object for Firestore by removing undefined values.
+ * Only recurses into plain objects and arrays.
  */
-const sanitize = (obj: any): any => {
+export const sanitize = (obj: any): any => {
     if (Array.isArray(obj)) {
         return obj.map(sanitize);
     } else if (obj !== null && typeof obj === 'object') {
+        // Check if it's a plain object (not a FieldValue, Date, etc.)
+        const isPlainObject = Object.getPrototypeOf(obj) === Object.prototype;
+        
+        if (!isPlainObject) {
+            return obj;
+        }
+
         return Object.entries(obj).reduce((acc, [key, value]) => {
             if (value !== undefined) {
                 acc[key] = sanitize(value);
