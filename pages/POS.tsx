@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { fuzzySearch, multiTermSearch } from '../lib/searchUtils';
 import { QRCodeSVG } from 'qrcode.react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-import type { Product, Dish, DishVariant, Customer, CartItem, PaymentMethod, Transaction, ProductVariant, HeldCart, AppSettings, Payment, RawMaterial, Promotion } from '../types';
+import type { Product, Dish, Customer, CartItem, PaymentMethod, Transaction, ProductVariant, HeldCart, AppSettings, Payment, RawMaterial, Promotion } from '../types';
 import Avatar from '../components/Avatar';
 import SlideOverPanel from '../components/SlideOverPanel';
 import Icon from '../components/Icon';
@@ -49,17 +49,15 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
                 whileHover={!isOutOfStock ? { y: -4, scale: 1.02 } : {}}
                 whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
                 onClick={() => !isOutOfStock && tileRef.current && onAdd(variant, tileRef.current)}
-                className={`group relative flex flex-col p-4 rounded-xl border transition-all duration-300 overflow-hidden ${
+                className={`group relative flex flex-col p-4 rounded-3xl border transition-all duration-300 overflow-hidden ${
                     isOutOfStock 
-                        ? 'bg-theme-main/50 border-theme-main opacity-60 cursor-not-allowed' 
-                        : 'bg-theme-surface/80 backdrop-blur-md border-theme-main shadow-sm hover:shadow-xl hover:shadow-primary-500/10 hover:border-primary-500/50 cursor-pointer'
+                        ? 'bg-slate-100/50 dark:bg-slate-800/20 border-slate-200 dark:border-slate-800 opacity-60 cursor-not-allowed' 
+                        : 'bg-white/80 dark:bg-slate-900/40 backdrop-blur-md border-slate-200/60 dark:border-slate-800/60 shadow-sm hover:shadow-xl hover:shadow-primary-500/10 hover:border-primary-500/50 cursor-pointer'
                 }`}
             >
                 {isOutOfStock && (
                     <div className="absolute top-3 right-3 z-10">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-1 rounded-lg border border-rose-500/20">
-                            Sold Out
-                        </span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-lg shadow-rose-500/50 animate-pulse" />
                     </div>
                 )}
                 
@@ -69,21 +67,21 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
                             {product.subCategory}
                         </span>
                     )}
-                    <h3 className="font-bold text-theme-main text-sm leading-snug group-hover:text-primary-500 transition-colors line-clamp-2">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-snug group-hover:text-primary-500 transition-colors line-clamp-2">
                         {product.name}
                     </h3>
                 </div>
 
                 <div className="mt-4 flex justify-between items-end">
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-0.5">Price</span>
-                        <p className="text-xl font-black text-theme-main tracking-tight">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Price</span>
+                        <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
                             ₹{variant.mrp}
                         </p>
                     </div>
                     <div className="text-right">
-                        <span className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-0.5 block">Stock</span>
-                        <p className={`text-xs font-bold ${variant.stock < 10 ? 'text-amber-500' : 'text-theme-muted'}`}>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 block">Stock</span>
+                        <p className={`text-xs font-bold ${variant.stock < 10 ? 'text-amber-500' : 'text-slate-500'}`}>
                             {variant.stock}
                         </p>
                     </div>
@@ -96,328 +94,93 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
     );
 };
 
-const MasterProductTile: React.FC<{ 
-    product: Product; 
-    onOpenVariants: (item: Product | Dish) => void;
-    cart: CartItem[] 
-}> = ({ product, onOpenVariants }) => {
+const MasterProductTile: React.FC<{ product: Product; onAddVariant: (variant: ProductVariant, element: HTMLDivElement) => void; cart: CartItem[] }> = ({ product, onAddVariant, cart }) => {
     const tileRef = React.useRef<HTMLDivElement>(null);
-    const variantsCount = product.variants.filter(v => !v.isDeleted).length;
-    
     return (
-        <Tooltip content={`Select from ${variantsCount} variants of ${product.name}`} position="top">
+        <Tooltip content={`Select a variant for ${product.name}`} position="top">
             <motion.div 
                 ref={tileRef} 
-                whileHover={{ y: -4, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => onOpenVariants(product)}
-                className="group relative flex flex-col p-4 rounded-xl border border-theme-main bg-theme-surface/80 backdrop-blur-md shadow-sm hover:shadow-2xl hover:border-primary-500/50 cursor-pointer overflow-hidden aspect-[4/5] min-h-[180px]"
+                whileHover={{ y: -4 }}
+                className="group relative flex flex-col p-4 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/40 backdrop-blur-md shadow-sm hover:shadow-xl hover:border-indigo-500/50 transition-all duration-300"
             >
-                <div className="flex-grow flex flex-col">
+                <div className="flex-grow mb-4">
                     {product.subCategory && (
-                        <span className="text-[10px] font-black uppercase tracking-widest text-primary-500 bg-primary-500/10 px-2 py-1 rounded-lg mb-3 self-start">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-500 bg-indigo-500/10 px-2 py-1 rounded-lg mb-3 inline-block">
                             {product.subCategory}
                         </span>
                     )}
-                    <h3 className="font-black text-theme-main text-base leading-tight group-hover:text-primary-500 transition-colors line-clamp-3">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-snug group-hover:text-indigo-500 transition-colors line-clamp-2">
                         {product.name}
                     </h3>
                 </div>
 
-                <div className="mt-4 flex justify-between items-end">
-                    <div className="flex flex-col">
-                         <span className="text-[10px] font-bold text-theme-muted uppercase tracking-widest mb-1">From</span>
-                         <p className="text-xl font-black text-theme-main tracking-tighter">
-                            ₹{Math.min(...product.variants.filter(v => !v.isDeleted).map(v => v.mrp))}
-                         </p>
-                    </div>
-                    <div className="bg-primary-500 text-white p-2 rounded-xl shadow-lg shadow-primary-500/30 group-hover:scale-110 transition-transform">
-                        <Icon name="plus" size={16} />
-                    </div>
+                <div className={`${product.variants.filter(v => !v.isDeleted).length > 5 ? 'grid grid-rows-2 grid-flow-col gap-x-3 gap-y-1 overflow-x-auto pb-2' : 'space-y-1'} max-h-40 overflow-y-auto pr-1 custom-scrollbar`}>
+                    {product.variants.filter(v => !v.isDeleted).map(variant => {
+                        const quantityInCart = cart.find(ci => 'productId' in ci.item && ci.item.id === variant.id)?.quantity || 0;
+                        const isOutOfStock = variant.stock <= quantityInCart;
+                        return (
+                            <button
+                                key={variant.id}
+                                onClick={() => !isOutOfStock && tileRef.current && onAddVariant(variant, tileRef.current)}
+                                disabled={isOutOfStock}
+                                className={`flex justify-between items-center px-3 py-1 rounded-lg text-[10px] font-bold transition-all border border-slate-100 dark:border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed group/btn ${product.variants.filter(v => !v.isDeleted).length > 5 ? 'min-w-[140px] w-auto' : 'w-full'}`}
+                            >
+                                <span className="truncate pr-2 flex items-center gap-1.5">
+                                    {isOutOfStock && <div className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
+                                    {variant.name}
+                                </span>
+                                <span className="font-black">₹{variant.mrp}</span>
+                            </button>
+                        )
+                    })}
                 </div>
                 
-                <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                    <span className="text-[8px] font-black uppercase tracking-widest text-primary-400 bg-theme-surface px-1.5 py-0.5 rounded shadow-sm border border-primary-500/20">
-                        {variantsCount} Variants
-                    </span>
-                </div>
-
-                <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-700" />
+                <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-indigo-500/5 blur-2xl group-hover:bg-indigo-500/10 transition-colors" />
             </motion.div>
         </Tooltip>
     );
 };
 
-const DishTile: React.FC<{ 
-    dish: Dish; 
-    onAdd: (dish: DishVariant, element: HTMLDivElement) => void; 
-    onOpenVariants: (item: Product | Dish) => void;
-    isOutOfStock: boolean; 
-}> = ({ dish, onAdd, onOpenVariants, isOutOfStock }) => {
+const DishTile: React.FC<{ dish: Dish; onAdd: (dish: Dish, element: HTMLDivElement) => void; isOutOfStock: boolean; }> = ({ dish, onAdd, isOutOfStock }) => {
     const tileRef = React.useRef<HTMLDivElement>(null);
-    const hasMultipleVariants = dish.variants.length > 1;
-    const variant = dish.variants[0];
-
     return (
-        <Tooltip content={hasMultipleVariants ? `Select variant for ${dish.name}` : `Add ${dish.name} to cart`} position="top">
+        <Tooltip content={`Add ${dish.name} to cart. Price: ₹${dish.price}`} position="top">
             <motion.div
                 ref={tileRef}
                 whileHover={!isOutOfStock ? { y: -4, scale: 1.02 } : {}}
                 whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
-                onClick={() => {
-                    if (isOutOfStock) return;
-                    if (hasMultipleVariants) {
-                        onOpenVariants(dish);
-                    } else if (tileRef.current) {
-                        onAdd(variant, tileRef.current);
-                    }
-                }}
-                className={`group relative rounded-2xl border transition-all duration-500 overflow-hidden aspect-[4/5] ${
+                onClick={() => !isOutOfStock && tileRef.current && onAdd(dish, tileRef.current)}
+                className={`group relative rounded-3xl border transition-all duration-300 overflow-hidden aspect-[4/5] ${
                     isOutOfStock 
-                        ? 'border-theme-main opacity-60 cursor-not-allowed grayscale' 
-                        : 'border-theme-main shadow-xl shadow-theme-main/10 hover:shadow-2xl cursor-pointer'
+                        ? 'border-slate-200 dark:border-slate-800 opacity-60 cursor-not-allowed' 
+                        : 'border-slate-200/60 dark:border-slate-800/60 shadow-sm hover:shadow-2xl cursor-pointer'
                 }`}
             >
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 opacity-90 group-hover:opacity-95 transition-all duration-500"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent z-10 opacity-80 group-hover:opacity-90 transition-opacity"></div>
                 <img 
-                    src={dish.imageUrl || 'https://picsum.photos/seed/dish/400/500'} 
+                    src={dish.imageUrl} 
                     alt={dish.name} 
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-110" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                 />
                 
-                <div className="absolute bottom-0 left-0 right-0 p-6 z-20 transform group-hover:translate-y-[-4px] transition-transform duration-500">
-                    <h3 className="font-black text-white text-lg leading-tight mb-2 group-hover:text-primary-300 transition-colors line-clamp-2 uppercase tracking-tight">
+                <div className="absolute bottom-0 left-0 right-0 p-5 z-20">
+                    <h3 className="font-bold text-white text-base leading-tight mb-1 group-hover:text-primary-400 transition-colors line-clamp-2">
                         {dish.name}
                     </h3>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-xs font-bold text-white/60">₹</span>
-                            <p className="text-3xl font-black text-white tracking-tighter">
-                                {hasMultipleVariants ? Math.min(...dish.variants.map(v => v.price)) : variant.price}
-                                {hasMultipleVariants && <span className="text-xs ml-1 text-white/50">+</span>}
-                            </p>
-                        </div>
-                        {hasMultipleVariants && (
-                            <div className="bg-primary-500 text-white p-2 rounded-xl shadow-lg shadow-primary-500/30 group-hover:rotate-12 transition-all">
-                                <Icon name="plus" size={16} />
-                            </div>
-                        )}
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-xs font-bold text-white/60">₹</span>
+                        <p className="text-2xl font-black text-white tracking-tighter">{dish.price}</p>
                     </div>
                 </div>
 
                 {isOutOfStock && (
-                    <div className="absolute top-5 right-5 z-20">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-white bg-rose-500 px-3 py-1.5 rounded-xl shadow-xl shadow-rose-500/40 border border-rose-400/30">
-                            Out of Stock
-                        </span>
-                    </div>
-                )}
-                
-                {!isOutOfStock && hasMultipleVariants && (
-                    <div className="absolute top-5 left-5 z-20">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-primary-300 bg-slate-900/60 backdrop-blur-md px-2.5 py-1.5 rounded-xl border border-primary-500/30">
-                            {dish.variants.length} Variants
-                        </span>
+                    <div className="absolute top-4 right-4 z-20">
+                        <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-lg shadow-rose-500/50 animate-pulse" />
                     </div>
                 )}
             </motion.div>
         </Tooltip>
-    );
-};
-
-const CustomItemTile: React.FC<{ onAdd: (name: string, price: number) => void }> = ({ onAdd }) => {
-    const [showForm, setShowForm] = useState(false);
-    const [name, setName] = useState('');
-    const [price, setPrice] = useState('');
-
-    return (
-        <div className="relative aspect-[4/5]">
-            <AnimatePresence mode="wait">
-                {!showForm ? (
-                    <motion.div
-                        key="tile"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        onClick={() => setShowForm(true)}
-                        className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-theme-main rounded-2xl bg-theme-surface hover:border-primary-500 hover:bg-primary-500/5 transition-all cursor-pointer group"
-                    >
-                        <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-primary-500 group-hover:text-white transition-all shadow-lg group-hover:shadow-primary-500/30">
-                            <Icon name="plus" size={32} />
-                        </div>
-                        <p className="mt-4 font-black text-slate-400 group-hover:text-primary-600 uppercase tracking-widest text-xs">Custom Item</p>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="form"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="w-full h-full p-6 flex flex-col border-2 border-primary-500 rounded-2xl bg-theme-surface shadow-2xl shadow-primary-500/20 z-30"
-                    >
-                        <h4 className="text-xs font-black text-primary-500 uppercase tracking-widest mb-4">Add Custom Item</h4>
-                        <div className="space-y-4 flex-grow">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Name</label>
-                                <input 
-                                    autoFocus
-                                    value={name} 
-                                    onChange={e => setName(e.target.value)} 
-                                    placeholder="e.g. Special Order" 
-                                    className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary-500 outline-none text-sm font-bold" 
-                                />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Price (₹)</label>
-                                <input 
-                                    type="number" 
-                                    value={price} 
-                                    onChange={e => setPrice(e.target.value)} 
-                                    placeholder="0.00" 
-                                    className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:ring-2 focus:ring-primary-500 outline-none text-xl font-black" 
-                                />
-                            </div>
-                        </div>
-                        <div className="flex gap-2 pt-4">
-                            <button onClick={() => setShowForm(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400 hover:text-rose-500 transition-colors">Cancel</button>
-                            <button 
-                                onClick={() => {
-                                    if (name && price) {
-                                        onAdd(name, parseFloat(price));
-                                        setName('');
-                                        setPrice('');
-                                        setShowForm(false);
-                                    }
-                                }}
-                                className="flex-[2] py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary-500/30 transition-all"
-                            >
-                                Add
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
-};
-
-const VariantGridModal: React.FC<{ 
-    item: Product | Dish | null; 
-    onClose: () => void; 
-    onAddVariant: (variant: ProductVariant | DishVariant, element: HTMLDivElement) => void;
-    cart: CartItem[];
-}> = ({ item, onClose, onAddVariant, cart }) => {
-    if (!item) return null;
-
-    const variants = 'variants' in item ? item.variants.filter(v => !v.isDeleted) : [];
-    const isDish = !('subCategory' in item);
-
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="absolute inset-0 bg-slate-950/60 backdrop-blur-xl" 
-            />
-            
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative bg-theme-surface rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-theme-main"
-            >
-                {/* Header */}
-                <div className="p-8 border-b border-theme-main flex justify-between items-center bg-theme-main/30">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 rounded-2xl bg-primary-500/10 flex items-center justify-center text-primary-500 shadow-xl shadow-primary-500/10">
-                            <Icon name={isDish ? 'restaurant' : 'inventory'} size={28} />
-                        </div>
-                        <div>
-                            <h3 className="text-2xl font-black text-theme-main tracking-tight uppercase">{item.name}</h3>
-                            <p className="text-xs font-bold text-theme-muted uppercase tracking-[0.3em] mt-1">Select from {variants.length} variations</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="w-12 h-12 flex items-center justify-center rounded-2xl bg-theme-main text-theme-muted hover:text-rose-500 hover:bg-rose-500/10 transition-all border border-theme-main">
-                        <Icon name="close" size={24} />
-                    </button>
-                </div>
-
-                {/* Grid */}
-                <div className="flex-grow overflow-y-auto p-10 custom-scrollbar">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                        {variants.map((v, i) => {
-                            const quantityInCart = cart.find(ci => ci.item.id === v.id)?.quantity || 0;
-                            const isProduct = 'stock' in v;
-                            const isOutOfStock = isProduct && (v as ProductVariant).stock <= quantityInCart;
-                            const price = isProduct ? (v as ProductVariant).mrp : (v as DishVariant).price;
-
-                            return (
-                                <motion.div
-                                    key={v.id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05 } }}
-                                    whileHover={!isOutOfStock ? { y: -8, scale: 1.05 } : {}}
-                                    whileTap={!isOutOfStock ? { scale: 0.95 } : {}}
-                                    onClick={(e) => {
-                                        if (isOutOfStock) return;
-                                        onAddVariant(v, e.currentTarget as HTMLDivElement);
-                                    }}
-                                    className={`relative p-5 rounded-xl border transition-all duration-300 flex flex-col items-center text-center cursor-pointer min-h-[140px] group ${
-                                        isOutOfStock 
-                                            ? 'bg-theme-main/50 border-theme-main opacity-40 grayscale cursor-not-allowed' 
-                                            : 'bg-theme-surface border-theme-main shadow-lg hover:shadow-2xl hover:border-primary-500/50'
-                                    }`}
-                                >
-                                    <div className={`w-10 h-10 rounded-xl mb-3 flex items-center justify-center transition-all duration-500 ${isOutOfStock ? 'bg-theme-main text-theme-muted' : 'bg-primary-500/10 text-primary-500 group-hover:bg-primary-500 group-hover:text-white group-hover:rotate-12'}`}>
-                                        <Icon name={isProduct ? 'inventory' : 'restaurant'} size={18} />
-                                    </div>
-                                    <h4 className="font-black text-theme-main text-xs line-clamp-2 mb-2 uppercase tracking-tight leading-tight">{v.name}</h4>
-                                    <div className="mt-auto">
-                                        <p className="text-lg font-black text-primary-500 tracking-tighter self-end">₹{price}</p>
-                                        {isProduct && (
-                                            <p className="text-[8px] font-bold text-theme-muted uppercase tracking-widest mt-0.5">Stock: {(v as ProductVariant).stock}</p>
-                                        )}
-                                    </div>
-
-                                    {quantityInCart > 0 && (
-                                        <div className="absolute top-[-8px] right-[-8px] w-7 h-7 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black shadow-lg shadow-emerald-500/40 border-2 border-theme-surface">
-                                            {quantityInCart}
-                                        </div>
-                                    )}
-
-                                    {isOutOfStock && (
-                                        <span className="absolute top-2 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-widest text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">Sold Out</span>
-                                    )}
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Footer */}
-                <div className="p-8 bg-theme-surface border-t border-theme-main flex justify-between items-center">
-                    <div className="flex items-center gap-4">
-                        <div className="flex -space-x-3">
-                            {variants.slice(0, 5).map((v, i) => (
-                                <div key={i} className="w-10 h-10 rounded-full bg-primary-500 text-white border-2 border-theme-surface flex items-center justify-center text-[10px] font-black shadow-md" style={{ zIndex: 10 - i }}>
-                                    {v.name.charAt(0)}
-                                </div>
-                            ))}
-                            {variants.length > 5 && (
-                                <div className="w-10 h-10 rounded-full bg-theme-main text-theme-muted border-2 border-theme-surface flex items-center justify-center text-[10px] font-black shadow-md">
-                                    +{variants.length - 5}
-                                </div>
-                            )}
-                        </div>
-                        <p className="text-xs font-bold text-theme-muted uppercase tracking-[0.2em] ml-2">Displaying {variants.length} options for checkout</p>
-                    </div>
-                    <button onClick={onClose} className="px-10 py-4 bg-primary-500 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-primary-600 transition-all shadow-xl">Finish Selecting</button>
-                </div>
-            </motion.div>
-        </div>
     );
 };
 
@@ -552,8 +315,8 @@ const CartView: React.FC<{
     }, [cart, promotions, products, extraCharges]);
 
     return (
-        <div className="bg-theme-surface rounded-2xl border border-theme-main shadow-2xl h-full flex flex-col overflow-hidden">
-            <div className="p-6 border-b border-theme-main">
+        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/50 dark:shadow-none h-full flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800/50">
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="font-black text-xl text-slate-900 dark:text-white tracking-tight">Current Order</h2>
@@ -714,31 +477,20 @@ const CustomChargeModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd:
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" />
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 10 }} 
-                animate={{ opacity: 1, scale: 1, y: 0 }} 
-                className="relative bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main"
-            >
-                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/30">
-                    <div>
-                        <h3 className="font-black text-xl text-slate-900 dark:text-white uppercase tracking-tight">Extra Charge</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Add delivery, service, or other fees</p>
-                    </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"><Icon name="close" size={20} /></button>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-theme-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-theme-main">
+                <div className="p-4 border-b border-theme-main flex justify-between items-center bg-theme-main">
+                    <h3 className="font-bold text-lg text-theme-main">Add Custom Charge</h3>
+                    <button onClick={onClose} className="p-2 hover:bg-theme-surface rounded-full transition-colors"><Icon name="close" className="w-5 h-5 text-theme-main" /></button>
                 </div>
-                <div className="p-10 space-y-6">
-                    <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Fee Description</label>
-                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary-500/10 outline-none text-slate-900 dark:text-white font-bold" placeholder="e.g. Service Charge, Delivery Fee" />
+                <div className="p-6 space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-theme-main mb-1">Description</label>
+                        <input type="text" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none text-theme-main" placeholder="e.g. Service Charge, Delivery Fee" />
                     </div>
-                    <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Amount (₹)</label>
-                        <div className="relative">
-                            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400 text-lg">₹</span>
-                            <input type="number" autoFocus value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-4 pl-10 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-4 focus:ring-primary-500/10 outline-none text-slate-900 dark:text-white text-3xl font-black tracking-tighter" placeholder="0.00" />
-                        </div>
+                    <div>
+                        <label className="block text-sm font-medium text-theme-main mb-1">Amount (₹)</label>
+                        <input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full p-3 bg-theme-main border border-theme-main rounded-lg focus:ring-2 focus:ring-theme-accent outline-none text-theme-main" placeholder="0.00" />
                     </div>
                     <button 
                         onClick={() => {
@@ -750,9 +502,9 @@ const CustomChargeModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd:
                                 setDescription('Service Charge');
                             }
                         }}
-                        className="w-full py-5 bg-primary-500 text-white font-black rounded-2xl hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/20 text-sm uppercase tracking-[0.2em]"
+                        className="w-full py-3 bg-theme-accent text-white font-bold rounded-lg hover:bg-theme-accent/90 transition-colors"
                     >
-                        Apply Charge
+                        Add Charge
                     </button>
                 </div>
             </motion.div>
@@ -1068,7 +820,7 @@ const PaymentModal: React.FC<{
             <motion.div 
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main"
+                className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 dark:border-slate-800/50"
             >
                 <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                     <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Complete Payment</h3>
@@ -1287,9 +1039,6 @@ const POS: React.FC<POSProps> = (props) => {
     const [isHoldModalOpen, setIsHoldModalOpen] = useState(false);
     const [holdName, setHoldName] = useState('');
     const [extraCharges, setExtraCharges] = useState<{ description: string, amount: number }[]>([]);
-    
-    // New state for variants
-    const [selectedItemForVariants, setSelectedItemForVariants] = useState<Product | Dish | null>(null);
 
     const handleAddExtraCharge = useCallback((charge: { description: string, amount: number }) => {
         setExtraCharges(prev => [...prev, charge]);
@@ -1299,35 +1048,15 @@ const POS: React.FC<POSProps> = (props) => {
         setExtraCharges(prev => prev.filter((_, i) => i !== index));
     }, []);
 
-    const handleAddItem = useCallback((item: ProductVariant | DishVariant | { name: string, price: number }) => {
+    const handleAddItem = useCallback((item: ProductVariant | Dish) => {
         setCart(prevCart => {
-            const isProduct = 'productId' in item;
-            const isDish = !isProduct && 'id' in item;
-            const isCustom = !('id' in item);
-
-            // Search for existing by ID and type
-            const existing = prevCart.find(ci => {
-                if (isCustom) return !('id' in ci.item) && ci.item.name === item.name;
-                const ciIsProduct = 'productId' in ci.item;
-                const ciIsDish = !ciIsProduct && 'id' in ci.item;
-                if (isProduct && ciIsProduct) return ci.item.id === item.id;
-                if (isDish && ciIsDish) return ci.item.id === item.id;
-                return false;
-            });
-
+            const isItemProduct = 'productId' in item;
+            const existing = prevCart.find(ci => ci.item.id === item.id && (('productId' in ci.item) === isItemProduct));
             if (existing) {
-                return prevCart.map(ci => {
-                    if (isCustom) return (!('id' in ci.item) && ci.item.name === item.name) ? { ...ci, quantity: ci.quantity + 1 } : ci;
-                    const ciIsProduct = 'productId' in ci.item;
-                    const ciIsDish = !ciIsProduct && 'id' in ci.item;
-                    if (isProduct && ciIsProduct && ci.item.id === item.id) return { ...ci, quantity: ci.quantity + 1 };
-                    if (isDish && ciIsDish && ci.item.id === item.id) return { ...ci, quantity: ci.quantity + 1 };
-                    return ci;
-                });
+                return prevCart.map(ci => (ci.item.id === item.id && (('productId' in ci.item) === isItemProduct)) ? { ...ci, quantity: ci.quantity + 1 } : ci);
             }
-
-            const price = isCustom ? (item as any).price : ('mrp' in item ? item.mrp : item.price);
-            return [...prevCart, { item: item as any, quantity: 1, appliedPrice: price }];
+            const price = 'mrp' in item ? item.mrp : item.price;
+            return [...prevCart, { item, quantity: 1, appliedPrice: price }];
         });
     }, []);
 
@@ -1463,14 +1192,10 @@ const POS: React.FC<POSProps> = (props) => {
             d.name,
             d.tags
         ])).map(dish => {
-            // Check if ANY variant is in stock
-            const isOutOfStock = dish.variants.every(v => {
-                const ingredients = v.ingredients || [];
-                return ingredients.some(ing => {
-                    const material = rawMaterials.find(rm => rm.id === ing.id);
-                    const available = (material?.stock || 0) - (allocatedRawMaterials[ing.id] || 0) - (cartRequirements[ing.id] || 0);
-                    return available < ing.quantity;
-                });
+            const isOutOfStock = dish.ingredients.some(ing => {
+                const material = rawMaterials.find(rm => rm.id === ing.id);
+                const available = (material?.stock || 0) - (allocatedRawMaterials[ing.id] || 0) - (cartRequirements[ing.id] || 0);
+                return available < ing.quantity;
             });
             return { ...dish, isOutOfStock };
         });
@@ -1569,9 +1294,9 @@ const POS: React.FC<POSProps> = (props) => {
     }, [appSettings.pinnedCustomerIds, onUpdateAppSettings]);
 
     return (
-        <div className="md:grid md:grid-cols-3 md:gap-6">
+        <div className="lg:grid lg:grid-cols-3 lg:gap-6">
             {/* Main content: Search, Filters, Product Grid */}
-            <div className="md:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-8">
                 <div className="relative flex gap-4">
                     <div className="relative flex-grow group">
                         <Icon name="search" className="w-6 h-6 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
@@ -1580,7 +1305,7 @@ const POS: React.FC<POSProps> = (props) => {
                             placeholder="Search products or dishes..." 
                             value={searchTerm} 
                             onChange={e => setSearchTerm(e.target.value)} 
-                            className="w-full p-5 pl-14 bg-theme-surface border border-theme-main rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all text-theme-main shadow-xl shadow-theme-main/10 font-bold text-lg" 
+                            className="w-full p-5 pl-14 bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl border border-slate-200/60 dark:border-slate-800/60 rounded-[2rem] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all text-slate-900 dark:text-white shadow-xl shadow-slate-200/20 dark:shadow-none font-bold text-lg" 
                         />
                     </div>
                     {props.appSettings.enableBarcodeScanner && (
@@ -1596,80 +1321,55 @@ const POS: React.FC<POSProps> = (props) => {
                 </div>
                 
                 {props.appSettings.shopTypes.includes('Restaurant') && props.appSettings.shopTypes.includes('Retail') && (
-                    <div className="flex items-center bg-theme-main/20 rounded-xl p-2 self-start w-fit border border-theme-main">
+                    <div className="flex items-center bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md rounded-[1.5rem] p-2 self-start w-fit border border-slate-200/50 dark:border-slate-800/50">
                         <button 
                             onClick={() => setActiveTab('products')} 
-                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'products' ? 'bg-theme-surface text-primary-500 shadow-lg' : 'text-theme-muted hover:text-theme-main'}`}
+                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-500 ${activeTab === 'products' ? 'bg-white dark:bg-slate-700 text-primary-500 shadow-xl shadow-primary-500/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                         >
                             Products
                         </button>
                         <button 
                             onClick={() => setActiveTab('dishes')} 
-                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-lg transition-all duration-300 ${activeTab === 'dishes' ? 'bg-theme-surface text-primary-500 shadow-lg' : 'text-theme-muted hover:text-theme-main'}`}
+                            className={`px-10 py-3 text-xs font-black uppercase tracking-widest rounded-2xl transition-all duration-500 ${activeTab === 'dishes' ? 'bg-white dark:bg-slate-700 text-primary-500 shadow-xl shadow-primary-500/10' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
                         >
                             Dishes
                         </button>
                     </div>
                 )}
 
-                <div data-tutorial-id="pos-product-grid" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-6 pb-32 md:pb-6">
+                <div data-tutorial-id="pos-product-grid" className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6 pb-32 md:pb-6">
                     <AnimatePresence mode="popLayout">
-                        {activeTab === 'products' ? (
-                            <>
-                                {filteredProducts.map((p, idx) => (
-                                    <motion.div
-                                        key={p.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                    >
-                                        {p.variants.filter(v => !v.isDeleted).length > 1 ? (
-                                            <MasterProductTile 
-                                                product={p} 
-                                                onOpenVariants={setSelectedItemForVariants} 
-                                                cart={cart}
-                                            />
-                                        ) : (
-                                            <SingleVariantProductTile 
-                                                product={p} 
-                                                onAdd={(v) => handleAddItem(v)} 
-                                                isOutOfStock={p.variants[0].stock <= (cart.find(ci => ci.item.id === p.variants[0].id)?.quantity || 0)} 
-                                            />
-                                        )}
-                                    </motion.div>
-                                ))}
-                                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                                    <CustomItemTile onAdd={(name, price) => handleAddItem({ name, price })} />
-                                </motion.div>
-                            </>
-                        ) : (
-                            <>
-                                {filteredDishes.map((d, idx) => (
-                                    <motion.div
-                                        key={d.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                    >
-                                        <DishTile 
-                                            dish={d} 
-                                            onAdd={(variant) => handleAddItem(variant)} 
-                                            onOpenVariants={setSelectedItemForVariants}
-                                            isOutOfStock={d.isOutOfStock} 
-                                        />
-                                    </motion.div>
-                                ))}
-                                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                                    <CustomItemTile onAdd={(name, price) => handleAddItem({ name, price })} />
-                                </motion.div>
-                            </>
-                        )}
+                        {activeTab === 'products' && filteredProducts.map((p, idx) => (
+                            <motion.div
+                                key={p.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                                className={p.variants.filter(v => !v.isDeleted).length > 5 ? 'col-span-2' : ''}
+                            >
+                                {p.variants.length === 1 && p.pricingType === 'fixed' ? (
+                                    <SingleVariantProductTile product={p} onAdd={(v) => handleAddItem(v)} isOutOfStock={p.variants[0].stock <= 0} />
+                                ) : (
+                                    <MasterProductTile product={p} onAddVariant={(v) => handleAddItem(v)} cart={cart} />
+                                )}
+                            </motion.div>
+                        ))}
+                        {activeTab === 'dishes' && filteredDishes.map((d, idx) => (
+                            <motion.div
+                                key={d.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.05 }}
+                            >
+                                <DishTile dish={d} onAdd={(dish) => handleAddItem(dish)} isOutOfStock={d.isOutOfStock} />
+                            </motion.div>
+                        ))}
                     </AnimatePresence>
                 </div>
             </div>
 
             {/* Desktop Cart */}
-            <div className="hidden md:block">
+            <div className="hidden lg:block">
                 <div className="sticky top-6 h-[calc(100vh-8rem)]">
                    <CartView 
                         cart={cart} 
@@ -1702,7 +1402,7 @@ const POS: React.FC<POSProps> = (props) => {
             </div>
             
             {/* Mobile Cart UI */}
-            <div data-tutorial-id="pos-cart" className="md:hidden fixed bottom-16 left-0 right-0 z-20">
+            <div data-tutorial-id="pos-cart" className="lg:hidden fixed bottom-16 left-0 right-0 z-20">
                 {cart.length > 0 && (
                      <Tooltip content="View Cart Details" position="top">
                          <div onClick={() => setMobileCartOpen(true)} className="bg-theme-accent text-white p-3 shadow-lg flex justify-between items-center cursor-pointer">
@@ -1784,13 +1484,6 @@ const POS: React.FC<POSProps> = (props) => {
                 onAdd={handleAddExtraCharge}
             />
 
-            <VariantGridModal 
-                item={selectedItemForVariants}
-                onClose={() => setSelectedItemForVariants(null)}
-                onAddVariant={(v) => handleAddItem(v)}
-                cart={cart}
-            />
-
             {isQRScannerOpen && (
                 <QRScannerModal 
                     onClose={() => setQRScannerOpen(false)} 
@@ -1812,38 +1505,38 @@ const POS: React.FC<POSProps> = (props) => {
                     <motion.div 
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        className="bg-theme-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-theme-main"
+                        className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden border border-white/20 dark:border-slate-800/50"
                     >
-                        <div className="p-6 border-b border-theme-main flex justify-between items-center">
-                            <h3 className="text-xl font-black text-theme-main tracking-tighter uppercase">Hold Current Order</h3>
-                            <button onClick={() => setIsHoldModalOpen(false)} className="p-2 hover:bg-theme-main rounded-full transition-colors">
-                                <Icon name="close" className="w-5 h-5 text-theme-muted" />
+                        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter">Hold Current Order</h3>
+                            <button onClick={() => setIsHoldModalOpen(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                                <Icon name="close" className="w-5 h-5 text-slate-400" />
                             </button>
                         </div>
                         <div className="p-8 space-y-8">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Order Name / Table Number</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Order Name / Table Number</label>
                                 <input 
                                     type="text" 
                                     value={holdName} 
                                     onChange={e => setHoldName(e.target.value)}
-                                    className="w-full p-5 bg-theme-main border border-theme-main rounded-xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none text-theme-main font-bold text-lg transition-all"
+                                    className="w-full p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none text-slate-900 dark:text-white font-bold text-lg transition-all"
                                     placeholder={customer ? customer.name : "e.g. Table 5, John Doe..."}
                                     autoFocus
                                     onKeyDown={e => e.key === 'Enter' && handleHoldCart()}
                                 />
-                                <p className="text-[10px] text-theme-muted font-bold uppercase tracking-widest ml-2">This helps you identify the order later</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest ml-2">This helps you identify the order later</p>
                             </div>
                             <div className="flex gap-4 pt-2">
                                 <button 
                                     onClick={() => setIsHoldModalOpen(false)}
-                                    className="flex-1 px-6 py-4 border border-theme-main rounded-xl font-black uppercase tracking-widest text-xs text-theme-muted hover:bg-theme-main transition-all"
+                                    className="flex-1 px-6 py-4 border border-slate-200 dark:border-slate-700 rounded-2xl font-black uppercase tracking-widest text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={handleHoldCart}
-                                    className="flex-1 px-6 py-4 bg-primary-500 hover:bg-primary-600 text-white rounded-xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-primary-500/25"
+                                    className="flex-1 px-6 py-4 bg-primary-500 hover:bg-primary-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-lg shadow-primary-500/25"
                                 >
                                     Hold Order
                                 </button>
