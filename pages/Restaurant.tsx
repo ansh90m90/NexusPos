@@ -100,8 +100,8 @@ const DishModal: React.FC<{
          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
             <div className="bg-theme-surface rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-theme-main animate-page-fade-in overflow-hidden">
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                     <div className="p-6 border-b border-theme-main bg-theme-surface flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                     <div className="p-4 md:p-6 border-b border-theme-main bg-theme-surface flex items-center justify-between">
+                        <div className="flex items-center gap-3 md:gap-4">
                             <button 
                                 type="button" 
                                 onClick={onClose} 
@@ -110,12 +110,12 @@ const DishModal: React.FC<{
                                 <Icon name="arrow-left" className="w-5 h-5" />
                             </button>
                             <div>
-                                <h3 className="text-xl font-bold text-theme-main">{dish ? 'Edit Dish' : 'Add Dish'}</h3>
+                                <h3 className="text-lg md:text-xl font-bold text-theme-main">{dish ? 'Edit Dish' : 'Add Dish'}</h3>
                             </div>
                         </div>
                         <div className="flex gap-2">
-                             <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium text-sm">Cancel</button>
-                             <button type="submit" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium text-sm">Save Dish</button>
+                             <button type="button" onClick={onClose} className="hidden md:block px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium text-sm">Cancel</button>
+                             <button type="submit" className="px-4 md:px-6 py-2 md:py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium text-xs md:text-sm">Save Dish</button>
                         </div>
                     </div>
 

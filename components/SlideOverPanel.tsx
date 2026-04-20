@@ -77,28 +77,28 @@ export const SlideOverPanel: React.FC<SlideOverPanelProps> = ({
                                 shadow-2xl flex flex-col
                                 ${position === 'right' 
                                     ? 'w-full md:max-w-xl h-full' 
-                                    : 'w-full max-h-[90vh] rounded-t-[2.5rem]'
+                                    : 'w-full max-h-[90vh] rounded-t-3xl md:rounded-t-[2.5rem]'
                                 }
                             `}
                         >
-                            <div className="flex-shrink-0 px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div className="flex-shrink-0 px-5 py-4 md:px-8 md:py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h3>
-                                    <div className="w-12 h-1 bg-primary-500 rounded-full mt-1.5" />
+                                    <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">{title}</h3>
+                                    <div className="w-10 h-1 bg-primary-500 rounded-full mt-1.5" />
                                 </div>
                                 <button 
                                     onClick={onClose} 
-                                    className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all shadow-sm"
+                                    className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all shadow-sm"
                                 >
                                     <Icon name="close" className="h-5 w-5" />
                                 </button>
                             </div>
 
-                            <div className="flex-grow p-8 overflow-y-auto custom-scrollbar">
+                            <div className="flex-grow p-4 md:p-8 overflow-y-auto custom-scrollbar">
                                 {children}
                             </div>
 
-                            <div className="flex-shrink-0 px-8 py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xl">
+                            <div className="flex-shrink-0 px-5 py-4 md:px-8 md:py-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xl">
                                 <div className="flex justify-end gap-4">
                                     {footer}
                                 </div>

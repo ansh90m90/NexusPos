@@ -53,34 +53,34 @@ const ExpensePanel: React.FC<{
             title={isEditing ? 'Edit Expense' : 'Add New Expense'}
             onClose={onClose}
             footer={
-                <div className="flex gap-4 w-full">
-                    <button type="button" onClick={onClose} className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-xs">Cancel</button>
-                    <button type="submit" form="expense-form" className="flex-2 px-8 py-4 rounded-2xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 font-black uppercase tracking-widest text-xs">Save Expense</button>
+                <div className="flex gap-3 md:gap-4 w-full">
+                    <button type="button" onClick={onClose} className="flex-1 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-[10px] md:text-xs">Cancel</button>
+                    <button type="submit" form="expense-form" className="flex-2 px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 font-black uppercase tracking-widest text-[10px] md:text-xs">Save Expense</button>
                 </div>
             }
         >
-            <form id="expense-form" onSubmit={handleSubmit} className="space-y-8">
+            <form id="expense-form" onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Description *</label>
-                    <input name="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Office Supplies" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
+                    <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Description *</label>
+                    <input name="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Office Supplies" className="w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold text-sm md:text-base" required />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Amount (₹) *</label>
-                        <input name="amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
+                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Amount (₹) *</label>
+                        <input name="amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold text-sm md:text-base" required />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Category *</label>
-                        <select name="category" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required>
+                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Category *</label>
+                        <select name="category" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold text-sm md:text-base" required>
                             {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Date *</label>
-                    <input name="date" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
+                    <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Date *</label>
+                    <input name="date" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold text-sm md:text-base" required />
                 </div>
 
                 <div className="pt-8 border-t border-slate-100 dark:border-slate-800 space-y-6">

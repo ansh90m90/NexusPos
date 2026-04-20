@@ -24,20 +24,20 @@ const Marketing: React.FC<MarketingProps> = ({ promotions, onSavePromotion, setM
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-theme-main">Marketing Hub</h1>
+            <div className="flex justify-between items-center px-1">
+                <h1 className="text-2xl md:text-3xl font-bold text-theme-main">Marketing Hub</h1>
                 <Tooltip content="Create a new promotional campaign" position="bottom">
                     <button 
                         onClick={() => setModalState({ type: 'PROMOTION_MODAL', data: null })}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold"
+                        className="flex items-center gap-2 px-3 md:px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-semibold text-sm"
                     >
-                        <Icon name="plus" className="w-5 h-5" />
+                        <Icon name="plus" className="w-4 h-4 md:w-5 md:h-5" />
                         New Promotion
                     </button>
                 </Tooltip>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {promotions.length > 0 ? (
                     promotions.map((promotion) => (
                         <div key={promotion.id} className="bg-theme-surface rounded-xl border border-theme-main shadow-sm p-4 flex flex-col">

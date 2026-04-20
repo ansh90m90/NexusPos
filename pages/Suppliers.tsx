@@ -33,25 +33,25 @@ const AddSupplierPaymentModal: React.FC<{
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 onSubmit={handleSubmit} 
-                className="bg-theme-surface backdrop-blur-2xl rounded-[2.5rem] shadow-2xl p-8 max-w-md w-full space-y-8 border border-theme-main"
+                className="bg-theme-surface backdrop-blur-2xl rounded-3xl md:rounded-[2.5rem] shadow-2xl p-5 md:p-8 max-w-md w-full space-y-6 md:space-y-8 border border-theme-main"
             >
-                <div className="flex justify-between items-start">
+                <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                     <div>
-                        <h3 className="text-2xl font-black text-theme-main tracking-tighter">{isLoan ? 'Take Loan' : 'Add Payment'}</h3>
+                        <h3 className="text-xl md:text-2xl font-black text-theme-main tracking-tighter">{isLoan ? 'Take Loan' : 'Add Payment'}</h3>
                         <p className="text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] mt-1">{supplier.name}</p>
                     </div>
-                    <div className="flex bg-theme-main p-1 rounded-2xl border border-theme-main">
+                    <div className="flex bg-theme-main p-1 rounded-2xl border border-theme-main w-full md:w-auto">
                         <button 
                             type="button" 
                             onClick={() => setIsLoan(false)}
-                            className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${!isLoan ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'text-theme-muted hover:text-theme-main'}`}
+                            className={`flex-1 md:flex-none px-4 md:px-6 py-2 md:py-2.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${!isLoan ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'text-theme-muted hover:text-theme-main'}`}
                         >
                             Payment
                         </button>
                         <button 
                             type="button" 
                             onClick={() => setIsLoan(true)}
-                            className={`px-6 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${isLoan ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25' : 'text-theme-muted hover:text-theme-main'}`}
+                            className={`flex-1 md:flex-none px-4 md:px-6 py-2 md:py-2.5 text-[9px] md:text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${isLoan ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25' : 'text-theme-muted hover:text-theme-main'}`}
                         >
                             Loan
                         </button>
@@ -77,8 +77,8 @@ const AddSupplierPaymentModal: React.FC<{
                             {isLoan ? 'Loan Amount' : 'Payment Amount'}
                         </label>
                         <div className="relative">
-                            <span className="absolute left-6 top-1/2 -translate-y-1/2 text-3xl font-black text-theme-muted">₹</span>
-                            <input id="payment" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full pl-12 pr-8 py-6 rounded-[2rem] bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-black text-3xl tracking-tighter" step="0.01" autoFocus required placeholder="0.00" />
+                            <span className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-2xl md:text-3xl font-black text-theme-muted">₹</span>
+                            <input id="payment" type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full pl-10 md:pl-12 pr-6 md:pr-8 py-4 md:py-6 rounded-2xl md:rounded-[2rem] bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-black text-2xl md:text-3xl tracking-tighter" step="0.01" autoFocus required placeholder="0.00" />
                         </div>
                         <div className="flex justify-between items-center px-4">
                             <p className="text-[10px] font-bold text-theme-muted uppercase tracking-widest">
@@ -384,7 +384,7 @@ const Suppliers: React.FC<SuppliersProps> = (props) => {
 
   return (
     <>
-      <div className="flex h-[calc(100vh-8rem)] bg-theme-surface backdrop-blur-xl rounded-[2.5rem] border border-theme-main shadow-2xl shadow-theme-main/10 overflow-hidden">
+      <div className="flex h-[calc(100vh-8rem)] bg-theme-surface backdrop-blur-xl rounded-3xl md:rounded-[2.5rem] border border-theme-main shadow-2xl shadow-theme-main/10 overflow-hidden">
         <div className={`w-full lg:w-2/5 xl:w-1/3 h-full lg:border-r border-theme-main ${selectedSupplier ? 'hidden lg:flex flex-col' : 'flex flex-col'}`}>
           <SupplierListPage suppliers={suppliers} onSelectSupplier={setSelectedSupplierId} setModalState={setModalState} />
         </div>

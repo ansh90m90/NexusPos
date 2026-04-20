@@ -70,7 +70,7 @@ export type IconName =
   | 'sync-offline' | 'sync-reload' | 'sales-chart' | 'receipt' | 'credit-card' 
   | 'receive-stock' | 'activity-sale' | 'activity-customer' | 'activity-low-stock' 
   | 'activity-purchase' | 'access-denied' | 'send' | 'link-external'
-  | 'cash' | 'online' | 'credit' | 'camera' | 'upload' | 'spinner' | 'check' | 'star' | 'user' | 'user-plus' | 'zap' | 'tag' | 'hash' | 'category' | 'hsn';
+  | 'cash' | 'online' | 'credit' | 'camera' | 'upload' | 'spinner' | 'check' | 'star' | 'user' | 'user-plus' | 'zap' | 'tag' | 'hash' | 'category' | 'hsn' | 'business';
 
 interface IconProps {
   name: IconName;
@@ -113,6 +113,7 @@ const CustomLogo = (props: any) => (
 
 const iconMap: Record<IconName, React.ElementType> = {
   logo: CustomLogo,
+  business: Building2,
   dashboard: LayoutDashboard,
   pos: MonitorDot,
   products: Package,

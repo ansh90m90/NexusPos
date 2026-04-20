@@ -233,21 +233,21 @@ const ReceiveStockModal: React.FC<{
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col border border-white/20 dark:border-slate-800/50 overflow-hidden"
+                className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl rounded-3xl md:rounded-[2.5rem] shadow-2xl max-w-6xl w-full max-h-[90vh] flex flex-col border border-white/20 dark:border-slate-800/50 overflow-hidden"
             >
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
-                    <div className="p-8 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-white/50 dark:bg-slate-900/50">
+                    <div className="p-4 md:p-8 border-b border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between bg-white/50 dark:bg-slate-900/50">
                          <div>
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">{isPreview ? 'Confirm Purchase' : 'Receive Stock'}</h3>
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Inventory Procurement</p>
+                            <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">{isPreview ? 'Confirm Purchase' : 'Receive Stock'}</h3>
+                            <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Inventory Procurement</p>
                          </div>
-                         <button type="button" onClick={onClose} className="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
+                         <button type="button" onClick={onClose} className="p-2 md:p-3 rounded-xl md:rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-rose-500 transition-colors">
                             <Icon name="close" size={20} />
                          </button>
                     </div>
                     
-                    <div className="p-8 flex-grow overflow-y-auto space-y-8 custom-scrollbar">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-4 md:p-8 flex-grow overflow-y-auto space-y-6 md:space-y-8 custom-scrollbar">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                             <div className="space-y-2">
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Supplier</label>
                                 <ComboBox

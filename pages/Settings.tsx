@@ -16,10 +16,10 @@ import { sanitize } from '../services/syncService';
 type SettingsTab = 'general' | 'appearance' | 'features' | 'staff_promos' | 'logs' | 'data' | 'cloud' | 'help' | 'about';
 
 const SettingRow: React.FC<{title: string, description: string, enabled: boolean, onToggle: () => void, disabled?: boolean}> = ({title, description, enabled, onToggle, disabled = false}) => (
-  <div className="flex justify-between items-center bg-theme-surface p-5 rounded-2xl border border-theme-main shadow-sm hover:border-primary-500/30 transition-colors">
+  <div className="flex justify-between items-center bg-theme-surface p-4 md:p-5 rounded-xl md:rounded-2xl border border-theme-main shadow-sm hover:border-primary-500/30 transition-colors">
     <div className="pr-4">
-        <h3 className="font-semibold text-theme-main mb-1">{title}</h3>
-        <p className="text-sm text-theme-muted leading-relaxed">{description}</p>
+        <h3 className="font-semibold text-sm md:text-base text-theme-main mb-1">{title}</h3>
+        <p className="text-xs md:text-sm text-theme-muted leading-relaxed">{description}</p>
     </div>
     <label htmlFor={`toggle-${title.replace(/\s+/g, '-')}`} className={`relative inline-flex items-center shrink-0 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
       <input 
@@ -58,14 +58,14 @@ const StaffModal: React.FC<{
     }
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4 modal-content">
-            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-3xl shadow-xl p-8 max-w-md w-full space-y-6 border border-theme-main">
-                <h3 className="text-2xl font-bold text-theme-main mb-2">{isEditing ? 'Edit Staff Member' : 'Add New Staff'}</h3>
+            <form onSubmit={handleSubmit} className="bg-theme-surface rounded-2xl md:rounded-3xl shadow-xl p-5 md:p-8 max-w-md w-full space-y-5 md:space-y-6 border border-theme-main">
+                <h3 className="text-xl md:text-2xl font-bold text-theme-main mb-2">{isEditing ? 'Edit Staff Member' : 'Add New Staff'}</h3>
                 
-                <div className="space-y-5">
+                <div className="space-y-4 md:space-y-5">
                     <div>
-                        <label className="block text-sm font-semibold text-theme-main mb-1">Full Name</label>
-                        <p className="text-xs text-theme-muted mb-2">The staff member's complete name.</p>
-                        <input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g., Jane Doe" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
+                        <label className="block text-xs md:text-sm font-semibold text-theme-main mb-1">Full Name</label>
+                        <p className="text-[10px] md:text-xs text-theme-muted mb-2">The staff member's complete name.</p>
+                        <input name="name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g., Jane Doe" className="w-full p-2.5 md:p-3 rounded-lg md:rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-sm md:text-base" required />
                     </div>
                     
                     <div>
@@ -834,6 +834,21 @@ const Settings: React.FC<SettingsProps> = ({ accountState, setAppSettings, onSav
                                 <div>
                                     <h3 className="font-semibold text-theme-main">{isTutorialActive ? 'End Tutorial' : 'App Tour'}</h3>
                                     <p className="text-sm text-theme-muted">Guided walkthrough</p>
+                                </div>
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    onEndTutorial();
+                                    setTimeout(onStartTutorial, 100);
+                                }} 
+                                className="flex items-center gap-4 p-4 rounded-2xl bg-theme-main hover:bg-theme-surface border border-theme-main transition-colors group text-left"
+                            >
+                                <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400 group-hover:scale-110 transition-transform">
+                                    <Icon name="sync-reload" className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-theme-main">Restart Tutorial</h3>
+                                    <p className="text-sm text-theme-muted">Start from the beginning</p>
                                 </div>
                             </button>
                         </div>

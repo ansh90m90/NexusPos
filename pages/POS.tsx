@@ -49,7 +49,7 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
                 whileHover={!isOutOfStock ? { y: -4, scale: 1.02 } : {}}
                 whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
                 onClick={() => !isOutOfStock && tileRef.current && onAdd(variant, tileRef.current)}
-                className={`group relative flex flex-col p-4 rounded-3xl border transition-all duration-300 overflow-hidden ${
+                className={`group relative flex flex-col p-3 md:p-4 rounded-2xl md:rounded-3xl border transition-all duration-300 overflow-hidden ${
                     isOutOfStock 
                         ? 'bg-slate-100/50 dark:bg-slate-800/20 border-slate-200 dark:border-slate-800 opacity-60 cursor-not-allowed' 
                         : 'bg-white/80 dark:bg-slate-900/40 backdrop-blur-md border-slate-200/60 dark:border-slate-800/60 shadow-sm hover:shadow-xl hover:shadow-primary-500/10 hover:border-primary-500/50 cursor-pointer'
@@ -72,10 +72,10 @@ const SingleVariantProductTile: React.FC<{ product: Product; onAdd: (variant: Pr
                     </h3>
                 </div>
 
-                <div className="mt-4 flex justify-between items-end">
+                <div className="mt-2 md:mt-4 flex justify-between items-end">
                     <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Price</span>
-                        <p className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                        <span className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Price</span>
+                        <p className="text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight">
                             ₹{variant.mrp}
                         </p>
                     </div>
@@ -101,7 +101,7 @@ const MasterProductTile: React.FC<{ product: Product; onAddVariant: (variant: Pr
             <motion.div 
                 ref={tileRef} 
                 whileHover={{ y: -4 }}
-                className="group relative flex flex-col p-4 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/40 backdrop-blur-md shadow-sm hover:shadow-xl hover:border-indigo-500/50 transition-all duration-300"
+                className="group relative flex flex-col p-3 md:p-4 rounded-2xl md:rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/40 backdrop-blur-md shadow-sm hover:shadow-xl hover:border-indigo-500/50 transition-all duration-300"
             >
                 <div className="flex-grow mb-4">
                     {product.subCategory && (
@@ -164,13 +164,13 @@ const DishTile: React.FC<{ dish: Dish; onAdd: (dish: Dish, element: HTMLDivEleme
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
                 />
                 
-                <div className="absolute bottom-0 left-0 right-0 p-5 z-20">
-                    <h3 className="font-bold text-white text-base leading-tight mb-1 group-hover:text-primary-400 transition-colors line-clamp-2">
+                <div className="absolute bottom-0 left-0 right-0 p-3 md:p-5 z-20">
+                    <h3 className="font-bold text-white text-sm md:text-base leading-tight mb-1 group-hover:text-primary-400 transition-colors line-clamp-2">
                         {dish.name}
                     </h3>
                     <div className="flex items-baseline gap-1">
-                        <span className="text-xs font-bold text-white/60">₹</span>
-                        <p className="text-2xl font-black text-white tracking-tighter">{dish.price}</p>
+                        <span className="text-[10px] md:text-xs font-bold text-white/60">₹</span>
+                        <p className="text-xl md:text-2xl font-black text-white tracking-tighter">{dish.price}</p>
                     </div>
                 </div>
 
@@ -449,18 +449,18 @@ const CartView: React.FC<{
                                 <Icon name="plus" size={12} />
                             </button>
                         </div>
-                        <span className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter">₹{total.toFixed(2)}</span>
+                        <span className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tighter">₹{total.toFixed(2)}</span>
                     </div>
                     
                     <button 
                         onClick={() => onPay(total, subtotal, discountInfo)} 
                         disabled={cart.length === 0 && extraCharges.length === 0} 
-                        className="w-full group relative flex items-center justify-center gap-3 p-5 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white rounded-2xl font-black text-xl shadow-xl shadow-primary-500/20 transition-all transform active:scale-[0.98] overflow-hidden"
+                        className="w-full group relative flex items-center justify-center gap-2 md:gap-3 p-4 md:p-5 bg-primary-500 hover:bg-primary-600 disabled:bg-slate-200 dark:disabled:bg-slate-800 text-white rounded-xl md:rounded-2xl font-black text-lg md:text-xl shadow-xl shadow-primary-500/20 transition-all transform active:scale-[0.98] overflow-hidden"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                        <Icon name="credit-card" size={24} />
+                        <Icon name="credit-card" size={20} className="md:w-6 md:h-6" />
                         <span>Checkout</span>
-                        <Icon name="arrow-right" size={20} className="group-hover:translate-x-1 transition-transform" />
+                        <Icon name="arrow-right" size={18} className="md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
             </div>
@@ -1179,9 +1179,13 @@ const POS: React.FC<POSProps> = (props) => {
     const filteredProducts = useMemo(() => {
         return products.filter(p => !p.isDeleted && multiTermSearch(searchTerm, [
             p.name,
+            p.category,
             p.subCategory,
+            p.supplier,
+            p.hsnCode,
             p.tags,
             ...p.variants.map(v => v.name),
+            ...p.variants.map(v => v.sku),
             ...p.variants.flatMap(v => v.tags || [])
         ]));
     }, [products, searchTerm]);
@@ -1190,7 +1194,9 @@ const POS: React.FC<POSProps> = (props) => {
         const cartRequirements = getCartIngredients(cart);
         return dishes.filter(d => !d.isDeleted && multiTermSearch(searchTerm, [
             d.name,
-            d.tags
+            d.tags,
+            ...d.variants.map(v => v.name),
+            ...d.variants.flatMap(v => v.tags || [])
         ])).map(dish => {
             const isOutOfStock = dish.ingredients.some(ing => {
                 const material = rawMaterials.find(rm => rm.id === ing.id);

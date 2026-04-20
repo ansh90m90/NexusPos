@@ -38,39 +38,39 @@ const CustomerPanel: React.FC<{
             title={isEditing ? 'Edit Customer' : 'Add New Customer'}
             onClose={onClose}
             footer={
-                <div className="flex justify-between items-center w-full gap-4">
+                <div className="flex justify-between items-center w-full gap-3 md:gap-4">
                     <div className="flex-1">
                         {isEditing && onDelete && (
                             <button
                                 type="button"
                                 onClick={() => setIsDeleteModalOpen(true)}
-                                className="px-6 py-4 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest h-full"
+                                className="px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all text-[9px] md:text-[10px] font-black uppercase tracking-widest h-full"
                             >
                                 Delete
                             </button>
                         )}
                     </div>
-                    <div className="flex gap-4 flex-2">
-                        <button type="button" onClick={onClose} className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-xs">Cancel</button>
-                        <button type="submit" form="customer-form" className="flex-2 px-8 py-4 rounded-2xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 font-black uppercase tracking-widest text-xs">Save Customer</button>
+                    <div className="flex gap-3 md:gap-4 flex-2">
+                        <button type="button" onClick={onClose} className="flex-1 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-[10px] md:text-xs">Cancel</button>
+                        <button type="submit" form="customer-form" className="flex-2 px-5 md:px-8 py-3 md:py-4 rounded-xl md:rounded-2xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 font-black uppercase tracking-widest text-[10px] md:text-xs">Save Customer</button>
                     </div>
                 </div>
             }
         >
-            <form id="customer-form" onSubmit={handleSubmit} className="space-y-8">
+            <form id="customer-form" onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Full Name *</label>
-                    <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., John Doe" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
+                    <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Full Name *</label>
+                    <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., John Doe" className="w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold text-sm md:text-base" required />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Phone Number</label>
-                        <input name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="e.g., +91 98765 43210" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" />
+                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                        <input name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="e.g., +91 98765 43210" className="w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold text-sm md:text-base" />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Customer Tier</label>
-                        <select name="tier" value={formData.tier} onChange={e => setFormData({ ...formData, tier: e.target.value as 'Retail' | 'Wholesale' })} className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold">
+                        <label className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Customer Tier</label>
+                        <select name="tier" value={formData.tier} onChange={e => setFormData({ ...formData, tier: e.target.value as 'Retail' | 'Wholesale' })} className="w-full p-3 md:p-4 rounded-xl md:rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold text-sm md:text-base">
                             <option value="Retail">Retail</option>
                             <option value="Wholesale">Wholesale</option>
                         </select>

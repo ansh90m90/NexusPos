@@ -9,18 +9,18 @@ type DateRange = 'today' | '7d' | '30d' | 'all';
 
 // #region Helper Components
 const ReportCard: React.FC<{title: string, children: React.ReactNode, className?: string}> = ({title, children, className}) => (
-    <div className={`bg-theme-surface rounded-xl border border-theme-main shadow-sm p-4 sm:p-5 ${className}`}>
-        <h2 className="text-base font-bold text-theme-main mb-3">{title}</h2>
-        <div className="h-[300px]">
+    <div className={`bg-theme-surface rounded-xl border border-theme-main shadow-sm p-3 sm:p-5 ${className}`}>
+        <h2 className="text-sm sm:text-base font-bold text-theme-main mb-3">{title}</h2>
+        <div className="h-[250px] sm:h-[300px]">
             {children}
         </div>
     </div>
 );
 
 const Stat: React.FC<{ label: string, value: string }> = ({ label, value }) => (
-    <div className="bg-theme-surface p-3 rounded-lg border border-theme-main shadow-sm flex flex-col justify-center min-h-[80px]">
-        <p className="text-xs text-theme-muted font-medium uppercase tracking-wider">{label}</p>
-        <p className="text-lg sm:text-xl font-bold text-theme-main truncate">{value}</p>
+    <div className="bg-theme-surface p-2 sm:p-3 rounded-lg border border-theme-main shadow-sm flex flex-col justify-center min-h-[60px] sm:min-h-[80px]">
+        <p className="text-[10px] sm:text-xs text-theme-muted font-medium uppercase tracking-wider">{label}</p>
+        <p className="text-base sm:text-xl font-bold text-theme-main truncate">{value}</p>
     </div>
 );
 

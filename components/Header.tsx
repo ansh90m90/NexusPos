@@ -33,11 +33,11 @@ const SyncControl: React.FC<{ status: SyncStatus, onSync: () => void }> = ({ sta
     const isSyncing = status === 'syncing';
 
     return (
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
+        <div className="flex items-center gap-1 bg-theme-main/50 p-1 rounded-2xl border border-theme-main/30">
             <Tooltip content={title} position="bottom">
-                <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${color} ${bgColor} px-3 py-1 rounded-xl cursor-help transition-all`}>
+                <div className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider ${color} ${bgColor} px-2 md:px-3 py-1 rounded-xl cursor-help transition-all shadow-sm`}>
                     <Icon name={iconName} size={14} className={isSyncing ? 'animate-spin' : ''} />
-                    <span className="hidden lg:inline">{text}</span>
+                    <span className="hidden md:inline">{text}</span>
                 </div>
             </Tooltip>
             <Tooltip content="Force Sync" position="bottom">
@@ -76,31 +76,31 @@ const Header: React.FC<HeaderProps> = ({ currentPage, currentUser, onLogout, not
     const currentBusiness = userBusinesses.find(b => b.id === currentBusinessId);
     
     return (
-        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 h-20 transition-all duration-300">
-            <div className="flex items-center gap-6">
+        <header className="bg-theme-surface/80 backdrop-blur-xl px-3 md:px-8 flex items-center justify-between sticky top-0 z-30 h-16 md:h-20 transition-all duration-300 border-b border-theme-main/10 shadow-sm shadow-black/5">
+            <div className="flex items-center gap-3 md:gap-6">
                 <div className="flex flex-col">
-                    <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{currentPage}</h1>
-                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em] hidden md:block">Nexus Management Suite</p>
+                    <h1 className="text-lg md:text-xl font-bold text-theme-main tracking-tight">{currentPage}</h1>
+                    <p className="text-[10px] text-theme-muted font-medium uppercase tracking-[0.2em] hidden md:block">Nexus Management Suite</p>
                 </div>
                 
-                <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden lg:block"></div>
+                <div className="h-8 w-px bg-theme-main hidden lg:block"></div>
 
                 {userBusinesses.length > 0 && (
                     <div className="relative" ref={businessMenuRef}>
                         <button 
                             onClick={() => setIsBusinessMenuOpen(o => !o)}
-                            className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:border-primary-500/50 transition-all group"
+                            className="flex items-center gap-2 p-1 md:px-4 md:py-2 rounded-2xl bg-theme-main/30 md:bg-theme-main/50 border border-theme-main hover:border-primary-500/50 transition-all group"
                         >
                             <div className="w-8 h-8 rounded-xl bg-primary-500/10 flex items-center justify-center text-primary-600">
                                 <Icon name="business" size={18} />
                             </div>
-                            <div className="flex flex-col items-start text-left">
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate max-w-[140px]">
+                            <div className="hidden md:flex flex-col items-start text-left">
+                                <span className="text-xs font-bold text-theme-main truncate max-w-[140px]">
                                     {currentBusiness?.name || 'Select Business'}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-medium">{currentBusiness?.role || 'Switch'}</span>
+                                <span className="text-[10px] text-theme-muted font-medium">{currentBusiness?.role || 'Switch'}</span>
                             </div>
-                            <Icon name="chevron-down" size={14} className={`text-slate-400 transition-transform duration-300 ${isBusinessMenuOpen ? 'rotate-180' : ''}`} />
+                            <Icon name="chevron-down" size={14} className={`text-theme-muted transition-transform duration-300 ${isBusinessMenuOpen ? 'rotate-180' : ''} hidden sm:block`} />
                         </button>
                         
                         <AnimatePresence>
@@ -147,9 +147,9 @@ const Header: React.FC<HeaderProps> = ({ currentPage, currentUser, onLogout, not
                 )}
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
                  {isTest && (
-                    <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 animate-pulse">
+                    <div className="hidden lg:flex items-center gap-2 px-4 py-1.5 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse">
                         <Icon name="activity-low-stock" size={16} />
                         <span className="text-[10px] font-bold uppercase tracking-wider">Sandbox Mode</span>
                     </div>
@@ -157,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, currentUser, onLogout, not
                 
                 {!isTest && <SyncControl status={syncStatus} onForceSync={onForceSync} />}
                 
-                <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
+                <div className="h-8 w-px bg-theme-main hidden sm:block"></div>
 
                 <div data-tutorial-id="notifications-button">
                     <NotificationBell notifications={notifications} onOpen={onOpenNotifications} />
@@ -166,16 +166,16 @@ const Header: React.FC<HeaderProps> = ({ currentPage, currentUser, onLogout, not
                 <div className="relative" ref={menuRef}>
                     <button 
                         onClick={() => setIsMenuOpen(o => !o)} 
-                        className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 hover:border-primary-500/50 transition-all"
+                        className="flex items-center gap-2 md:gap-3 p-1 md:p-1.5 md:pr-4 rounded-2xl bg-theme-main/30 md:bg-theme-main/50 border border-theme-main hover:border-primary-500/50 transition-all"
                     >
                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center text-white shadow-lg shadow-primary-500/20">
                             <span className="text-sm font-bold">{currentUser.name.slice(0, 1).toUpperCase()}</span>
                         </div>
                         <div className="hidden md:block text-left">
-                            <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{currentUser.name}</p>
-                            <p className="text-[10px] text-slate-400 font-medium">{currentUser.role}</p>
+                            <p className="text-xs font-bold text-theme-main leading-tight">{currentUser.name}</p>
+                            <p className="text-[10px] text-theme-muted font-medium">{currentUser.role}</p>
                         </div>
-                        <Icon name="chevron-down" size={12} className={`text-slate-400 transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`} />
+                        <Icon name="chevron-down" size={12} className={`text-theme-muted transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''} hidden md:block`} />
                     </button>
                     
                     <AnimatePresence>
