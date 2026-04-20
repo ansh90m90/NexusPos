@@ -289,6 +289,7 @@ const SupplierListPage: React.FC<{
                     </div>
                      <Tooltip content="Add New Supplier" position="bottom">
                          <button 
+                            data-tutorial-id="add-supplier-button"
                             onClick={() => setModalState({ type: 'add_supplier', data: null })} 
                             className="p-3 rounded-2xl bg-primary-500 text-white shadow-lg shadow-primary-500/25 hover:bg-primary-600 transition-all hover:-translate-y-0.5 active:translate-y-0"
                         >

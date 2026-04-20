@@ -55,7 +55,9 @@ import {
   Check,
   Star,
   User,
-  Hexagon
+  Hexagon,
+  Tag,
+  Hash
 } from 'lucide-react';
 
 export type IconName = 
@@ -68,7 +70,7 @@ export type IconName =
   | 'sync-offline' | 'sync-reload' | 'sales-chart' | 'receipt' | 'credit-card' 
   | 'receive-stock' | 'activity-sale' | 'activity-customer' | 'activity-low-stock' 
   | 'activity-purchase' | 'access-denied' | 'send' | 'link-external'
-  | 'cash' | 'online' | 'credit' | 'camera' | 'upload' | 'spinner' | 'check' | 'star' | 'user' | 'user-plus' | 'zap';
+  | 'cash' | 'online' | 'credit' | 'camera' | 'upload' | 'spinner' | 'check' | 'star' | 'user' | 'user-plus' | 'zap' | 'tag' | 'hash' | 'category' | 'hsn';
 
 interface IconProps {
   name: IconName;
@@ -168,6 +170,10 @@ const iconMap: Record<IconName, React.ElementType> = {
   user: User,
   'user-plus': UserPlus,
   zap: Zap,
+  tag: Tag,
+  hash: Hash,
+  category: Layers,
+  hsn: Hash
 };
 
 const Icon: React.FC<IconProps> = ({ name, className = "w-6 h-6", strokeWidth = 1.5 }) => {

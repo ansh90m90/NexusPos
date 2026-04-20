@@ -3,8 +3,8 @@
  * Simple phonetic normalization for Indian names and items.
  * Handles common variations like 'v'/'w', 's'/'sh', 'ee'/'i', 'oo'/'u', 'z'/'j'.
  */
-export const normalizePhonetic = (str: string): string => {
-    if (!str) return '';
+export const normalizePhonetic = (str: string | undefined | null): string => {
+    if (!str || typeof str !== 'string') return '';
     return str.toLowerCase()
         .replace(/\s+/g, '')
         .replace(/ph/g, 'f')
@@ -46,8 +46,9 @@ export const matchesPhonetic = (search: string, target: string): boolean => {
 /**
  * Fuzzy search that combines exact match, prefix match, and phonetic match.
  */
-export const fuzzySearch = (search: string, target: string): boolean => {
-    if (!search) return true;
+export const fuzzySearch = (search: string | undefined | null, target: string | undefined | null): boolean => {
+    if (!search || typeof search !== 'string') return true;
+    if (!target || typeof target !== 'string') return false;
     const lowerSearch = search.toLowerCase();
     const lowerTarget = target.toLowerCase();
     

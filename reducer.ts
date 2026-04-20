@@ -247,7 +247,8 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
 
             // Auto-create supplier if it doesn't exist
             if (productData.supplier && productData.supplier.trim() !== '') {
-                const supplierExists = newState.suppliers.some(s => s.name.toLowerCase() === productData.supplier!.toLowerCase());
+                const searchName = productData.supplier.toLowerCase();
+                const supplierExists = newState.suppliers.some(s => s.name && s.name.toLowerCase() === searchName);
                 if (!supplierExists) {
                     const newSupplier: Supplier = {
                         id: getNextId(newState.suppliers),
@@ -307,6 +308,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                                             quantity: batchDiff,
                                             receivedDate: now,
                                             netPurchasePrice: v.netPurchasePrice || 0,
+                                            mrp: v.mrp || 0,
                                             batchNumber: 'INIT-ADD'
                                         });
                                     } else if (batchDiff < 0) {
@@ -336,6 +338,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                                     quantity: v.stock,
                                     receivedDate: now,
                                     netPurchasePrice: v.netPurchasePrice || 0,
+                                    mrp: v.mrp || 0,
                                     batchNumber: 'INIT-ADD'
                                 });
                             }
@@ -373,6 +376,7 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                             quantity: newV.stock,
                             receivedDate: now,
                             netPurchasePrice: newV.netPurchasePrice || 0,
+                            mrp: newV.mrp || 0,
                             batchNumber: 'INIT-ADD'
                         });
                     }
@@ -641,7 +645,8 @@ export function applyOperation(state: AccountState, operation: Operation): Accou
                             variantId: variantIdForBatch,
                             id: `B-${Date.now()}-${Math.floor(Math.random() * 1000000)}`, 
                             receivedDate: order.date,
-                            netPurchasePrice: batchNetPrice
+                            netPurchasePrice: batchNetPrice,
+                            mrp: matchingItem.mrp || 0
                         } as Batch);
                     }
                 }

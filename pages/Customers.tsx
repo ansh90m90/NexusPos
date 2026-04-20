@@ -44,14 +44,14 @@ const CustomerPanel: React.FC<{
                             <button
                                 type="button"
                                 onClick={() => setIsDeleteModalOpen(true)}
-                                className="px-6 py-4 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
+                                className="px-6 py-4 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest h-full"
                             >
                                 Delete
                             </button>
                         )}
                     </div>
                     <div className="flex gap-4 flex-2">
-                        <button type="button" onClick={onClose} className="flex-1 px-6 py-4 rounded-2xl bg-theme-main text-theme-muted hover:bg-theme-main/80 transition-all font-black uppercase tracking-widest text-xs">Cancel</button>
+                        <button type="button" onClick={onClose} className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-xs">Cancel</button>
                         <button type="submit" form="customer-form" className="flex-2 px-8 py-4 rounded-2xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 font-black uppercase tracking-widest text-xs">Save Customer</button>
                     </div>
                 </div>
@@ -59,18 +59,18 @@ const CustomerPanel: React.FC<{
         >
             <form id="customer-form" onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Full Name</label>
-                    <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., John Doe" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" required />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Full Name *</label>
+                    <input name="name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., John Doe" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Phone Number</label>
-                        <input name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="e.g., +91 98765 43210" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" />
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Phone Number</label>
+                        <input name="phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="e.g., +91 98765 43210" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" />
                     </div>
                     <div className="space-y-2">
-                        <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Customer Tier</label>
-                        <select name="tier" value={formData.tier} onChange={e => setFormData({ ...formData, tier: e.target.value as 'Retail' | 'Wholesale' })} className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Customer Tier</label>
+                        <select name="tier" value={formData.tier} onChange={e => setFormData({ ...formData, tier: e.target.value as 'Retail' | 'Wholesale' })} className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold">
                             <option value="Retail">Retail</option>
                             <option value="Wholesale">Wholesale</option>
                         </select>
@@ -78,19 +78,23 @@ const CustomerPanel: React.FC<{
                 </div>
 
                 <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-theme-muted uppercase tracking-[0.2em] ml-2">Full Address</label>
-                    <input name="address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="e.g., 123 Main St, City" className="w-full p-4 rounded-2xl bg-theme-main text-theme-main border border-theme-main focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all font-bold" />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Full Address</label>
+                    <input name="address" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="e.g., 123 Main St, City" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" />
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-theme-main rounded-2xl border border-theme-main">
-                    <input 
-                        type="checkbox" 
-                        id="enableSms"
-                        checked={formData.enableSms} 
-                        onChange={e => setFormData({ ...formData, enableSms: e.target.checked })}
-                        className="w-5 h-5 rounded-lg border-theme-main text-primary-500 focus:ring-primary-500"
-                    />
-                    <label htmlFor="enableSms" className="text-xs font-bold text-theme-muted uppercase tracking-widest cursor-pointer">Enable SMS Notifications</label>
+                <div className="flex items-center gap-4 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <div className="relative inline-block w-12 h-6 transition duration-200 ease-in-out">
+                        <input 
+                            type="checkbox" 
+                            id="enableSms"
+                            checked={formData.enableSms} 
+                            onChange={e => setFormData({ ...formData, enableSms: e.target.checked })}
+                            className="absolute z-10 w-12 h-6 opacity-0 cursor-pointer peer"
+                        />
+                        <div className="w-12 h-6 bg-slate-200 dark:bg-slate-700 rounded-full peer-checked:bg-primary-500 transition-colors duration-200" />
+                        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-6" />
+                    </div>
+                    <label htmlFor="enableSms" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest cursor-pointer">Enable SMS Notifications</label>
                 </div>
             </form>
         </SlideOverPanel>
@@ -229,6 +233,7 @@ const CustomerListPage: React.FC<{
                     </div>
                     <Tooltip content="Add New Customer" position="bottom">
                         <button 
+                            data-tutorial-id="add-customer-button"
                             onClick={() => setModalState({ type: 'add_customer', data: null })} 
                             className="p-3 rounded-2xl bg-primary-500 text-white shadow-lg shadow-primary-500/25 hover:bg-primary-600 transition-all hover:-translate-y-0.5 active:translate-y-0"
                         >

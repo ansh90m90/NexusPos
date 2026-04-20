@@ -19,12 +19,13 @@ const NavItem: React.FC<{
   iconName: string;
   currentPage: Page;
   onNavigate: (page: Page) => void;
-}> = ({ page, label, iconName, currentPage, onNavigate }) => {
+  isMobile?: boolean;
+}> = ({ page, label, iconName, currentPage, onNavigate, isMobile }) => {
     const isActive = currentPage === page;
     return (
-        <Tooltip content={label} position="right">
+        <Tooltip content={label} position={isMobile ? "top" : "right"}>
             <button
-                data-tutorial-id={`nav-${page}`}
+                data-tutorial-id={!isMobile ? `nav-${page}` : `mobile-nav-${page}`}
                 onClick={(e) => {
                     e.preventDefault();
                     onNavigate(page);
@@ -36,7 +37,7 @@ const NavItem: React.FC<{
                 }`}
             >
                 <Icon name={iconName} size={24} />
-                {isActive && (
+                {isActive && !isMobile && (
                     <motion.div 
                         layoutId="activeNav"
                         className="absolute -left-4 top-1/2 -translate-y-1/2 h-8 w-1.5 bg-primary-500 rounded-r-full hidden md:block"
@@ -73,24 +74,43 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, employee
     (item.page !== 'Customers' || appSettings.enableCreditSystem)
   );
 
+  const dashboardItem = accessibleNavItems.find(item => item.page === 'Dashboard');
+  const otherNavItems = accessibleNavItems.filter(item => item.page !== 'Dashboard');
+
   const MAX_VISIBLE_ICONS_MOBILE = 4;
   const visibleItems = accessibleNavItems.slice(0, MAX_VISIBLE_ICONS_MOBILE);
   const hiddenItems = accessibleNavItems.slice(MAX_VISIBLE_ICONS_MOBILE);
 
   return (
-      <nav id="sidebar" className="fixed bottom-0 left-0 z-40 w-full h-20 bg-theme-surface/80 backdrop-blur-xl border-t border-theme-main md:top-0 md:left-0 md:h-screen md:w-24 md:border-t-0 md:border-r transition-all duration-300" aria-label="Sidebar">
-        <div className="flex flex-row items-center justify-around h-full md:flex-col md:justify-start md:py-8 md:gap-8">
-            <button 
-                onClick={(e) => { e.preventDefault(); handleNavigation('Dashboard'); }} 
-                className="hidden md:flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-xl shadow-primary-500/20 hover:scale-105 transition-transform" 
-                title={appSettings.shopName}
-            >
-               <Icon name="logo" size={32} className="text-white" />
-            </button>
+      <nav id="sidebar" className="fixed bottom-0 left-0 z-40 w-full h-20 bg-theme-surface/80 backdrop-blur-xl border-t border-theme-main md:top-0 md:left-0 md:h-screen md:w-24 md:border-t-0 md:border-r-0 transition-all duration-300" aria-label="Sidebar">
+        <div className="flex flex-row items-center justify-around h-full md:flex-col md:justify-start md:py-6 md:gap-4">
+            
+            {/* Logo and Dashboard Combined Container (Desktop) */}
+            <div className="hidden md:flex flex-col items-center gap-4 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-sm">
+                <button 
+                    onClick={(e) => { e.preventDefault(); handleNavigation('Dashboard'); }} 
+                    className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 shadow-xl shadow-primary-500/20 hover:scale-105 transition-transform" 
+                    title={appSettings.shopName}
+                >
+                    <Icon name="logo" size={32} className="text-white" />
+                </button>
+                
+                {dashboardItem && (
+                    <NavItem
+                        page={dashboardItem.page}
+                        label={dashboardItem.label}
+                        iconName={dashboardItem.iconName}
+                        currentPage={currentPage}
+                        onNavigate={handleNavigation}
+                    />
+                )}
+            </div>
+
+            <div className="h-px w-12 bg-slate-100 dark:bg-slate-800 hidden md:block my-2" />
             
             <ul className="flex flex-row items-center justify-around w-full md:flex-col md:gap-4">
-                 {/* Desktop: Show all items */}
-                 {accessibleNavItems.map((item) => (
+                 {/* Desktop: Show other items */}
+                 {otherNavItems.map((item) => (
                     <li key={item.page} className="hidden md:block">
                         <NavItem
                             page={item.page}
@@ -111,6 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, employee
                             iconName={item.iconName}
                             currentPage={currentPage}
                             onNavigate={handleNavigation}
+                            isMobile
                         />
                     </li>
                  ))}

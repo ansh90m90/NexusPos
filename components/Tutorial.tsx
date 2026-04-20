@@ -32,8 +32,14 @@ const Tutorial: React.FC<TutorialProps> = ({ steps, isTutorialActive, onClose, c
         let rafId: number;
 
         const updatePositions = () => {
-            const targetElement = step.elementSelector ? document.querySelector(step.elementSelector) : null;
+            let targetElement = step.elementSelector ? document.querySelector(step.elementSelector) : null;
             
+            // On mobile, if a nav item is not found, try the mobile-nav- prefix
+            if (!targetElement && step.elementSelector?.includes('nav-')) {
+                const mobileSelector = step.elementSelector.replace('nav-', 'mobile-nav-');
+                targetElement = document.querySelector(mobileSelector);
+            }
+
             if (targetElement) {
                 const targetRect = targetElement.getBoundingClientRect();
                 setHighlightStyle({

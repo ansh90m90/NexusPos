@@ -315,7 +315,7 @@ const CartView: React.FC<{
     }, [cart, promotions, products, extraCharges]);
 
     return (
-        <div className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/50 dark:shadow-none h-full flex flex-col overflow-hidden">
+        <div data-tutorial-id="pos-cart" className="bg-white/80 dark:bg-slate-900/60 backdrop-blur-xl rounded-[2rem] border border-slate-200/60 dark:border-slate-800/60 shadow-2xl shadow-slate-200/50 dark:shadow-none h-full flex flex-col overflow-hidden">
             <div className="p-6 border-b border-slate-100 dark:border-slate-800/50">
                 <div className="flex justify-between items-center mb-6">
                     <div>
@@ -690,7 +690,7 @@ const CustomerSelectModal: React.FC<{
                         </div>
 
                         <div className="flex-grow overflow-y-auto p-2 custom-scrollbar">
-                            {search !== '' && !customers.some(c => c.name.toLowerCase() === search.toLowerCase()) && (
+                            {search !== '' && !customers.some(c => c.name && c.name.toLowerCase() === search.toLowerCase()) && (
                                 <div 
                                     onClick={() => {
                                         setNewName(search);

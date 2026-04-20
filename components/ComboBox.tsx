@@ -7,30 +7,35 @@ interface ComboBoxProps {
     label: string;
     value: string;
     onChange: (value: string) => void;
+    onSelect?: (value: string) => void;
     options: string[];
     placeholder?: string;
     required?: boolean;
     error?: string;
     helperText?: string;
+    allowCustom?: boolean;
 }
 
 const ComboBox: React.FC<ComboBoxProps> = ({ 
     label, 
     value, 
     onChange, 
+    onSelect,
     options, 
     placeholder, 
     required,
     error,
-    helperText
+    helperText,
+    allowCustom
 }) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [searchTerm, setSearchTerm] = useState(value);
+    const [searchTerm, setSearchTerm] = useState(value || '');
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        setSearchTerm(value);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setSearchTerm(value || '');
     }, [value]);
 
     useEffect(() => {
@@ -43,11 +48,11 @@ const ComboBox: React.FC<ComboBoxProps> = ({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredOptions = options.filter(option => 
-        fuzzySearch(searchTerm, option)
+    const filteredOptions = (options || []).filter(option => 
+        fuzzySearch(searchTerm || '', option || '')
     );
 
-    const isNewValue = searchTerm.trim() !== '' && !options.some(opt => opt.toLowerCase() === searchTerm.toLowerCase());
+    const isNewValue = (searchTerm || '').trim() !== '' && !(options || []).some(opt => opt && opt.toLowerCase() === (searchTerm || '').toLowerCase());
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
@@ -59,7 +64,27 @@ const ComboBox: React.FC<ComboBoxProps> = ({
     const handleOptionSelect = (option: string) => {
         setSearchTerm(option);
         onChange(option);
+        if (onSelect) {
+            onSelect(option);
+        }
         setIsOpen(false);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const trimmed = searchTerm.trim();
+            if (trimmed !== '') {
+                // If it's a known option, select it correctly (case-insensitive find)
+                const exactMatch = options.find(opt => opt && opt.toLowerCase() === trimmed.toLowerCase());
+                const finalValue = exactMatch || (allowCustom ? trimmed : '');
+                if (finalValue) {
+                    handleOptionSelect(finalValue);
+                }
+            }
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+        }
     };
 
     return (
@@ -71,6 +96,7 @@ const ComboBox: React.FC<ComboBoxProps> = ({
                     type="text"
                     value={searchTerm}
                     onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
                     onFocus={() => setIsOpen(true)}
                     placeholder={placeholder}
                     className={`w-full p-3 rounded-xl bg-theme-main text-theme-main border transition-all focus:ring-2 focus:ring-primary-500 focus:outline-none ${
@@ -114,7 +140,7 @@ const ComboBox: React.FC<ComboBoxProps> = ({
             {error ? (
                 <p className="text-[10px] text-red-500 mt-1 font-medium">{error}</p>
             ) : isNewValue ? (
-                <p className="text-[10px] text-amber-600 mt-1 font-medium italic">This is a new {label.toLowerCase()} and will be created.</p>
+                <p className="text-[10px] text-amber-600 mt-1 font-medium italic">This is a new {(label || 'entry').toLowerCase()} and will be created.</p>
             ) : helperText ? (
                 <p className="text-[10px] text-theme-muted mt-1">{helperText}</p>
             ) : null}

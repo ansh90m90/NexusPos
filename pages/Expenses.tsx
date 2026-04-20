@@ -53,74 +53,99 @@ const ExpensePanel: React.FC<{
             title={isEditing ? 'Edit Expense' : 'Add New Expense'}
             onClose={onClose}
             footer={
-                <>
-                    <button type="button" onClick={onClose} className="px-6 py-2.5 rounded-xl bg-theme-main text-theme-main hover:bg-theme-surface border border-theme-main transition font-medium">Cancel</button>
-                    <button type="submit" form="expense-form" className="px-6 py-2.5 rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-colors shadow-sm font-medium">Save Expense</button>
-                </>
+                <div className="flex gap-4 w-full">
+                    <button type="button" onClick={onClose} className="flex-1 px-6 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-black uppercase tracking-widest text-xs">Cancel</button>
+                    <button type="submit" form="expense-form" className="flex-2 px-8 py-4 rounded-2xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 font-black uppercase tracking-widest text-xs">Save Expense</button>
+                </div>
             }
         >
-            <form id="expense-form" onSubmit={handleSubmit} className="space-y-5">
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Description</label>
-                    <input name="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Office Supplies" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
-                    <p className="text-xs text-theme-muted mt-2">A brief description of the expense.</p>
+            <form id="expense-form" onSubmit={handleSubmit} className="space-y-8">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Description *</label>
+                    <input name="description" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Office Supplies" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
                 </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Amount</label>
-                    <input name="amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })} placeholder="e.g., 150.00" className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
-                    <p className="text-xs text-theme-muted mt-2">The total amount spent.</p>
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Category</label>
-                    <select name="category" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required>
-                        {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                    <p className="text-xs text-theme-muted mt-2">Categorize the expense for reporting.</p>
-                </div>
-                <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Date</label>
-                    <input name="date" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all" required />
-                    <p className="text-xs text-theme-muted mt-2">The date the expense occurred.</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-theme-main mb-1">Frequency</label>
-                        <select name="frequency" value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value as any })} className="w-full p-3 rounded-xl bg-theme-main text-theme-main border border-theme-main focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all">
-                            <option value="one-time">One-time</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Amount (₹) *</label>
+                        <input name="amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })} placeholder="0.00" className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Category *</label>
+                        <select name="category" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required>
+                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                     </div>
-                    <div className="flex items-center gap-2 pt-8">
-                        <input 
-                            type="checkbox" 
-                            id="isRecurring" 
-                            checked={formData.isRecurring} 
-                            onChange={e => setFormData({ ...formData, isRecurring: e.target.checked })}
-                            className="w-5 h-5 rounded border-theme-main text-primary-500 focus:ring-primary-500"
-                        />
-                        <label htmlFor="isRecurring" className="text-sm font-semibold text-theme-main">Recurring Expense</label>
+                </div>
+
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Date *</label>
+                    <input name="date" type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold" required />
+                </div>
+
+                <div className="pt-8 border-t border-slate-100 dark:border-slate-800 space-y-6">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Recurrence Options</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Frequency</label>
+                            <select name="frequency" value={formData.frequency} onChange={e => setFormData({ ...formData, frequency: e.target.value as any })} className="w-full p-4 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold">
+                                <option value="one-time">One-time</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 self-end h-[60px]">
+                            <input 
+                                type="checkbox" 
+                                id="isRecurring" 
+                                checked={formData.isRecurring} 
+                                onChange={e => setFormData({ ...formData, isRecurring: e.target.checked })}
+                                className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 text-primary-500 focus:ring-primary-500 cursor-pointer"
+                            />
+                            <label htmlFor="isRecurring" className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest cursor-pointer">Recurring Expense</label>
+                        </div>
                     </div>
                 </div>
                 
-                 <div>
-                    <label className="block text-sm font-semibold text-theme-main mb-1">Attachment (Optional)</label>
-                    <p className="text-xs text-theme-muted mb-2">Upload a receipt or invoice image.</p>
+                 <div className="pt-8 border-t border-slate-100 dark:border-slate-800 space-y-4">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Attachment (Optional)</h4>
                     {attachment ? (
-                        <div className="flex items-center gap-3 p-3 border rounded-xl border-theme-main bg-theme-main">
-                            <img src={`data:${attachment.mimeType};base64,${attachment.data}`} alt="Receipt thumbnail" className="w-16 h-16 object-cover rounded-lg shadow-sm" />
-                            <div className="flex-grow">
-                                <p className="text-sm font-semibold text-theme-main">Receipt Attached</p>
-                                <p className="text-xs text-theme-muted">{attachment.mimeType}</p>
+                        <div className="flex items-center gap-4 p-4 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 transition-all group">
+                            <div className="relative overflow-hidden rounded-[1.5rem] w-20 h-20 shadow-md">
+                                <img src={`data:${attachment.mimeType};base64,${attachment.data}`} alt="Receipt" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                     <button type="button" onClick={() => setAttachment(null)} className="p-2 bg-rose-500 text-white rounded-xl shadow-lg">
+                                        <Icon name="delete" className="w-4 h-4"/>
+                                    </button>
+                                </div>
                             </div>
-                            <button type="button" onClick={() => setAttachment(null)} className="p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-full transition-colors">
+                            <div className="flex-grow">
+                                <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Receipt Attached</p>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{attachment.mimeType}</p>
+                            </div>
+                            <button type="button" onClick={() => setAttachment(null)} className="p-3 text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-colors md:mr-2">
                                 <Icon name="delete" className="w-5 h-5"/>
                             </button>
                         </div>
                     ) : (
-                        <input type="file" onChange={handleFileChange} accept="image/*" className="w-full text-sm text-theme-muted file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-theme-main file:text-theme-main hover:file:bg-theme-surface border border-theme-main rounded-xl cursor-pointer transition-all" />
+                        <div className="relative group">
+                            <input 
+                                type="file" 
+                                onChange={handleFileChange} 
+                                accept="image/*" 
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+                            />
+                            <div className="w-full py-10 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-3 group-hover:border-primary-500/50 group-hover:bg-primary-500/[0.02] transition-all">
+                                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-400 group-hover:text-primary-500 transition-colors">
+                                    <Icon name="upload" className="w-6 h-6"/>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Click to upload receipt</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">PNG, JPG up to 5MB</p>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
             </form>

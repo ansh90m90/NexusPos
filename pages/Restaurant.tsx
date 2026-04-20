@@ -180,8 +180,10 @@ const DishModal: React.FC<{
                                             ))}
                                         </div>
                                         <ComboBox
+                                            label="Dish Tag"
                                             value=""
-                                            onChange={(val) => {
+                                            onChange={() => {}}
+                                            onSelect={(val) => {
                                                 if (val && !formData.tags?.includes(val)) {
                                                     setFormData(prev => ({ ...prev, tags: [...(prev.tags || []), val] }));
                                                 }

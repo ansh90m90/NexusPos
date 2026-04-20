@@ -251,6 +251,7 @@ const ReceiveStockModal: React.FC<{
                             <div className="space-y-2">
                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Supplier</label>
                                 <ComboBox
+                                    label="Supplier"
                                     value={supplierName}
                                     onChange={(val) => setSupplierName(val)}
                                     options={suppliers.map(s => s.name)}
@@ -350,40 +351,41 @@ const ReceiveStockModal: React.FC<{
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-end">
                                             <div className="md:col-span-3 space-y-2">
                                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Product</label>
-                                                <select 
-                                                    value={item.variantId} 
-                                                    onChange={e => handleItemChange(index, 'variantId', e.target.value)} 
-                                                    className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-xs font-bold"
-                                                >
-                                                    <option value={0}>Select existing product</option>
-                                                    {products.map(p => (
-                                                        <optgroup key={p.id} label={p.name}>
-                                                            {p.variants.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
-                                                        </optgroup>
-                                                    ))}
-                                                </select>
-                                                {item.variantId === 0 && (
-                                                    <input 
-                                                        type="text" 
-                                                        value={item.productName || ''} 
-                                                        onChange={e => handleItemChange(index, 'productName', e.target.value)} 
-                                                        placeholder="New Product Name" 
-                                                        className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-xs font-bold" 
-                                                        required 
-                                                    />
-                                                )}
+                                                <ComboBox
+                                                    label="Product"
+                                                    value={item.variantId ? products.flatMap(p => p.variants).find(v => v.id === item.variantId)?.name || '' : item.productName || ''}
+                                                    onSelect={(val) => {
+                                                        const allVariantsWithProduct = products.flatMap(p => p.variants.map(v => ({...v, productName: p.name})));
+                                                        const selected = allVariantsWithProduct.find(v => `${v.productName} - ${v.name}` === val);
+                                                        if (selected) {
+                                                            handleItemChange(index, 'variantId', selected.id);
+                                                        } else {
+                                                            handleItemChange(index, 'variantId', 0);
+                                                            handleItemChange(index, 'productName', val);
+                                                        }
+                                                    }}
+                                                    onChange={(val) => {
+                                                        if (!products.flatMap(p => p.variants).some(v => v.name === val)) {
+                                                            handleItemChange(index, 'variantId', 0);
+                                                            handleItemChange(index, 'productName', val);
+                                                        }
+                                                    }}
+                                                    options={products.flatMap(p => p.variants.map(v => `${p.name} - ${v.name}`))}
+                                                    placeholder="Search or type name"
+                                                    allowCustom={true}
+                                                />
                                             </div>
-                                             <div className="md:col-span-2 space-y-2">
+                                             <div className="md:col-span-1 space-y-2">
                                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Batch No.</label>
                                                 <input 
                                                     type="text" 
                                                     value={batches[index]?.batchNumber || ''} 
                                                     onChange={e => handleBatchChange(index, 'batchNumber', e.target.value)} 
                                                     className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-xs font-bold" 
-                                                    placeholder="Optional" 
+                                                    placeholder="Batch" 
                                                 />
                                             </div>
-                                            <div className="md:col-span-2 space-y-2">
+                                            <div className="md:col-span-1 space-y-2">
                                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Expiry</label>
                                                 <input 
                                                     type="date" 
@@ -409,6 +411,16 @@ const ReceiveStockModal: React.FC<{
                                                     step="0.01" 
                                                     value={item.netRate} 
                                                     onChange={e => handleItemChange(index, 'netRate', e.target.value)} 
+                                                    className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-xs font-bold" 
+                                                />
+                                            </div>
+                                            <div className="md:col-span-2 space-y-2">
+                                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">MRP</label>
+                                                <input 
+                                                    type="number" 
+                                                    step="0.01" 
+                                                    value={item.mrp} 
+                                                    onChange={e => handleItemChange(index, 'mrp', e.target.value)} 
                                                     className="w-full p-3.5 rounded-2xl bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none transition-all text-xs font-bold" 
                                                 />
                                             </div>
@@ -681,6 +693,7 @@ const Procurement: React.FC<ProcurementProps> = ({ products, suppliers, purchase
                  </div>
                  <Tooltip content="Create a new purchase order" position="bottom">
                      <button 
+                        data-tutorial-id="new-purchase-button"
                         onClick={() => setModalState({ type: 'add_purchase', data: null })}
                         className="px-8 py-4 bg-primary-500 text-white rounded-2xl hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25 flex items-center gap-3 font-black uppercase tracking-widest text-xs"
                      >

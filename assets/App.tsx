@@ -38,14 +38,17 @@ import LiveMenu from '../LiveMenu';
 import ErrorBoundary from '../components/ErrorBoundary';
 
 const tutorialSteps: TutorialStep[] = [
-    { elementSelector: null, title: 'Welcome to the Hub!', content: "Let's take a quick tour of the main features to get you started.", page: 'Dashboard' },
-    { elementSelector: '#sidebar', title: 'Navigation Sidebar', content: 'This is your main navigation menu. You can access all major sections of the app from here.', page: 'Dashboard' },
-    { elementSelector: '[data-tutorial-id="nav-POS"]', title: 'Point of Sale (POS)', content: 'This is where you will conduct most of your sales. Let\'s go there now.', page: 'Dashboard' },
-    { elementSelector: '[data-tutorial-id="pos-product-grid"]', title: 'Product Grid', content: 'Click on any product or dish here to add it to the cart on the right.', page: 'POS' },
-    { elementSelector: '[data-tutorial-id="pos-cart"]', title: 'The Cart', content: 'Items you select will appear in the cart. On mobile, tap this summary bar to open it. On desktop, the cart is on the right. Here you can adjust quantities and see the total bill.', page: 'POS' },
-    { elementSelector: '[data-tutorial-id="notifications-button"]', title: 'Notifications', content: 'Check here for important alerts like low stock or expiring items.', page: 'Dashboard' },
-    { elementSelector: '[data-tutorial-id="nav-Settings"]', title: 'Settings', content: 'You can configure all aspects of your shop, manage staff, and access this tutorial again from the Settings page.', page: 'Dashboard' },
-    { elementSelector: null, title: 'Tour Complete!', content: "You're all set! Feel free to explore. You can restart this tutorial anytime from Settings > Help & Support.", page: 'Settings' }
+    { elementSelector: null, title: 'Welcome to the Shop Hub!', content: "Let's take a quick tour of how to manage your business effectively. We'll start by setting up your ecosystem.", page: 'Dashboard' },
+    { elementSelector: '[data-tutorial-id="nav-Suppliers"]', title: 'Managing Suppliers', content: 'First, let\'s manage the people you buy from. Click here to go to the Suppliers section.', page: 'Dashboard' },
+    { elementSelector: '[data-tutorial-id="add-supplier-button"]', title: 'Add a Supplier', content: 'Use this button to add a new supplier. You can even pull business details automatically using their GSTIN!', page: 'Suppliers' },
+    { elementSelector: '[data-tutorial-id="nav-Customers"]', title: 'Managing Customers', content: 'Now, let\'s look at your customers. Navigate here to maintain your client base and their credit logs.', page: 'Suppliers' },
+    { elementSelector: '[data-tutorial-id="add-customer-button"]', title: 'Add a Customer', content: 'Register your regular customers here to track their purchases and send them automated SMS receipts.', page: 'Customers' },
+    { elementSelector: '[data-tutorial-id="nav-Purchases"]', title: 'Inventory Inward', content: 'Stocking up is easy. Go to the Purchases section to receive new inventory from your suppliers.', page: 'Customers' },
+    { elementSelector: '[data-tutorial-id="new-purchase-button"]', title: 'Receive Stock', content: 'Click here to record a new purchase. This will automatically update your inventory counts and batch details.', page: 'Purchases' },
+    { elementSelector: '[data-tutorial-id="nav-POS"]', title: 'Selling (POS)', content: 'The heart of your shop! Let\'s go to the Point of Sale to make your first sale.', page: 'Purchases' },
+    { elementSelector: '[data-tutorial-id="pos-product-grid"]', title: 'Quick Selling', content: 'Just click on a product to add it to the cart. You can search by name or scan barcodes too.', page: 'POS' },
+    { elementSelector: '[data-tutorial-id="pos-cart"]', title: 'Checkout', content: 'Finalize the sale here. You can apply discounts, select customers for credit, and print professional receipts.', page: 'POS' },
+    { elementSelector: null, title: 'All Done!', content: "Tutorial completed! All data used during this tour will now be reset so you can start fresh with your real business data.", page: 'Dashboard' }
 ];
 
 
@@ -80,6 +83,26 @@ const AccountApp: React.FC<{
   const [isTutorialActive, setTutorialActive] = useState(!appSettings.tutorialCompleted);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [mainScrollTop, setMainScrollTop] = useState(0);
+  const tutorialSnapshotRef = useRef<AccountState | null>(null);
+
+  useEffect(() => {
+    if (isTutorialActive && !tutorialSnapshotRef.current) {
+        tutorialSnapshotRef.current = JSON.parse(JSON.stringify(accountState));
+    }
+  }, [isTutorialActive, accountState]);
+
+  const handleTutorialComplete = () => {
+    setTutorialActive(false);
+    handleUpdateAppSettings(s => ({...s, tutorialCompleted: true}));
+    if (tutorialSnapshotRef.current) {
+        // We use the existing IMPORT_ACCOUNT_STATE to revert everything back to the snapshot
+        dispatchOperation('IMPORT_ACCOUNT_STATE', { newState: tutorialSnapshotRef.current });
+        tutorialSnapshotRef.current = null;
+        toast.showToast("Tutorial data has been cleared.", "info");
+    }
+    setCurrentPage('Dashboard');
+  };
+
   const mainContentRef = useRef<HTMLElement>(null);
   const toast = useToast();
   const accentColorClasses: Record<AccentColor, string> = {
@@ -258,7 +281,7 @@ const AccountApp: React.FC<{
         {isCommandPaletteOpen && <CommandPalette isOpen={isCommandPaletteOpen} onClose={closeCommandPalette} items={commandPaletteItems} setCurrentPage={setCurrentPage} />}
         {modalState.type === 'data_transfer' && <DataTransferModal mode="full" onClose={() => setModalState({ type: null, data: null })} onImport={handleAccountImport} currentAccountData={JSON.stringify(accountState)} />}
         {activeActivity && <ActivityDetailModal activity={activeActivity} accountState={accountState} onClose={() => setActiveActivity(null)} />}
-        <Tutorial steps={tutorialSteps} isTutorialActive={isTutorialActive} onClose={() => { setTutorialActive(false); handleUpdateAppSettings(s => ({...s, tutorialCompleted: true})); }} currentStep={tutorialStep} onNext={handleNextTutorialStep} onPrev={() => setTutorialStep(s => s - 1)} mainScrollTop={mainScrollTop} />
+        <Tutorial steps={tutorialSteps} isTutorialActive={isTutorialActive} onClose={handleTutorialComplete} currentStep={tutorialStep} onNext={handleNextTutorialStep} onPrev={() => setTutorialStep(s => s - 1)} mainScrollTop={mainScrollTop} />
       </div>
     </ThemeContext.Provider>
   );

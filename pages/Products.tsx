@@ -59,6 +59,207 @@ const SortIndicator: React.FC<{ direction: SortDirection | null }> = ({ directio
         </motion.span>
     );
 };
+
+const MasterDataView: React.FC<{
+    products: Product[];
+    onSaveProduct: (product: Partial<Product>) => void;
+}> = ({ products, onSaveProduct }) => {
+    const [activeSection, setActiveSection] = useState<'subCategory' | 'hsnCode' | 'tags'>('subCategory');
+    const [editValue, setEditValue] = useState<{ original: string, current: string } | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+    const toast = useToast();
+
+    const data = useMemo(() => {
+        const subCategories = new Set<string>();
+        const hsnCodes = new Set<string>();
+        const tags = new Set<string>();
+
+        products.forEach(p => {
+            if (p.subCategory) subCategories.add(p.subCategory);
+            if (p.hsnCode) hsnCodes.add(p.hsnCode);
+            if (p.tags) p.tags.forEach(t => tags.add(t));
+            p.variants.forEach(v => {
+                if (v.tags) v.tags.forEach(t => tags.add(t));
+            });
+        });
+
+        return {
+            subCategory: Array.from(subCategories).sort(),
+            hsnCode: Array.from(hsnCodes).sort(),
+            tags: Array.from(tags).sort()
+        };
+    }, [products]);
+
+    const handleUpdate = (newValue: string) => {
+        if (!editValue || newValue === editValue.original) {
+            setEditValue(null);
+            return;
+        }
+
+        // Apply global update to all products matching the original value
+        products.forEach(p => {
+            let updated = false;
+            const productUpdate: Partial<Product> = { id: p.id };
+
+            if (activeSection === 'subCategory' && p.subCategory === editValue.original) {
+                productUpdate.subCategory = newValue;
+                updated = true;
+            } else if (activeSection === 'hsnCode' && p.hsnCode === editValue.original) {
+                productUpdate.hsnCode = newValue;
+                updated = true;
+            } else if (activeSection === 'tags') {
+                if (p.tags?.includes(editValue.original)) {
+                    productUpdate.tags = p.tags.map(t => t === editValue.original ? newValue : t);
+                    updated = true;
+                }
+                const updatedVariants = p.variants.map(v => {
+                    if (v.tags?.includes(editValue.original)) {
+                        return { ...v, tags: v.tags.map(t => t === editValue.original ? newValue : t) };
+                    }
+                    return v;
+                });
+                if (JSON.stringify(updatedVariants) !== JSON.stringify(p.variants)) {
+                    productUpdate.variants = updatedVariants;
+                    updated = true;
+                }
+            }
+
+            if (updated) {
+                onSaveProduct(productUpdate);
+            }
+        });
+
+        toast.showToast(`Updated ${activeSection} globally`, 'success');
+        setEditValue(null);
+    };
+
+    const handleDelete = (value: string) => {
+        products.forEach(p => {
+            let updated = false;
+            const productUpdate: Partial<Product> = { id: p.id };
+
+            if (activeSection === 'subCategory' && p.subCategory === value) {
+                productUpdate.subCategory = '';
+                updated = true;
+            } else if (activeSection === 'hsnCode' && p.hsnCode === value) {
+                productUpdate.hsnCode = '';
+                updated = true;
+            } else if (activeSection === 'tags') {
+                if (p.tags?.includes(value)) {
+                    productUpdate.tags = p.tags.filter(t => t !== value);
+                    updated = true;
+                }
+                const updatedVariants = p.variants.map(v => {
+                    if (v.tags?.includes(value)) {
+                        return { ...v, tags: v.tags.filter(t => t !== value) };
+                    }
+                    return v;
+                });
+                if (JSON.stringify(updatedVariants) !== JSON.stringify(p.variants)) {
+                    productUpdate.variants = updatedVariants;
+                    updated = true;
+                }
+            }
+
+            if (updated) {
+                onSaveProduct(productUpdate);
+            }
+        });
+
+        toast.showToast(`Deleted ${value} from all products`, 'success');
+        setDeleteConfirm(null);
+    };
+
+    const sections = [
+        { id: 'subCategory', label: 'Sub-Categories', icon: 'category' },
+        { id: 'hsnCode', label: 'HSN Codes', icon: 'hsn' },
+        { id: 'tags', label: 'Tags', icon: 'tag' },
+    ] as const;
+
+    return (
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+                {sections.map(s => (
+                    <button
+                        key={s.id}
+                        onClick={() => setActiveSection(s.id)}
+                        className={`flex items-center gap-3 px-6 py-3 rounded-2xl transition-all font-bold whitespace-nowrap ${activeSection === s.id ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'bg-white dark:bg-slate-900/40 text-slate-500 hover:text-slate-900 border border-slate-200 dark:border-slate-800'}`}
+                    >
+                        <Icon name={s.icon as any} size={18} />
+                        <span className="text-xs uppercase tracking-widest">{s.label}</span>
+                    </button>
+                ))}
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 p-8 shadow-xl shadow-slate-200/20 dark:shadow-none">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {data[activeSection].map((val, idx) => (
+                        <div key={idx} className="group relative bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50 hover:border-primary-500/30 transition-all flex justify-between items-center overflow-hidden">
+                            <span className="font-bold text-slate-900 dark:text-white truncate flex-1">{val}</span>
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                <button
+                                    onClick={() => setEditValue({ original: val, current: val })}
+                                    className="p-2 text-slate-400 hover:text-primary-500 transition-all rounded-lg hover:bg-white dark:hover:bg-slate-700"
+                                    title="Edit Globally"
+                                >
+                                    <Icon name="edit" size={14} />
+                                </button>
+                                <button
+                                    onClick={() => setDeleteConfirm(val)}
+                                    className="p-2 text-slate-400 hover:text-rose-500 transition-all rounded-lg hover:bg-white dark:hover:bg-slate-700"
+                                    title="Delete Globally"
+                                >
+                                    <Icon name="delete" size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                    {data[activeSection].length === 0 && (
+                        <div className="col-span-full py-12 text-center">
+                            <Icon name="info" size={32} className="mx-auto text-slate-300 mb-3" />
+                            <p className="text-slate-400 font-medium italic">No {activeSection} found in your inventory.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {editValue && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-2xl border border-slate-200 dark:border-slate-800 max-w-md w-full">
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Rename Global Entry</h3>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 px-1">Updating all items with this {activeSection}</p>
+                        
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Value</label>
+                                <input
+                                    autoFocus
+                                    value={editValue.current}
+                                    onChange={e => setEditValue({ ...editValue, current: e.target.value })}
+                                    onKeyDown={e => e.key === 'Enter' && handleUpdate(editValue.current)}
+                                    className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 focus:ring-4 focus:ring-primary-500/10 focus:outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button onClick={() => setEditValue(null)} className="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold uppercase tracking-widest text-[10px] hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancel</button>
+                                <button onClick={() => handleUpdate(editValue.current)} className="flex-1 py-4 rounded-2xl bg-primary-500 text-white font-bold uppercase tracking-widest text-[10px] hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/25">Save Changes</button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            <ConfirmationModal
+                isOpen={!!deleteConfirm}
+                title={`Delete ${activeSection} Globally`}
+                message={`Are you sure you want to remove "${deleteConfirm}" from ALL products and variants? This action cannot be undone.`}
+                onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+                onCancel={() => setDeleteConfirm(null)}
+                confirmText="Yes, Remove All"
+            />
+        </div>
+    );
+};
 // #endregion
 
 // #region Modals
@@ -218,7 +419,10 @@ const ProductPanel: React.FC<{
                 </div>
                 
                 <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Variants & Pricing</h4>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Icon name="tag" size={14} className="text-primary-500" />
+                        Variants & Pricing
+                    </h4>
                     <div className="space-y-6">
                         {isPerUnit ? (
                              <div className="p-6 rounded-[2rem] bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
@@ -272,8 +476,10 @@ const ProductPanel: React.FC<{
                                             ))}
                                         </div>
                                         <ComboBox
+                                            label="Variant Tag"
                                             value=""
-                                            onChange={(val) => {
+                                            onChange={() => {}}
+                                            onSelect={(val) => {
                                                 if (val && !variant.tags?.includes(val)) {
                                                     handleVariantChange(index, 'tags', [...(variant.tags || []), val]);
                                                 }
@@ -321,7 +527,10 @@ const ProductPanel: React.FC<{
                 </div>
 
                 <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Additional Details</h4>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Icon name="more" size={14} className="text-primary-500" />
+                        Additional Details
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <ComboBox
                             label="Sub-Category"
@@ -348,7 +557,10 @@ const ProductPanel: React.FC<{
                 </div>
 
                 <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
-                    <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Product Tags</h4>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                        <Icon name="tag" size={14} className="text-primary-500" />
+                        Product Tags
+                    </h4>
                     <div className="space-y-4">
                         <div className="flex flex-wrap gap-2">
                             {formData.tags?.map((tag, i) => (
@@ -771,39 +983,53 @@ const Products: React.FC<ProductsProps> = ({
                     </button>
                 </Tooltip>
             )}
+            <Tooltip content="Manage sub-categories, HSN codes, and tags" position="bottom">
+                <button 
+                    onClick={() => setActiveTab('master')} 
+                    className={`px-8 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all duration-300 ${activeTab === 'master' ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/25' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}
+                >
+                    Master Lists
+                </button>
+            </Tooltip>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1 group">
-          <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary-500 transition-colors">
-            <Icon name="search" size={20} />
-          </div>
-          <input 
-            type="text" 
-            value={searchTerm} 
-            onChange={e => setSearchTerm(e.target.value)} 
-            placeholder={`Search ${activeTab === 'store' ? 'Store Items' : 'Rashan'}...`} 
-            className="w-full pl-14 pr-8 py-5 rounded-[2rem] bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl text-slate-900 dark:text-white border border-slate-200/60 dark:border-slate-800/60 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all shadow-xl shadow-slate-200/30 dark:shadow-none font-bold" 
-          />
-        </div>
-        <Tooltip content={`Add a new ${activeTab === 'store' ? 'Store Item' : 'Rashan Item'}`} position="bottom">
-            <button 
-                onClick={() => setModalState({ type: 'add_product', data: null })} 
-                className="group flex items-center gap-3 px-10 py-5 rounded-[2rem] bg-primary-500 text-white hover:bg-primary-600 font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0"
-            >
-                <Icon name="plus" size={18} className="group-hover:rotate-90 transition-transform duration-300" />
-                Add Product
-            </button>
-        </Tooltip>
-      </div>
+      {activeTab === 'master' ? (
+          <MasterDataView products={products} onSaveProduct={setProducts} />
+      ) : (
+          <>
+            <div className="flex flex-col md:flex-row gap-4">
+                <div className="relative flex-1 group">
+                <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary-500 transition-colors">
+                    <Icon name="search" size={20} />
+                </div>
+                <input 
+                    type="text" 
+                    value={searchTerm} 
+                    onChange={e => setSearchTerm(e.target.value)} 
+                    placeholder={`Search ${activeTab === 'store' ? 'Store Items' : 'Rashan'}...`} 
+                    className="w-full pl-14 pr-8 py-5 rounded-[2rem] bg-white/80 dark:bg-slate-900/40 backdrop-blur-xl text-slate-900 dark:text-white border border-slate-200/60 dark:border-slate-800/60 focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 focus:outline-none transition-all shadow-xl shadow-slate-200/30 dark:shadow-none font-bold" 
+                />
+                </div>
+                <Tooltip content={`Add a new ${activeTab === 'store' ? 'Store Item' : 'Rashan Item'}`} position="bottom">
+                    <button 
+                        onClick={() => setModalState({ type: 'add_product', data: null })} 
+                        className="group flex items-center gap-3 px-10 py-5 rounded-[2rem] bg-primary-500 text-white hover:bg-primary-600 font-black uppercase tracking-widest text-xs transition-all shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0"
+                    >
+                        <Icon name="plus" size={18} className="group-hover:rotate-90 transition-transform duration-300" />
+                        Add Product
+                    </button>
+                </Tooltip>
+            </div>
 
-      <ProductList
-        products={filteredProducts}
-        searchTerm={searchTerm}
-        setModalState={setModalState}
-        onDeleteProduct={onDeleteProduct}
-      />
+            <ProductList
+                products={filteredProducts}
+                searchTerm={searchTerm}
+                setModalState={setModalState}
+                onDeleteProduct={onDeleteProduct}
+            />
+          </>
+      )}
 
       {(modalState.type === 'add_product' || modalState.type === 'edit_product') && (
         <ProductPanel

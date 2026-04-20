@@ -2,7 +2,7 @@ import { createContext } from 'react';
 
 export type Page = 'Dashboard' | 'POS' | 'Products' | 'Restaurant' | 'Purchases' | 'Customers' | 'Suppliers' | 'Reports' | 'Settings' | 'MyAccount' | 'Expenses' | 'Marketing';
 export type EmployeeRole = 'Admin' | 'Cashier';
-export type ProductsPageTab = 'store' | 'rashan';
+export type ProductsPageTab = 'store' | 'rashan' | 'master';
 export type RestaurantPageTab = 'dishes' | 'materials' | 'kds';
 export type SyncStatus = 'synced' | 'syncing' | 'error' | 'offline';
 export type ShopType = 'Retail' | 'Restaurant' | 'Rashan';
@@ -110,6 +110,7 @@ export interface Batch {
     quantity: number;
     receivedDate: string; // ISO String
     netPurchasePrice: number; // The actual net price paid for this batch unit
+    mrp: number; // The MRP at the time this batch was purchased
 }
 
 export interface ProductVariant {

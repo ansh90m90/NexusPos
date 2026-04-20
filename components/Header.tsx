@@ -76,7 +76,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, currentUser, onLogout, not
     const currentBusiness = userBusinesses.find(b => b.id === currentBusinessId);
     
     return (
-        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 h-20 transition-all duration-300">
+        <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 h-20 transition-all duration-300">
             <div className="flex items-center gap-6">
                 <div className="flex flex-col">
                     <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">{currentPage}</h1>
